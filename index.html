@@ -255,6 +255,7 @@
         gap: 6px;
         touch-action: none;
         user-select: none;
+        position: relative;
       }
 
       .tile,
@@ -277,6 +278,7 @@
         font-weight: 800;
         line-height: 1;
         box-shadow: inset 0 -4px 0 rgba(23, 35, 31, 0.03);
+        z-index: 1;
       }
 
       .tile-letter {
@@ -354,6 +356,23 @@
 
       .path-end.active {
         color: rgba(255, 255, 255, 0.96);
+      }
+
+      .path-connector {
+        position: absolute;
+        border-radius: 999px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .path-connector.solved {
+        background: color-mix(in srgb, var(--tile-found) 82%, white 18%);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+
+      .path-connector.active {
+        background: color-mix(in srgb, var(--tile-active) 82%, white 18%);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
       }
 
       .block {
@@ -571,7 +590,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.19";
+      const APP_VERSION = "v00.00.20";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1299,6 +1318,24 @@
         return { solved, active, solvedEnds, activeEnds };
       }
 
+      function buildConnectorSegments() {
+        const solved = [];
+        const active = [];
+
+        state.puzzle.words.forEach((word, wordIndex) => {
+          if (!isSolvedWord(wordIndex)) return;
+          for (let index = 0; index < word.path.length - 1; index += 1) {
+            solved.push([word.path[index], word.path[index + 1]]);
+          }
+        });
+
+        for (let index = 0; index < state.activePath.length - 1; index += 1) {
+          active.push([state.activePath[index], state.activePath[index + 1]]);
+        }
+
+        return { solved, active };
+      }
+
       function activeWordPath() {
         return state.activePath
           .map((index) => state.puzzle.cells[index].letter)
@@ -1498,6 +1535,7 @@
         const tileSize = (boardWidth - gap * (cols - 1)) / cols;
         return {
           gap,
+          tileSize,
           fontSize: clamp(tileSize * 0.46, 8, 24),
           hintSize: clamp(tileSize * 0.22, 6, 11),
           arrowSize: clamp(tileSize * 0.24, 7, 12),
@@ -1516,6 +1554,35 @@
         els.board.style.setProperty("--tile-radius", `${metrics.radius}px`);
         els.board.innerHTML = "";
         const arrowMap = buildArrowMap();
+        const connectors = buildConnectorSegments();
+
+        function appendConnector(from, to, className) {
+          const [fromRow, fromCol] = toCoord(from, state.puzzle.cols);
+          const [toRow, toCol] = toCoord(to, state.puzzle.cols);
+          const step = metrics.tileSize + metrics.gap;
+          const x1 = fromCol * step + metrics.tileSize / 2;
+          const y1 = fromRow * step + metrics.tileSize / 2;
+          const x2 = toCol * step + metrics.tileSize / 2;
+          const y2 = toRow * step + metrics.tileSize / 2;
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const length = Math.hypot(dx, dy);
+          const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+          const thickness = Math.max(8, metrics.tileSize * 0.24);
+
+          const connector = document.createElement("div");
+          connector.className = `path-connector ${className}`;
+          connector.style.width = `${length}px`;
+          connector.style.height = `${thickness}px`;
+          connector.style.left = `${x1}px`;
+          connector.style.top = `${y1 - thickness / 2}px`;
+          connector.style.transformOrigin = "0 50%";
+          connector.style.transform = `rotate(${angle}deg)`;
+          els.board.appendChild(connector);
+        }
+
+        connectors.solved.forEach(([from, to]) => appendConnector(from, to, "solved"));
+        connectors.active.forEach(([from, to]) => appendConnector(from, to, "active"));
 
         state.puzzle.cells.forEach((cell, index) => {
           if (cell.type === "block") {
