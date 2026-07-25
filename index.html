@@ -185,21 +185,28 @@
       }
 
       select,
+      input,
       button {
         font: inherit;
       }
 
-      select {
+      select,
+      input {
         appearance: none;
         border: 1px solid rgba(23, 35, 31, 0.12);
         border-radius: 16px;
-        padding: 12px 38px 12px 14px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.76);
+        color: var(--ink);
+        font-weight: 800;
+      }
+
+      select {
+        padding-right: 38px;
         background:
           linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 20px) calc(50% - 2px) / 8px 8px no-repeat,
           linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 14px) calc(50% - 2px) / 8px 8px no-repeat,
           rgba(255, 255, 255, 0.76);
-        color: var(--ink);
-        font-weight: 800;
       }
 
       button {
@@ -216,6 +223,7 @@
       }
 
       button:focus-visible,
+      input:focus-visible,
       select:focus-visible,
       .tile:focus-visible {
         outline: 3px solid rgba(29, 122, 98, 0.28);
@@ -555,6 +563,14 @@
           </div>
 
           <div class="field">
+            <label for="seed-input">Seed</label>
+            <div class="controls">
+              <input id="seed-input" type="text" spellcheck="false" autocomplete="off" />
+              <button class="secondary" id="seed-apply-btn" type="button">Apply seed</button>
+            </div>
+          </div>
+
+          <div class="field">
             <label for="color-mode">Solved colors</label>
             <select id="color-mode">
               <option value="hue">Different hues</option>
@@ -616,7 +632,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.26";
+      const APP_VERSION = "v00.00.27";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -803,6 +819,7 @@
         selectedGridSize: "5x5",
         selectedColorMode: "value",
         practiceIndex: 0,
+        currentSeed: "",
         puzzle: null,
         foundWords: [],
         hints: {},
@@ -828,6 +845,8 @@
         successBanner: document.getElementById("success-banner"),
         successText: document.getElementById("success-text"),
         gridSize: document.getElementById("grid-size"),
+        seedInput: document.getElementById("seed-input"),
+        seedApplyBtn: document.getElementById("seed-apply-btn"),
         colorMode: document.getElementById("color-mode"),
         dailyBtn: document.getElementById("daily-btn"),
         practiceBtn: document.getElementById("practice-btn"),
@@ -1379,8 +1398,43 @@
         return lengths;
       }
 
-      function materializePuzzle(rows, cols, mode, variant) {
-        const seedLabel = `${mode}:${rows}x${cols}:${variant}`;
+      function gridSeedPrefix(rows, cols) {
+        return `${rows}x${cols}:`;
+      }
+
+      function extractSeedBody(seedValue, rows, cols) {
+        const trimmed = String(seedValue || "").trim();
+        const prefix = gridSeedPrefix(rows, cols);
+        if (trimmed.startsWith(prefix)) {
+          return trimmed.slice(prefix.length).trim() || "practice-0";
+        }
+        if (/^\d+x\d+:/.test(trimmed)) {
+          return trimmed.replace(/^\d+x\d+:/, "").trim() || "practice-0";
+        }
+        return trimmed || "practice-0";
+      }
+
+      function normalizeSeed(seedValue, rows, cols, fallbackBody = "practice-0") {
+        const body = extractSeedBody(seedValue, rows, cols) || fallbackBody;
+        return `${gridSeedPrefix(rows, cols)}${body}`;
+      }
+
+      function buildDailySeed(rows, cols) {
+        return normalizeSeed(`daily-${getDailyVariant()}`, rows, cols, "daily-0");
+      }
+
+      function buildPracticeSeed(rows, cols, variant) {
+        return normalizeSeed(`practice-${variant}`, rows, cols, "practice-0");
+      }
+
+      function materializePuzzle(rows, cols, mode, seedKey) {
+        const normalizedSeed = normalizeSeed(
+          seedKey,
+          rows,
+          cols,
+          mode === "daily" ? `daily-${getDailyVariant()}` : "practice-0"
+        );
+        const seedLabel = `${mode}:${normalizedSeed}`;
         const layout = buildPlayableLayout(rows, cols, seedLabel);
         const lengths = chooseWordLengths(layout.path.length, cols, seedLabel);
         let offset = 0;
@@ -1406,8 +1460,9 @@
         });
 
         return {
-          id: `${rows}x${cols}-${mode}-${variant}`,
+          id: `${mode}-${normalizedSeed}`,
           name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
+          seedKey: normalizedSeed,
           rows,
           cols,
           cells,
@@ -1451,7 +1506,7 @@
 
       function getDailyPuzzle() {
         const { rows, cols } = currentGridSize();
-        return materializePuzzle(rows, cols, "daily", getDailyVariant());
+        return materializePuzzle(rows, cols, "daily", buildDailySeed(rows, cols));
       }
 
       function isSolvedWord(wordIndex) {
@@ -1615,6 +1670,7 @@
       function startPuzzle(puzzle, mode, options = {}) {
         state.mode = mode;
         state.puzzle = puzzle;
+        state.currentSeed = puzzle.seedKey;
         state.activePath = [];
         state.invalidTiles = [];
         state.draggingPointerId = null;
@@ -1957,6 +2013,7 @@
           Object.values(state.hints).reduce((sum, value) => sum + value, 0)
         );
         els.gridSize.value = state.selectedGridSize;
+        els.seedInput.value = state.currentSeed;
         els.colorMode.value = state.selectedColorMode;
 
         const solved = state.foundWords.length === state.puzzle.words.length;
@@ -1976,18 +2033,28 @@
       function nextPracticePuzzle() {
         const { rows, cols } = currentGridSize();
         state.practiceIndex += 1;
-        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice", { ignoreSavedState: true });
+        const seed = buildPracticeSeed(rows, cols, state.practiceIndex);
+        startPuzzle(materializePuzzle(rows, cols, "practice", seed), "practice", { ignoreSavedState: true });
       }
 
       function applyGridSize(value) {
         state.selectedGridSize = value;
+        const { rows, cols } = currentGridSize();
+        const currentSeedBody = extractSeedBody(els.seedInput.value, rows, cols);
         state.practiceIndex = 0;
         if (state.mode === "practice") {
-          const { rows, cols } = currentGridSize();
-          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice", { ignoreSavedState: true });
+          const seed = normalizeSeed(currentSeedBody, rows, cols, "practice-0");
+          startPuzzle(materializePuzzle(rows, cols, "practice", seed), "practice");
         } else {
           startPuzzle(getDailyPuzzle(), "daily");
         }
+      }
+
+      function applySeedInput() {
+        const { rows, cols } = currentGridSize();
+        const normalizedSeed = normalizeSeed(els.seedInput.value, rows, cols, "practice-0");
+        state.practiceIndex = 0;
+        startPuzzle(materializePuzzle(rows, cols, "practice", normalizedSeed), "practice");
       }
 
       function applyColorMode(value) {
@@ -2008,12 +2075,18 @@
 
       els.dailyBtn.addEventListener("click", () => startPuzzle(getDailyPuzzle(), "daily"));
       els.practiceBtn.addEventListener("click", nextPracticePuzzle);
+      els.seedApplyBtn.addEventListener("click", applySeedInput);
       els.submitBtn.addEventListener("click", submitPath);
       els.undoBtn.addEventListener("click", undoPath);
       els.hintBtn.addEventListener("click", revealHint);
       els.solveBtn.addEventListener("click", solvePuzzle);
       els.resetBtn.addEventListener("click", resetProgress);
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
+      els.seedInput.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        applySeedInput();
+      });
       els.colorMode.addEventListener("change", (event) => applyColorMode(event.target.value));
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("resize", renderBoard);
