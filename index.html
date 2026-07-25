@@ -316,10 +316,17 @@
       }
 
       .board-shell {
+        position: relative;
         padding: 14px;
         border-radius: 26px;
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(245, 239, 226, 0.94));
         border: 1px solid rgba(23, 35, 31, 0.08);
+      }
+
+      .board-shell.sphere-mode {
+        padding: 18px;
+        background:
+          radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.92), rgba(244, 238, 224, 0.86) 42%, rgba(226, 216, 195, 0.92) 100%);
       }
 
       .board {
@@ -327,6 +334,31 @@
         gap: 6px;
         touch-action: none;
         user-select: none;
+      }
+
+      .board.flat-board {
+        display: grid;
+      }
+
+      .board.sphere-board {
+        position: relative;
+        display: block;
+        width: 100%;
+        aspect-ratio: 1;
+        min-height: 320px;
+        border-radius: 50%;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.2), transparent 34%),
+          radial-gradient(circle at 50% 50%, rgba(29, 122, 98, 0.22), rgba(18, 59, 79, 0.88) 68%, rgba(9, 24, 34, 0.98) 100%);
+        box-shadow:
+          inset 0 16px 32px rgba(255, 255, 255, 0.16),
+          inset 0 -22px 36px rgba(0, 0, 0, 0.34);
+        cursor: grab;
+      }
+
+      .board.sphere-board.rotating {
+        cursor: grabbing;
       }
 
       .tile,
@@ -414,6 +446,39 @@
           linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent),
           var(--wall);
         border: 1px solid var(--wall-edge);
+      }
+
+      .board.sphere-board .tile,
+      .board.sphere-board .block {
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform: translate(-50%, -50%);
+        margin: 0;
+      }
+
+      .board.sphere-board .tile {
+        box-shadow:
+          inset 0 -3px 0 rgba(23, 35, 31, 0.06),
+          0 6px 10px rgba(0, 0, 0, 0.18);
+      }
+
+      .board.sphere-board .block {
+        border-radius: 50%;
+        box-shadow:
+          inset 0 2px 3px rgba(255, 255, 255, 0.1),
+          0 5px 8px rgba(0, 0, 0, 0.24);
+      }
+
+      .board.sphere-board .occluded {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .sphere-note {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 0.94rem;
       }
 
       .legend {
@@ -554,9 +619,10 @@
             <div class="mode-pill" id="puzzle-pill">Puzzle</div>
           </div>
 
-          <div class="board-shell">
+          <div class="board-shell" id="board-shell">
             <div class="board" id="board" aria-label="Word grid"></div>
           </div>
+          <div class="sphere-note" id="sphere-note" hidden>Drag the globe background or blocked cells to rotate it.</div>
 
           <div class="legend">
             <span><i class="dot" style="background: var(--tile-active)"></i> Current path</span>
@@ -639,7 +705,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.13";
+      const APP_VERSION = "v00.00.14";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -672,11 +738,18 @@
         startTime: Date.now(),
         timerHandle: null,
         draggingPointerId: null,
-        gestureExtended: false
+        gestureExtended: false,
+        rotatingPointerId: null,
+        sphereYaw: -0.55,
+        spherePitch: -0.3,
+        rotateLastX: 0,
+        rotateLastY: 0
       };
 
       const els = {
         board: document.getElementById("board"),
+        boardShell: document.getElementById("board-shell"),
+        sphereNote: document.getElementById("sphere-note"),
         slots: document.getElementById("slots"),
         modePill: document.getElementById("mode-pill"),
         puzzlePill: document.getElementById("puzzle-pill"),
@@ -703,6 +776,11 @@
 
       function clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
+      }
+
+      function resetSphereRotation() {
+        state.sphereYaw = -0.55;
+        state.spherePitch = -0.3;
       }
 
       function hashText(text) {
@@ -1411,7 +1489,9 @@
         state.activePath = [];
         state.invalidTiles = [];
         state.draggingPointerId = null;
+        state.rotatingPointerId = null;
         state.gestureExtended = false;
+        if (puzzle.wrap) resetSphereRotation();
         const saved = loadStateForPuzzle(puzzle);
         state.foundWords = saved?.foundWords || [];
         state.hints = saved?.hints || {};
@@ -1519,6 +1599,33 @@
         state.gestureExtended = false;
       }
 
+      function handleBoardPointerDown(event) {
+        if (!state.puzzle?.wrap) return;
+        if (event.target.closest(".tile")) return;
+        state.rotatingPointerId = event.pointerId;
+        state.rotateLastX = event.clientX;
+        state.rotateLastY = event.clientY;
+        els.board.classList.add("rotating");
+        event.preventDefault();
+      }
+
+      function handleWindowPointerMove(event) {
+        if (state.rotatingPointerId !== event.pointerId) return;
+        const dx = event.clientX - state.rotateLastX;
+        const dy = event.clientY - state.rotateLastY;
+        state.rotateLastX = event.clientX;
+        state.rotateLastY = event.clientY;
+        state.sphereYaw += dx * 0.01;
+        state.spherePitch = clamp(state.spherePitch + dy * 0.008, -1.2, 1.2);
+        renderBoard();
+      }
+
+      function handleWindowPointerUp(event) {
+        if (state.rotatingPointerId !== event.pointerId) return;
+        state.rotatingPointerId = null;
+        els.board.classList.remove("rotating");
+      }
+
       function handleTileClick(index) {
         const cell = state.puzzle.cells[index];
         if (!cell || cell.type !== "tile" || isLockedTile(index)) return;
@@ -1582,9 +1689,92 @@
         };
       }
 
-      function renderBoard() {
-        if (!state.puzzle) return;
+      function createTileElement(cell, index, arrowMap) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "tile";
+        button.setAttribute("aria-label", `Letter ${cell.letter}`);
+
+        const letter = document.createElement("span");
+        letter.className = "tile-letter";
+        letter.textContent = cell.letter;
+        button.appendChild(letter);
+
+        if (state.activePath.includes(index)) button.classList.add("active");
+        if (isSolvedWord(cell.wordIndex)) button.classList.add("found", "locked");
+        if (state.invalidTiles.includes(index)) button.classList.add("invalid");
+        if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
+          button.classList.add("hinted");
+        }
+
+        const badge = document.createElement("span");
+        badge.className = "tile-index";
+        if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
+          badge.textContent = cell.step;
+        }
+        button.appendChild(badge);
+
+        const activeArrow = arrowMap.active.get(index);
+        const solvedArrow = arrowMap.solved.get(index);
+        const arrow = activeArrow || solvedArrow;
+        if (arrow) {
+          const arrowEl = document.createElement("span");
+          arrowEl.className = `path-arrow ${activeArrow ? "active" : "solved"}`;
+          arrowEl.textContent = arrow;
+          button.appendChild(arrowEl);
+        }
+
+        button.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
+        button.addEventListener("pointerenter", (event) => handlePointerEnter(index, event));
+        button.addEventListener("pointerup", handlePointerUp);
+        button.addEventListener("click", () => handleTileClick(index));
+        return button;
+      }
+
+      function projectSpherePoint(index, width) {
+        const [row, col] = toCoord(index, state.puzzle.cols);
+        const lon = ((col + 0.5) / state.puzzle.cols - 0.5) * Math.PI * 2;
+        const lat = ((row + 0.5) / state.puzzle.rows - 0.5) * Math.PI * 0.92;
+
+        const cosLat = Math.cos(lat);
+        let x = cosLat * Math.sin(lon);
+        let y = Math.sin(lat);
+        let z = cosLat * Math.cos(lon);
+
+        const cosYaw = Math.cos(state.sphereYaw);
+        const sinYaw = Math.sin(state.sphereYaw);
+        const yawX = x * cosYaw - z * sinYaw;
+        const yawZ = x * sinYaw + z * cosYaw;
+        x = yawX;
+        z = yawZ;
+
+        const cosPitch = Math.cos(state.spherePitch);
+        const sinPitch = Math.sin(state.spherePitch);
+        const pitchY = y * cosPitch - z * sinPitch;
+        const pitchZ = y * sinPitch + z * cosPitch;
+        y = pitchY;
+        z = pitchZ;
+
+        const center = width / 2;
+        const radius = width * 0.39;
+        const orbit = radius * 0.93;
+        const depth = (z + 1) / 2;
+        const scale = 0.52 + depth * 0.72;
+
+        return {
+          x: center + x * orbit,
+          y: center + y * orbit,
+          z,
+          scale,
+          depth,
+          visible: z > -0.24
+        };
+      }
+
+      function renderFlatBoard() {
         const metrics = computeTileMetrics();
+        els.board.className = "board flat-board";
+        els.boardShell.classList.remove("sphere-mode");
         els.board.style.gridTemplateColumns = `repeat(${state.puzzle.cols}, minmax(0, 1fr))`;
         els.board.style.gap = `${metrics.gap}px`;
         els.board.style.setProperty("--tile-font-size", `${metrics.fontSize}px`);
@@ -1602,46 +1792,67 @@
             return;
           }
 
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "tile";
-          button.setAttribute("aria-label", `Letter ${cell.letter}`);
-
-          const letter = document.createElement("span");
-          letter.className = "tile-letter";
-          letter.textContent = cell.letter;
-          button.appendChild(letter);
-
-          if (state.activePath.includes(index)) button.classList.add("active");
-          if (isSolvedWord(cell.wordIndex)) button.classList.add("found", "locked");
-          if (state.invalidTiles.includes(index)) button.classList.add("invalid");
-          if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
-            button.classList.add("hinted");
-          }
-
-          const badge = document.createElement("span");
-          badge.className = "tile-index";
-          if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
-            badge.textContent = cell.step;
-          }
-          button.appendChild(badge);
-
-          const activeArrow = arrowMap.active.get(index);
-          const solvedArrow = arrowMap.solved.get(index);
-          const arrow = activeArrow || solvedArrow;
-          if (arrow) {
-            const arrowEl = document.createElement("span");
-            arrowEl.className = `path-arrow ${activeArrow ? "active" : "solved"}`;
-            arrowEl.textContent = arrow;
-            button.appendChild(arrowEl);
-          }
-
-          button.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
-          button.addEventListener("pointerenter", (event) => handlePointerEnter(index, event));
-          button.addEventListener("pointerup", handlePointerUp);
-          button.addEventListener("click", () => handleTileClick(index));
-          els.board.appendChild(button);
+          els.board.appendChild(createTileElement(cell, index, arrowMap));
         });
+      }
+
+      function renderSphereBoard() {
+        const width =
+          els.board.getBoundingClientRect().width ||
+          els.boardShell.getBoundingClientRect().width - 36;
+        const baseSize = clamp((width * 0.88) / state.puzzle.cols, 18, 62);
+        const arrowMap = buildArrowMap();
+        els.board.className = `board sphere-board${state.rotatingPointerId !== null ? " rotating" : ""}`;
+        els.boardShell.classList.add("sphere-mode");
+        els.board.style.gridTemplateColumns = "";
+        els.board.style.gap = "0";
+        els.board.innerHTML = "";
+
+        const projected = state.puzzle.cells.map((cell, index) => ({
+          cell,
+          index,
+          projection: projectSpherePoint(index, width)
+        }));
+
+        projected.sort((a, b) => a.projection.z - b.projection.z);
+
+        projected.forEach(({ cell, index, projection }) => {
+          const size = baseSize * projection.scale;
+          const radius = clamp(size * 0.22, 6, 20);
+          const fontSize = clamp(size * 0.38, 9, 26);
+          const hintSize = clamp(size * 0.16, 6, 11);
+          const arrowSize = clamp(size * 0.18, 7, 13);
+
+          let element;
+          if (cell.type === "block") {
+            element = document.createElement("div");
+            element.className = "block";
+          } else {
+            element = createTileElement(cell, index, arrowMap);
+          }
+
+          if (!projection.visible) element.classList.add("occluded");
+          element.style.left = `${projection.x}px`;
+          element.style.top = `${projection.y}px`;
+          element.style.width = `${size}px`;
+          element.style.height = `${size}px`;
+          element.style.zIndex = String(Math.round((projection.z + 1) * 1000));
+          element.style.setProperty("--tile-radius", `${radius}px`);
+          element.style.setProperty("--tile-font-size", `${fontSize}px`);
+          element.style.setProperty("--tile-index-size", `${hintSize}px`);
+          element.style.setProperty("--tile-arrow-size", `${arrowSize}px`);
+          element.style.opacity = projection.visible ? String(0.46 + projection.depth * 0.54) : "0";
+          els.board.appendChild(element);
+        });
+      }
+
+      function renderBoard() {
+        if (!state.puzzle) return;
+        if (state.puzzle.wrap) {
+          renderSphereBoard();
+          return;
+        }
+        renderFlatBoard();
       }
 
       function hintedDisplay(word, wordIndex) {
@@ -1689,6 +1900,7 @@
         );
         els.gridSize.value = state.selectedGridSize;
         els.wrapSphere.checked = state.wrapSphere;
+        els.sphereNote.hidden = !state.puzzle.wrap;
 
         const solved = state.foundWords.length === state.puzzle.words.length;
         els.successBanner.hidden = !solved;
@@ -1751,7 +1963,10 @@
       els.resetBtn.addEventListener("click", resetProgress);
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
       els.wrapSphere.addEventListener("change", (event) => applyWrapSphere(event.target.checked));
+      els.board.addEventListener("pointerdown", handleBoardPointerDown);
       window.addEventListener("pointerup", handlePointerUp);
+      window.addEventListener("pointermove", handleWindowPointerMove);
+      window.addEventListener("pointerup", handleWindowPointerUp);
       window.addEventListener("resize", renderBoard);
 
       populateGridSizeOptions();
