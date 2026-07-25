@@ -571,6 +571,30 @@
           </div>
 
           <div class="field">
+            <label for="word-mode">Word selection</label>
+            <select id="word-mode">
+              <option value="any">Any words</option>
+              <option value="contains-z">Only words with Z</option>
+              <option value="contains-x">Only words with X</option>
+              <option value="contains-q">Only words with Q</option>
+              <option value="contains-ing">Only words with ING</option>
+              <option value="contains-mm">Only words with MM</option>
+              <option value="starts-with">Words beginning with...</option>
+              <option value="fixed-length">Only N-letter words</option>
+            </select>
+          </div>
+
+          <div class="field" id="start-letter-field" hidden>
+            <label for="start-letter-input">Starting letter</label>
+            <input id="start-letter-input" type="text" inputmode="text" maxlength="1" spellcheck="false" autocomplete="off" value="A" />
+          </div>
+
+          <div class="field" id="fixed-length-field" hidden>
+            <label for="fixed-length-input">Word length N</label>
+            <input id="fixed-length-input" type="number" min="4" max="12" step="1" value="5" />
+          </div>
+
+          <div class="field">
             <label for="color-mode">Solved colors</label>
             <select id="color-mode">
               <option value="hue">Different hues</option>
@@ -632,7 +656,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.27";
+      const APP_VERSION = "v00.00.28";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -818,6 +842,9 @@
         mode: "daily",
         selectedGridSize: "5x5",
         selectedColorMode: "value",
+        selectedWordMode: "any",
+        selectedStartLetter: "A",
+        selectedFixedLength: 5,
         practiceIndex: 0,
         currentSeed: "",
         puzzle: null,
@@ -847,6 +874,11 @@
         gridSize: document.getElementById("grid-size"),
         seedInput: document.getElementById("seed-input"),
         seedApplyBtn: document.getElementById("seed-apply-btn"),
+        wordMode: document.getElementById("word-mode"),
+        startLetterField: document.getElementById("start-letter-field"),
+        startLetterInput: document.getElementById("start-letter-input"),
+        fixedLengthField: document.getElementById("fixed-length-field"),
+        fixedLengthInput: document.getElementById("fixed-length-input"),
         colorMode: document.getElementById("color-mode"),
         dailyBtn: document.getElementById("daily-btn"),
         practiceBtn: document.getElementById("practice-btn"),
@@ -1208,9 +1240,9 @@
         return null;
       }
 
-      function buildFallbackLayout(rows, cols, seedLabel) {
+      function buildFallbackLayout(rows, cols, seedLabel, wordSettings) {
         const rng = makeRng(hashText(`${seedLabel}:fallback`));
-        const targetLength = chooseTargetLength(rows, cols);
+        const targetLength = chooseTargetLength(rows, cols, wordSettings);
         const startCandidates = Array.from({ length: rows * cols }, (_, index) => index)
           .sort(() => rng() - 0.5);
 
@@ -1280,15 +1312,21 @@
         };
       }
 
-      function chooseTargetLength(rows, cols) {
+      function chooseTargetLength(rows, cols, wordSettings) {
         const density = clamp(0.82 - cols * 0.012, 0.5, 0.78);
         let target = Math.max(10, Math.floor(rows * cols * density));
+        if (wordSettings?.mode === "fixed-length") {
+          const fixedLength = wordSettings.fixedLength;
+          target -= target % fixedLength;
+          if (target < fixedLength) target = fixedLength;
+          return target;
+        }
         while (target > 8 && target % 2 === 1) target -= 1;
         return target;
       }
 
-      function buildPlayableLayout(rows, cols, seedLabel) {
-        const targetLength = chooseTargetLength(rows, cols);
+      function buildPlayableLayout(rows, cols, seedLabel, wordSettings) {
+        const targetLength = chooseTargetLength(rows, cols, wordSettings);
         for (let attempt = 0; attempt < 10; attempt += 1) {
           const blocked = generateBlockedMask(rows, cols, `${seedLabel}:mask:${attempt}`, targetLength);
           const availableSet = collectPlayableSet(rows, cols, blocked);
@@ -1310,27 +1348,98 @@
           };
         }
 
-        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`);
+        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`, wordSettings);
       }
 
-      function generateFallbackWord(length, rng) {
+      function generateFallbackWord(length, rng, wordSettings) {
         const consonants = "BCDFGHJKLMNPRSTVWZ";
         const vowels = "AEIOUY";
-        let word = "";
+        const letters = [];
         for (let index = 0; index < length; index += 1) {
           const source = index % 2 === 0 ? consonants : vowels;
-          word += source[Math.floor(rng() * source.length)];
+          letters.push(source[Math.floor(rng() * source.length)]);
         }
-        return word;
+
+        switch (wordSettings.mode) {
+          case "contains-z":
+            letters[Math.floor(rng() * length)] = "Z";
+            break;
+          case "contains-x":
+            letters[Math.floor(rng() * length)] = "X";
+            break;
+          case "contains-q":
+            letters[Math.floor(rng() * length)] = "Q";
+            break;
+          case "contains-ing":
+            if (length >= 3) {
+              letters[length - 3] = "I";
+              letters[length - 2] = "N";
+              letters[length - 1] = "G";
+            }
+            break;
+          case "contains-mm": {
+            const start = Math.max(0, Math.floor(length / 2) - 1);
+            letters[start] = "M";
+            letters[Math.min(length - 1, start + 1)] = "M";
+            break;
+          }
+          case "starts-with":
+            letters[0] = wordSettings.startLetter;
+            break;
+          default:
+            break;
+        }
+
+        return letters.join("");
       }
 
-      function pickWord(length, slotIndex, seedLabel) {
-        const bank = (WORD_BANK[String(length)] || []).filter((word) => word.length === length);
+      function sanitizeStartLetter(value) {
+        const letter = String(value || "").trim().toUpperCase().replace(/[^A-Z]/g, "");
+        return letter[0] || "A";
+      }
+
+      function sanitizeFixedLength(value) {
+        return clamp(Number.parseInt(value, 10) || 5, 4, 12);
+      }
+
+      function currentWordSettings() {
+        return {
+          mode: state.selectedWordMode,
+          startLetter: sanitizeStartLetter(state.selectedStartLetter),
+          fixedLength: sanitizeFixedLength(state.selectedFixedLength)
+        };
+      }
+
+      function matchesWordMode(word, wordSettings) {
+        switch (wordSettings.mode) {
+          case "contains-z":
+            return word.includes("Z");
+          case "contains-x":
+            return word.includes("X");
+          case "contains-q":
+            return word.includes("Q");
+          case "contains-ing":
+            return word.includes("ING");
+          case "contains-mm":
+            return word.includes("MM");
+          case "starts-with":
+            return word.startsWith(wordSettings.startLetter);
+          case "fixed-length":
+            return word.length === wordSettings.fixedLength;
+          default:
+            return true;
+        }
+      }
+
+      function pickWord(length, slotIndex, seedLabel, wordSettings) {
+        const bank = (WORD_BANK[String(length)] || [])
+          .filter((word) => word.length === length)
+          .filter((word) => matchesWordMode(word, wordSettings));
         const seed = hashText(`${seedLabel}:word:${length}:${slotIndex}`);
         const rng = makeRng(seed);
 
         if (bank.length === 0) {
-          return generateFallbackWord(length, rng);
+          return generateFallbackWord(length, rng, wordSettings);
         }
 
         return bank[(seed + slotIndex * 11) % bank.length];
@@ -1344,7 +1453,14 @@
         return minWords <= maxWords;
       }
 
-      function chooseWordLengths(totalCells, cols, seedLabel) {
+      function chooseWordLengths(totalCells, cols, seedLabel, wordSettings) {
+        if (wordSettings.mode === "fixed-length") {
+          return Array.from(
+            { length: Math.floor(totalCells / wordSettings.fixedLength) },
+            () => wordSettings.fixedLength
+          );
+        }
+
         const minLen = 4;
         const maxLen = Math.min(12, Math.max(7, Math.floor(cols * 0.7)));
         const rng = makeRng(hashText(`${seedLabel}:lengths`));
@@ -1398,12 +1514,33 @@
         return lengths;
       }
 
+      function wordSelectionSeedKey(wordSettings) {
+        switch (wordSettings.mode) {
+          case "contains-z":
+            return "z";
+          case "contains-x":
+            return "x";
+          case "contains-q":
+            return "q";
+          case "contains-ing":
+            return "ing";
+          case "contains-mm":
+            return "mm";
+          case "starts-with":
+            return `starts-${wordSettings.startLetter}`;
+          case "fixed-length":
+            return `n-${wordSettings.fixedLength}`;
+          default:
+            return "any";
+        }
+      }
+
       function gridSeedPrefix(rows, cols) {
         return `${rows}x${cols}:`;
       }
 
       function extractSeedBody(seedValue, rows, cols) {
-        const trimmed = String(seedValue || "").trim();
+        const trimmed = String(seedValue || "").trim().replace(/\|words=[^|]+$/, "");
         const prefix = gridSeedPrefix(rows, cols);
         if (trimmed.startsWith(prefix)) {
           return trimmed.slice(prefix.length).trim() || "practice-0";
@@ -1414,34 +1551,36 @@
         return trimmed || "practice-0";
       }
 
-      function normalizeSeed(seedValue, rows, cols, fallbackBody = "practice-0") {
+      function normalizeSeed(seedValue, rows, cols, fallbackBody = "practice-0", wordSettings = currentWordSettings()) {
         const body = extractSeedBody(seedValue, rows, cols) || fallbackBody;
-        return `${gridSeedPrefix(rows, cols)}${body}`;
+        return `${gridSeedPrefix(rows, cols)}${body}|words=${wordSelectionSeedKey(wordSettings)}`;
       }
 
       function buildDailySeed(rows, cols) {
-        return normalizeSeed(`daily-${getDailyVariant()}`, rows, cols, "daily-0");
+        return normalizeSeed(`daily-${getDailyVariant()}`, rows, cols, "daily-0", currentWordSettings());
       }
 
       function buildPracticeSeed(rows, cols, variant) {
-        return normalizeSeed(`practice-${variant}`, rows, cols, "practice-0");
+        return normalizeSeed(`practice-${variant}`, rows, cols, "practice-0", currentWordSettings());
       }
 
       function materializePuzzle(rows, cols, mode, seedKey) {
+        const wordSettings = currentWordSettings();
         const normalizedSeed = normalizeSeed(
           seedKey,
           rows,
           cols,
-          mode === "daily" ? `daily-${getDailyVariant()}` : "practice-0"
+          mode === "daily" ? `daily-${getDailyVariant()}` : "practice-0",
+          wordSettings
         );
         const seedLabel = `${mode}:${normalizedSeed}`;
-        const layout = buildPlayableLayout(rows, cols, seedLabel);
-        const lengths = chooseWordLengths(layout.path.length, cols, seedLabel);
+        const layout = buildPlayableLayout(rows, cols, seedLabel, wordSettings);
+        const lengths = chooseWordLengths(layout.path.length, cols, seedLabel, wordSettings);
         let offset = 0;
 
         const words = lengths.map((length, index) => {
           const path = layout.path.slice(offset, offset + length);
-          const text = pickWord(length, index, seedLabel);
+          const text = pickWord(length, index, seedLabel, wordSettings);
           offset += length;
           return { text, path };
         });
@@ -2014,6 +2153,11 @@
         );
         els.gridSize.value = state.selectedGridSize;
         els.seedInput.value = state.currentSeed;
+        els.wordMode.value = state.selectedWordMode;
+        els.startLetterInput.value = sanitizeStartLetter(state.selectedStartLetter);
+        els.fixedLengthInput.value = String(sanitizeFixedLength(state.selectedFixedLength));
+        els.startLetterField.hidden = state.selectedWordMode !== "starts-with";
+        els.fixedLengthField.hidden = state.selectedWordMode !== "fixed-length";
         els.colorMode.value = state.selectedColorMode;
 
         const solved = state.foundWords.length === state.puzzle.words.length;
@@ -2050,6 +2194,21 @@
         }
       }
 
+      function applyWordSettings() {
+        state.selectedWordMode = els.wordMode.value;
+        state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
+        state.selectedFixedLength = sanitizeFixedLength(els.fixedLengthInput.value);
+        const { rows, cols } = currentGridSize();
+        const currentSeedBody = extractSeedBody(els.seedInput.value, rows, cols);
+
+        if (state.mode === "practice") {
+          startPuzzle(materializePuzzle(rows, cols, "practice", currentSeedBody), "practice");
+          return;
+        }
+
+        startPuzzle(materializePuzzle(rows, cols, "daily", `daily-${getDailyVariant()}`), "daily");
+      }
+
       function applySeedInput() {
         const { rows, cols } = currentGridSize();
         const normalizedSeed = normalizeSeed(els.seedInput.value, rows, cols, "practice-0");
@@ -2076,6 +2235,15 @@
       els.dailyBtn.addEventListener("click", () => startPuzzle(getDailyPuzzle(), "daily"));
       els.practiceBtn.addEventListener("click", nextPracticePuzzle);
       els.seedApplyBtn.addEventListener("click", applySeedInput);
+      els.wordMode.addEventListener("change", applyWordSettings);
+      els.startLetterInput.addEventListener("input", () => {
+        els.startLetterInput.value = sanitizeStartLetter(els.startLetterInput.value);
+        if (state.selectedWordMode === "starts-with") applyWordSettings();
+      });
+      els.fixedLengthInput.addEventListener("change", () => {
+        els.fixedLengthInput.value = String(sanitizeFixedLength(els.fixedLengthInput.value));
+        if (state.selectedWordMode === "fixed-length") applyWordSettings();
+      });
       els.submitBtn.addEventListener("click", submitPath);
       els.undoBtn.addEventListener("click", undoPath);
       els.hintBtn.addEventListener("click", revealHint);
