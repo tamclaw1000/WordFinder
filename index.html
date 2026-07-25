@@ -455,6 +455,7 @@
         top: 0;
         transform: translate(-50%, -50%);
         margin: 0;
+        border-radius: 50%;
       }
 
       .board.sphere-board .tile {
@@ -464,7 +465,6 @@
       }
 
       .board.sphere-board .block {
-        border-radius: 50%;
         box-shadow:
           inset 0 2px 3px rgba(255, 255, 255, 0.1),
           0 5px 8px rgba(0, 0, 0, 0.24);
@@ -705,7 +705,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.14";
+      const APP_VERSION = "v00.00.15";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1733,8 +1733,11 @@
 
       function projectSpherePoint(index, width) {
         const [row, col] = toCoord(index, state.puzzle.cols);
-        const lon = ((col + 0.5) / state.puzzle.cols - 0.5) * Math.PI * 2;
-        const lat = ((row + 0.5) / state.puzzle.rows - 0.5) * Math.PI * 0.92;
+        const rowPhase = row % 2 === 0 ? 0 : 0.5;
+        const u = (((col + 0.5 + rowPhase) / state.puzzle.cols) % 1 + 1) % 1;
+        const v = (row + 0.5) / state.puzzle.rows;
+        const lon = (u - 0.5) * Math.PI * 2;
+        const lat = Math.asin(clamp(v * 2 - 1, -0.98, 0.98)) * 0.96;
 
         const cosLat = Math.cos(lat);
         let x = cosLat * Math.sin(lon);
@@ -1756,10 +1759,10 @@
         z = pitchZ;
 
         const center = width / 2;
-        const radius = width * 0.39;
+        const radius = width * 0.395;
         const orbit = radius * 0.93;
         const depth = (z + 1) / 2;
-        const scale = 0.52 + depth * 0.72;
+        const scale = 0.68 + depth * 0.44;
 
         return {
           x: center + x * orbit,
@@ -1800,7 +1803,8 @@
         const width =
           els.board.getBoundingClientRect().width ||
           els.boardShell.getBoundingClientRect().width - 36;
-        const baseSize = clamp((width * 0.88) / state.puzzle.cols, 18, 62);
+        const totalCells = state.puzzle.cells.length;
+        const baseSize = clamp((width * 1.28) / Math.sqrt(totalCells), 18, 54);
         const arrowMap = buildArrowMap();
         els.board.className = `board sphere-board${state.rotatingPointerId !== null ? " rotating" : ""}`;
         els.boardShell.classList.add("sphere-mode");
@@ -1818,10 +1822,10 @@
 
         projected.forEach(({ cell, index, projection }) => {
           const size = baseSize * projection.scale;
-          const radius = clamp(size * 0.22, 6, 20);
-          const fontSize = clamp(size * 0.38, 9, 26);
-          const hintSize = clamp(size * 0.16, 6, 11);
-          const arrowSize = clamp(size * 0.18, 7, 13);
+          const radius = size / 2;
+          const fontSize = clamp(size * 0.34, 8, 24);
+          const hintSize = clamp(size * 0.15, 6, 10);
+          const arrowSize = clamp(size * 0.17, 7, 12);
 
           let element;
           if (cell.type === "block") {
