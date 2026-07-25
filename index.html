@@ -558,6 +558,7 @@
             <button class="primary" id="submit-btn">Submit path</button>
             <button class="ghost" id="undo-btn">Undo</button>
             <button class="warning" id="hint-btn">Hint</button>
+            <button class="secondary" id="solve-btn">Solve</button>
             <button class="ghost" id="reset-btn">Reset</button>
           </div>
 
@@ -590,7 +591,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.23";
+      const APP_VERSION = "v00.00.24";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -643,6 +644,7 @@
         submitBtn: document.getElementById("submit-btn"),
         undoBtn: document.getElementById("undo-btn"),
         hintBtn: document.getElementById("hint-btn"),
+        solveBtn: document.getElementById("solve-btn"),
         resetBtn: document.getElementById("reset-btn")
       };
 
@@ -1540,6 +1542,16 @@
         render();
       }
 
+      function solvePuzzle() {
+        state.activePath = [];
+        state.invalidTiles = [];
+        state.hints = {};
+        state.foundWords = state.puzzle.words.map((_, index) => index);
+        saveState();
+        setMessage("Puzzle solved. Every word has been revealed.");
+        render();
+      }
+
       function computeTileMetrics() {
         const cols = state.puzzle.cols;
         const gap =
@@ -1765,6 +1777,7 @@
       els.submitBtn.addEventListener("click", submitPath);
       els.undoBtn.addEventListener("click", undoPath);
       els.hintBtn.addEventListener("click", revealHint);
+      els.solveBtn.addEventListener("click", solvePuzzle);
       els.resetBtn.addEventListener("click", resetProgress);
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
       window.addEventListener("pointerup", handlePointerUp);
