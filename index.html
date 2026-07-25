@@ -520,6 +520,15 @@
             <select id="grid-size"></select>
           </div>
 
+          <div class="field">
+            <label for="path-geometry">Path geometry</label>
+            <select id="path-geometry">
+              <option value="square">Square</option>
+              <option value="pentagon">Pentagon</option>
+              <option value="hexagon">Hexagon</option>
+            </select>
+          </div>
+
           <div class="actions">
             <button class="primary" id="submit-btn">Submit path</button>
             <button class="ghost" id="undo-btn">Undo</button>
@@ -556,7 +565,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.12";
+      const APP_VERSION = "v00.00.17";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -578,6 +587,7 @@
       const state = {
         mode: "daily",
         selectedGridSize: "5x5",
+        selectedPathGeometry: "square",
         practiceIndex: 0,
         puzzle: null,
         foundWords: [],
@@ -604,6 +614,7 @@
         successBanner: document.getElementById("success-banner"),
         successText: document.getElementById("success-text"),
         gridSize: document.getElementById("grid-size"),
+        pathGeometry: document.getElementById("path-geometry"),
         dailyBtn: document.getElementById("daily-btn"),
         practiceBtn: document.getElementById("practice-btn"),
         submitBtn: document.getElementById("submit-btn"),
@@ -718,6 +729,56 @@
           if (!blockedSet.has(index)) playable.add(index);
         }
         return playable;
+      }
+
+      function polygonVertices(sides, radius, rotation) {
+        return Array.from({ length: sides }, (_, index) => {
+          const angle = rotation + (Math.PI * 2 * index) / sides;
+          return [Math.cos(angle) * radius, Math.sin(angle) * radius];
+        });
+      }
+
+      function pointInPolygon(x, y, vertices) {
+        let inside = false;
+        for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i, i += 1) {
+          const [xi, yi] = vertices[i];
+          const [xj, yj] = vertices[j];
+          const intersects =
+            yi > y !== yj > y &&
+            x < ((xj - xi) * (y - yi)) / ((yj - yi) || 1e-9) + xi;
+          if (intersects) inside = !inside;
+        }
+        return inside;
+      }
+
+      function buildGeometryConstraintSet(rows, cols, geometry, targetLength) {
+        if (geometry === "square") return null;
+
+        const sides = geometry === "pentagon" ? 5 : 6;
+        const rotation = geometry === "pentagon" ? -Math.PI / 2 : Math.PI / 6;
+        let bestSet = null;
+
+        for (let radius = 0.52; radius <= 1.08; radius += 0.04) {
+          const vertices = polygonVertices(sides, radius, rotation);
+          const allowed = new Set();
+
+          for (let row = 0; row < rows; row += 1) {
+            for (let col = 0; col < cols; col += 1) {
+              const x = ((col + 0.5) / cols) * 2 - 1;
+              const y = ((row + 0.5) / rows) * 2 - 1;
+              if (pointInPolygon(x, y, vertices)) {
+                allowed.add(row * cols + col);
+              }
+            }
+          }
+
+          if (!bestSet || allowed.size < bestSet.size) bestSet = allowed;
+          if (allowed.size >= targetLength && isPlayableConnected(allowed, rows, cols)) {
+            return allowed;
+          }
+        }
+
+        return bestSet;
       }
 
       function isPlayableConnected(playableSet, rows, cols) {
@@ -963,10 +1024,12 @@
         return null;
       }
 
-      function buildFallbackLayout(rows, cols, seedLabel) {
+      function buildFallbackLayout(rows, cols, seedLabel, geometry = "square") {
         const rng = makeRng(hashText(`${seedLabel}:fallback`));
         const targetLength = chooseTargetLength(rows, cols);
-        const startCandidates = Array.from({ length: rows * cols }, (_, index) => index)
+        const constraintSet = buildGeometryConstraintSet(rows, cols, geometry, targetLength);
+        const startPool = constraintSet ? [...constraintSet] : Array.from({ length: rows * cols }, (_, index) => index);
+        const startCandidates = startPool
           .sort(() => rng() - 0.5);
 
         for (let attempt = 0; attempt < 24; attempt += 1) {
@@ -984,7 +1047,7 @@
             const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols);
 
             const candidates = neighborIndexes(current, rows, cols)
-              .filter((next) => !visited.has(next))
+              .filter((next) => !visited.has(next) && (!constraintSet || constraintSet.has(next)))
               .map((next) => {
                 const nextDirection = directionBetween(current, next, cols);
                 const turns = previousDirection &&
@@ -1006,7 +1069,9 @@
 
             for (const candidate of candidates) {
               visited.add(candidate.next);
-              const reachable = reachableCount(candidate.next, visited, rows, cols);
+              const reachable = constraintSet
+                ? reachableCountInSet(candidate.next, visited, constraintSet, rows, cols)
+                : reachableCount(candidate.next, visited, rows, cols);
               visited.delete(candidate.next);
               const remaining = targetLength - path.length;
               if (reachable < remaining) continue;
@@ -1042,11 +1107,34 @@
         return target;
       }
 
-      function buildPlayableLayout(rows, cols, seedLabel) {
+      function buildPlayableLayout(rows, cols, seedLabel, geometry = "square") {
         const targetLength = chooseTargetLength(rows, cols);
+        const geometrySet = buildGeometryConstraintSet(rows, cols, geometry, targetLength);
+
+        if (geometrySet && geometrySet.size >= targetLength) {
+          for (let attempt = 0; attempt < 12; attempt += 1) {
+            const path = growPathOnAvailable(
+              geometrySet,
+              rows,
+              cols,
+              targetLength,
+              `${seedLabel}:geometry-path:${attempt}`
+            );
+            if (!path) continue;
+
+            return {
+              path,
+              cells: buildCellsFromPlayable(rows, cols, new Set(path))
+            };
+          }
+        }
+
         for (let attempt = 0; attempt < 10; attempt += 1) {
           const blocked = generateBlockedMask(rows, cols, `${seedLabel}:mask:${attempt}`, targetLength);
-          const availableSet = collectPlayableSet(rows, cols, blocked);
+          let availableSet = collectPlayableSet(rows, cols, blocked);
+          if (geometrySet) {
+            availableSet = new Set([...availableSet].filter((index) => geometrySet.has(index)));
+          }
           if (availableSet.size < targetLength) continue;
 
           const path = growPathOnAvailable(
@@ -1065,7 +1153,7 @@
           };
         }
 
-        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`);
+        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`, geometry);
       }
 
       function generateFallbackWord(length, rng) {
@@ -1153,9 +1241,9 @@
         return lengths;
       }
 
-      function materializePuzzle(rows, cols, mode, variant) {
-        const seedLabel = `${mode}:${rows}x${cols}:${variant}`;
-        const layout = buildPlayableLayout(rows, cols, seedLabel);
+      function materializePuzzle(rows, cols, mode, variant, geometry = "square") {
+        const seedLabel = `${mode}:${rows}x${cols}:${variant}:${geometry}`;
+        const layout = buildPlayableLayout(rows, cols, seedLabel, geometry);
         const lengths = chooseWordLengths(layout.path.length, cols, seedLabel);
         let offset = 0;
 
@@ -1180,8 +1268,8 @@
         });
 
         return {
-          id: `${rows}x${cols}-${mode}-${variant}`,
-          name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
+          id: `${rows}x${cols}-${mode}-${variant}-${geometry}`,
+          name: `${rows}x${cols} ${geometry[0].toUpperCase()}${geometry.slice(1)} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
           rows,
           cols,
           cells,
@@ -1193,6 +1281,10 @@
       function currentGridSize() {
         const [rows, cols] = state.selectedGridSize.split("x").map(Number);
         return { rows, cols };
+      }
+
+      function currentPathGeometry() {
+        return state.selectedPathGeometry;
       }
 
       function getDailyVariant() {
@@ -1225,7 +1317,7 @@
 
       function getDailyPuzzle() {
         const { rows, cols } = currentGridSize();
-        return materializePuzzle(rows, cols, "daily", getDailyVariant());
+        return materializePuzzle(rows, cols, "daily", getDailyVariant(), currentPathGeometry());
       }
 
       function isSolvedWord(wordIndex) {
@@ -1588,6 +1680,7 @@
           Object.values(state.hints).reduce((sum, value) => sum + value, 0)
         );
         els.gridSize.value = state.selectedGridSize;
+        els.pathGeometry.value = state.selectedPathGeometry;
 
         const solved = state.foundWords.length === state.puzzle.words.length;
         els.successBanner.hidden = !solved;
@@ -1606,7 +1699,7 @@
       function nextPracticePuzzle() {
         const { rows, cols } = currentGridSize();
         state.practiceIndex += 1;
-        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
+        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex, currentPathGeometry()), "practice");
       }
 
       function applyGridSize(value) {
@@ -1614,7 +1707,18 @@
         state.practiceIndex = 0;
         if (state.mode === "practice") {
           const { rows, cols } = currentGridSize();
-          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
+          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex, currentPathGeometry()), "practice");
+        } else {
+          startPuzzle(getDailyPuzzle(), "daily");
+        }
+      }
+
+      function applyPathGeometry(value) {
+        state.selectedPathGeometry = value;
+        state.practiceIndex = 0;
+        if (state.mode === "practice") {
+          const { rows, cols } = currentGridSize();
+          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex, currentPathGeometry()), "practice");
         } else {
           startPuzzle(getDailyPuzzle(), "daily");
         }
@@ -1638,6 +1742,7 @@
       els.hintBtn.addEventListener("click", revealHint);
       els.resetBtn.addEventListener("click", resetProgress);
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
+      els.pathGeometry.addEventListener("change", (event) => applyPathGeometry(event.target.value));
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("resize", renderBoard);
 
