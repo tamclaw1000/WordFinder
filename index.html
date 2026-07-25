@@ -445,7 +445,7 @@
       <section class="hero">
         <div class="hero-meta">
           <div class="eyebrow">WordFinder Requirements Build</div>
-          <div class="version-chip" id="version-chip">v00.00.10</div>
+          <div class="version-chip" id="version-chip">v00.00.11</div>
           <a class="link-chip" href="./v1.html">Open v1.html</a>
         </div>
         <h1>Generated from the spec, not the old page.</h1>
@@ -537,7 +537,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.10";
+      const APP_VERSION = "v00.00.11";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -655,20 +655,302 @@
         return seen.size;
       }
 
-      function chooseTargetLength(rows, cols) {
-        const density = clamp(0.82 - cols * 0.012, 0.5, 0.78);
-        let target = Math.max(10, Math.floor(rows * cols * density));
-        while (target > 8 && target % 2 === 1) target -= 1;
-        return target;
+      function reachableCountInSet(start, visited, allowedSet, rows, cols) {
+        const seen = new Set([start]);
+        const queue = [start];
+
+        while (queue.length > 0) {
+          const current = queue.pop();
+          for (const next of neighborIndexes(current, rows, cols)) {
+            if (!allowedSet.has(next) || seen.has(next)) continue;
+            if (visited.has(next) && next !== start) continue;
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+
+        return seen.size;
       }
 
-      function buildPlayableLayout(rows, cols, seedLabel) {
-        const rng = makeRng(hashText(`${seedLabel}:layout`));
+      function buildCellsFromPlayable(rows, cols, playableSet) {
+        return Array.from({ length: rows * cols }, (_, index) =>
+          playableSet.has(index) ? { type: "tile" } : { type: "block" }
+        );
+      }
+
+      function coarseNeighborIndexes(index, rows, cols) {
+        const row = Math.floor(index / cols);
+        const col = index % cols;
+        const neighbors = [];
+        if (row > 0) neighbors.push(index - cols);
+        if (row < rows - 1) neighbors.push(index + cols);
+        if (col > 0) neighbors.push(index - 1);
+        if (col < cols - 1) neighbors.push(index + 1);
+        return neighbors;
+      }
+
+      function countSetNeighbors(index, rows, cols, sourceSet, neighborFn = neighborIndexes) {
+        return neighborFn(index, rows, cols).filter((neighbor) => sourceSet.has(neighbor)).length;
+      }
+
+      function collectPlayableSet(rows, cols, blockedSet) {
+        const playable = new Set();
+        for (let index = 0; index < rows * cols; index += 1) {
+          if (!blockedSet.has(index)) playable.add(index);
+        }
+        return playable;
+      }
+
+      function isPlayableConnected(playableSet, rows, cols) {
+        const [start] = playableSet;
+        if (start === undefined) return false;
+        const seen = new Set([start]);
+        const queue = [start];
+
+        while (queue.length > 0) {
+          const current = queue.pop();
+          for (const next of neighborIndexes(current, rows, cols)) {
+            if (!playableSet.has(next) || seen.has(next)) continue;
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+
+        return seen.size === playableSet.size;
+      }
+
+      function generateBlockedMask(rows, cols, seedLabel, targetPlayable) {
+        const rng = makeRng(hashText(`${seedLabel}:blocked-mask`));
+        const total = rows * cols;
+        const targetBlocked = Math.max(0, total - targetPlayable);
+        const coarseRows = Math.ceil(rows / 2);
+        const coarseCols = Math.ceil(cols / 2);
+        const coarseTotal = coarseRows * coarseCols;
+        const coarseTargetBlocked = clamp(
+          Math.round(targetBlocked / 8),
+          2,
+          Math.max(2, Math.min(coarseTotal - 1, Math.round((rows + cols) / 2)))
+        );
+        const coarseBlocked = new Set();
+        const blockedOrder = [];
+        const regions = [];
+        const coarseOwner = new Map();
+        const regionTargets = [];
+        const seedCount = clamp(Math.round((rows + cols) / 8), 3, 8);
+
+        function chooseSeed(preferInterior) {
+          for (let attempt = 0; attempt < 50; attempt += 1) {
+            const row = preferInterior && coarseRows > 2
+              ? randInt(rng, 1, coarseRows - 2)
+              : randInt(rng, 0, coarseRows - 1);
+            const col = preferInterior && coarseCols > 2
+              ? randInt(rng, 1, coarseCols - 2)
+              : randInt(rng, 0, coarseCols - 1);
+            const index = row * coarseCols + col;
+            if (coarseBlocked.has(index)) continue;
+            return index;
+          }
+          return randInt(rng, 0, coarseTotal - 1);
+        }
+
+        for (let index = 0; index < seedCount; index += 1) {
+          const seed = chooseSeed(index % 2 === 0);
+          if (coarseBlocked.has(seed)) continue;
+          coarseBlocked.add(seed);
+          blockedOrder.push(seed);
+          regions.push([seed]);
+          coarseOwner.set(seed, regions.length - 1);
+          regionTargets.push(2 + randInt(rng, 0, 2));
+        }
+
+        while (coarseBlocked.size < coarseTargetBlocked) {
+          const regionOrder = regions
+            .map((region, index) => ({ region, index }))
+            .filter((entry) => entry.region.length < regionTargets[entry.index])
+            .map((region, index) => ({
+              index: region.index,
+              score: region.region.length + rng() * 0.8
+            }))
+            .sort((a, b) => a.score - b.score);
+
+          if (regionOrder.length === 0) {
+            const fallbackSeed = chooseSeed(false);
+            if (!coarseBlocked.has(fallbackSeed)) {
+              coarseBlocked.add(fallbackSeed);
+              blockedOrder.push(fallbackSeed);
+              regions.push([fallbackSeed]);
+              coarseOwner.set(fallbackSeed, regions.length - 1);
+              regionTargets.push(2 + randInt(rng, 0, 2));
+            }
+            continue;
+          }
+
+          let chosenRegionIndex = null;
+          let chosenCandidate = null;
+
+          for (const regionEntry of regionOrder) {
+            const region = regions[regionEntry.index];
+            const frontier = [...new Set(
+              region.flatMap((cell) => coarseNeighborIndexes(cell, coarseRows, coarseCols))
+            )].filter((candidate) => !coarseBlocked.has(candidate));
+
+            if (frontier.length === 0) continue;
+
+            const scored = frontier
+            .map((candidate) => {
+              const touching = countSetNeighbors(candidate, coarseRows, coarseCols, coarseBlocked, coarseNeighborIndexes);
+              const touchingRegion = countSetNeighbors(candidate, coarseRows, coarseCols, new Set(region), coarseNeighborIndexes);
+              const otherTouches = coarseNeighborIndexes(candidate, coarseRows, coarseCols)
+                .filter((neighbor) => coarseBlocked.has(neighbor) && coarseOwner.get(neighbor) !== regionEntry.index)
+                .length;
+              const row = Math.floor(candidate / coarseCols);
+              const col = candidate % coarseCols;
+              const centerDistance = Math.abs(row - coarseRows / 2) + Math.abs(col - coarseCols / 2);
+              const shapeScore =
+                touching === 1 ? 3.6 :
+                touching === 2 ? 2.4 :
+                touching === 3 ? 0.4 : -2.4;
+              return {
+                candidate,
+                score:
+                  shapeScore +
+                  touchingRegion * 0.9 -
+                  otherTouches * 3.5 -
+                  centerDistance * 0.03 +
+                  rng() * 0.7
+              };
+            })
+            .sort((a, b) => b.score - a.score);
+            chosenRegionIndex = regionEntry.index;
+            chosenCandidate = scored[0].candidate;
+            break;
+          }
+
+          if (chosenRegionIndex === null || chosenCandidate === null) {
+            const fallbackSeed = chooseSeed(false);
+            if (!coarseBlocked.has(fallbackSeed)) {
+              coarseBlocked.add(fallbackSeed);
+              blockedOrder.push(fallbackSeed);
+              regions.push([fallbackSeed]);
+              coarseOwner.set(fallbackSeed, regions.length - 1);
+            }
+            continue;
+          }
+
+          coarseBlocked.add(chosenCandidate);
+          blockedOrder.push(chosenCandidate);
+          regions[chosenRegionIndex].push(chosenCandidate);
+          coarseOwner.set(chosenCandidate, chosenRegionIndex);
+        }
+
+        const blocked = new Set();
+        for (const coarseIndex of coarseBlocked) {
+          const baseRow = Math.floor(coarseIndex / coarseCols) * 2;
+          const baseCol = (coarseIndex % coarseCols) * 2;
+          const patterns = [
+            [[0, 0], [0, 1], [1, 0], [1, 1]],
+            [[0, 0], [0, 1], [1, 0]],
+            [[0, 0], [0, 1], [1, 1]],
+            [[0, 0], [1, 0], [1, 1]],
+            [[0, 1], [1, 0], [1, 1]]
+          ];
+          const pattern = patterns[randInt(rng, 0, patterns.length - 1)];
+          for (const [dr, dc] of pattern) {
+            const row = baseRow + dr;
+            const col = baseCol + dc;
+            if (row >= rows || col >= cols) continue;
+            blocked.add(row * cols + col);
+          }
+        }
+
+        if (blocked.size <= targetBlocked / 2) {
+          for (let attempt = 0; attempt < rows * cols; attempt += 1) {
+            const index = randInt(rng, 0, rows * cols - 1);
+            if (blocked.has(index)) continue;
+            if (countSetNeighbors(index, rows, cols, blocked) >= 2) {
+              blocked.add(index);
+            }
+            if (blocked.size >= targetBlocked) break;
+          }
+        }
+
+        return blocked;
+      }
+
+      function growPathOnAvailable(availableSet, rows, cols, targetLength, seedLabel) {
+        const rng = makeRng(hashText(`${seedLabel}:available-path`));
+        const startCandidates = [...availableSet]
+          .map((index) => ({
+            index,
+            noise: rng(),
+            blockedNeighbors: neighborIndexes(index, rows, cols).filter((neighbor) => !availableSet.has(neighbor)).length
+          }))
+          .sort((a, b) => b.blockedNeighbors - a.blockedNeighbors || a.noise - b.noise)
+          .map((entry) => entry.index);
+
+        for (let attempt = 0; attempt < Math.min(18, startCandidates.length); attempt += 1) {
+          const visited = new Set();
+          const path = [];
+          const start = startCandidates[attempt];
+
+          function dfs(current) {
+            path.push(current);
+            visited.add(current);
+
+            if (path.length === targetLength) return true;
+
+            const previous = path[path.length - 2];
+            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols);
+
+            const candidates = neighborIndexes(current, rows, cols)
+              .filter((next) => availableSet.has(next) && !visited.has(next))
+              .map((next) => {
+                const nextDirection = directionBetween(current, next, cols);
+                const turnBonus = previousDirection &&
+                  (previousDirection[0] !== nextDirection[0] || previousDirection[1] !== nextDirection[1])
+                  ? 2.2
+                  : 0;
+                const onward = neighborIndexes(next, rows, cols)
+                  .filter((candidate) => availableSet.has(candidate) && !visited.has(candidate) && candidate !== current)
+                  .length;
+                const wallHug = neighborIndexes(next, rows, cols)
+                  .filter((candidate) => !availableSet.has(candidate))
+                  .length;
+
+                return {
+                  next,
+                  score: onward - turnBonus - wallHug * 0.4 + rng() * 0.6
+                };
+              })
+              .sort((a, b) => a.score - b.score);
+
+            for (const candidate of candidates) {
+              visited.add(candidate.next);
+              const reachable = reachableCountInSet(candidate.next, visited, availableSet, rows, cols);
+              visited.delete(candidate.next);
+              const remaining = targetLength - path.length;
+              if (reachable < remaining) continue;
+              if (dfs(candidate.next)) return true;
+            }
+
+            visited.delete(current);
+            path.pop();
+            return false;
+          }
+
+          if (dfs(start)) return [...path];
+        }
+
+        return null;
+      }
+
+      function buildFallbackLayout(rows, cols, seedLabel) {
+        const rng = makeRng(hashText(`${seedLabel}:fallback`));
         const targetLength = chooseTargetLength(rows, cols);
         const startCandidates = Array.from({ length: rows * cols }, (_, index) => index)
           .sort(() => rng() - 0.5);
 
-        for (let attempt = 0; attempt < 36; attempt += 1) {
+        for (let attempt = 0; attempt < 24; attempt += 1) {
           const visited = new Set();
           const path = [];
           const start = startCandidates[attempt % startCandidates.length];
@@ -718,20 +1000,53 @@
           }
 
           if (dfs(start)) {
-            const openCells = new Set(path);
-            const cells = Array.from({ length: rows * cols }, (_, index) =>
-              openCells.has(index) ? { type: "tile" } : { type: "block" }
-            );
-            return { path: [...path], cells };
+            const playableSet = new Set(path);
+            return {
+              path: [...path],
+              cells: buildCellsFromPlayable(rows, cols, playableSet)
+            };
           }
         }
 
         const fallbackPath = Array.from({ length: targetLength }, (_, index) => index);
-        const fallbackSet = new Set(fallbackPath);
-        const cells = Array.from({ length: rows * cols }, (_, index) =>
-          fallbackSet.has(index) ? { type: "tile" } : { type: "block" }
-        );
-        return { path: fallbackPath, cells };
+        const playableSet = new Set(fallbackPath);
+        return {
+          path: fallbackPath,
+          cells: buildCellsFromPlayable(rows, cols, playableSet)
+        };
+      }
+
+      function chooseTargetLength(rows, cols) {
+        const density = clamp(0.82 - cols * 0.012, 0.5, 0.78);
+        let target = Math.max(10, Math.floor(rows * cols * density));
+        while (target > 8 && target % 2 === 1) target -= 1;
+        return target;
+      }
+
+      function buildPlayableLayout(rows, cols, seedLabel) {
+        const targetLength = chooseTargetLength(rows, cols);
+        for (let attempt = 0; attempt < 10; attempt += 1) {
+          const blocked = generateBlockedMask(rows, cols, `${seedLabel}:mask:${attempt}`, targetLength);
+          const availableSet = collectPlayableSet(rows, cols, blocked);
+          if (availableSet.size < targetLength) continue;
+
+          const path = growPathOnAvailable(
+            availableSet,
+            rows,
+            cols,
+            targetLength,
+            `${seedLabel}:path:${attempt}`
+          );
+          if (!path) continue;
+
+          const playableSet = new Set(path);
+          return {
+            path,
+            cells: buildCellsFromPlayable(rows, cols, playableSet)
+          };
+        }
+
+        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`);
       }
 
       function generateFallbackWord(length, rng) {

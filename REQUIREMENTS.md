@@ -119,17 +119,19 @@ puzzle files. Any requirements for the prototype must therefore reflect the curr
 
 ### Board Shape Generation
 
-- The generator must create a single contiguous playable path through the board.
+- The generator must create a single contiguous final playable path through the board.
 - Non-playable cells must be emitted as blocked cells.
-- The playable shape must be irregular enough that it does not read as a simple row-trimmed stripe.
-- The current prototype achieves this with a seeded self-avoiding path search:
+- The blocked-cell silhouette should not read as a simple leftover trace around one snake path.
+- The current prototype now uses a two-stage deterministic layout:
   - seed a pseudo-random generator from mode, variant/date, and grid size
   - choose a target playable density that decreases as the grid gets larger
-  - attempt to grow one orthogonally contiguous path
-  - prefer turns over straight continuations to reduce visual obviousness
-  - reject branches that leave too little reachable space to finish the target path length
-- If the irregular search fails repeatedly, the generator may fall back to a simpler deterministic layout,
-  but fallback behavior should be rare and treated as a resilience path, not the normal outcome.
+  - generate several independent blocked-cell regions on a coarse mask
+  - expand those coarse regions into chunkier blocked shapes on the final board
+  - carve the final orthogonally contiguous playable path through the remaining available space
+- The path-carving phase still prefers turns, avoids prematurely stranded space, and aims to keep
+  the final board non-trivial to read at a glance.
+- If the blocked-region-first search fails repeatedly, the generator may fall back to a simpler
+  deterministic layout, but fallback behavior should be rare and treated as a resilience path.
 
 ### Word-Length Planning
 

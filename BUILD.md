@@ -1,6 +1,6 @@
 # WordFinder Build Log
 
-Current prototype version: `v00.00.10`
+Current prototype version: `v00.00.11`
 
 ## Summary
 
@@ -144,13 +144,21 @@ and follow-up iterations.
   local progress persistence, scalable grid rendering, and requirements-aligned messaging/layout.
 - Kept the implementation static-site friendly and rebuilt the deployment artifact from the new page.
 
+### `v00.00.11` two-stage blocked-region generator
+
+- Replaced the single-path-first blocked-cell model in the new `index.html` build with a two-stage generator.
+- Stage 1 now seeds multiple deterministic blocked-cell regions as independent coarse blobs.
+- Stage 2 carves the final playable path through the remaining available space instead of treating all
+  blocked cells as mere leftover negative space from one walk.
+- This produces more intentional dark regions and reduces fallback to the older path-only layout logic.
+
 ## Current State
 
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
-- Current version: `v00.00.10`
-- Latest recorded commit at the time of this log: pending next push for the `v00.00.10` rebuild
-- Latest published tag: `v00.00.05`
+- Current version: `v00.00.11`
+- Latest recorded commit at the time of this log: pending next push for the `v00.00.11` generator update
+- Latest published tag: `v00.00.10`
 
 ## Notes
 
