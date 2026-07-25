@@ -176,78 +176,6 @@
         min-width: 164px;
       }
 
-      .toggle-field {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        padding: 12px 14px;
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(23, 35, 31, 0.08);
-      }
-
-      .toggle-copy {
-        display: grid;
-        gap: 3px;
-      }
-
-      .toggle-copy strong {
-        font-size: 0.78rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--muted);
-      }
-
-      .toggle-copy span {
-        color: var(--muted);
-        font-size: 0.92rem;
-        line-height: 1.35;
-      }
-
-      .toggle-switch {
-        position: relative;
-        display: inline-flex;
-        width: 54px;
-        height: 32px;
-      }
-
-      .toggle-switch input {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .toggle-slider {
-        width: 100%;
-        height: 100%;
-        border-radius: 999px;
-        background: rgba(23, 35, 31, 0.14);
-        box-shadow: inset 0 0 0 1px rgba(23, 35, 31, 0.08);
-        transition: background 140ms ease;
-      }
-
-      .toggle-slider::after {
-        content: "";
-        position: absolute;
-        top: 4px;
-        left: 4px;
-        width: 24px;
-        height: 24px;
-        border-radius: 999px;
-        background: white;
-        box-shadow: 0 2px 8px rgba(23, 35, 31, 0.18);
-        transition: transform 140ms ease;
-      }
-
-      .toggle-switch input:checked + .toggle-slider {
-        background: rgba(29, 122, 98, 0.74);
-      }
-
-      .toggle-switch input:checked + .toggle-slider::after {
-        transform: translateX(22px);
-      }
-
       .field label {
         font-size: 0.74rem;
         letter-spacing: 0.08em;
@@ -316,17 +244,10 @@
       }
 
       .board-shell {
-        position: relative;
         padding: 14px;
         border-radius: 26px;
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(245, 239, 226, 0.94));
         border: 1px solid rgba(23, 35, 31, 0.08);
-      }
-
-      .board-shell.sphere-mode {
-        padding: 18px;
-        background:
-          radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.92), rgba(244, 238, 224, 0.86) 42%, rgba(226, 216, 195, 0.92) 100%);
       }
 
       .board {
@@ -334,109 +255,6 @@
         gap: 6px;
         touch-action: none;
         user-select: none;
-      }
-
-      .board.flat-board {
-        display: grid;
-      }
-
-      .board.sphere-board {
-        position: relative;
-        display: block;
-        width: 100%;
-        aspect-ratio: 1;
-        min-height: 320px;
-        border-radius: 50%;
-        overflow: hidden;
-        background:
-          radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.2), transparent 34%),
-          radial-gradient(circle at 50% 50%, rgba(29, 122, 98, 0.22), rgba(18, 59, 79, 0.88) 68%, rgba(9, 24, 34, 0.98) 100%);
-        box-shadow:
-          inset 0 16px 32px rgba(255, 255, 255, 0.16),
-          inset 0 -22px 36px rgba(0, 0, 0, 0.34);
-        cursor: grab;
-      }
-
-      .board.sphere-board.rotating {
-        cursor: grabbing;
-      }
-
-      .sphere-svg {
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-
-      .sphere-edge {
-        stroke: rgba(255, 255, 255, 0.16);
-        stroke-linecap: round;
-      }
-
-      .sphere-path-active {
-        stroke: rgba(29, 122, 98, 0.96);
-        stroke-linecap: round;
-        stroke-linejoin: round;
-      }
-
-      .sphere-path-solved {
-        stroke: rgba(40, 79, 122, 0.92);
-        stroke-linecap: round;
-        stroke-linejoin: round;
-      }
-
-      .sphere-node text {
-        font-family: Georgia, "Times New Roman", serif;
-        font-weight: 800;
-        text-anchor: middle;
-        dominant-baseline: central;
-        pointer-events: none;
-      }
-
-      .sphere-node.playable {
-        cursor: pointer;
-      }
-
-      .sphere-node.playable circle {
-        fill: rgba(255, 253, 250, 0.96);
-        stroke: rgba(23, 35, 31, 0.14);
-        stroke-width: 1.2;
-      }
-
-      .sphere-node.blocked circle {
-        fill: rgba(11, 23, 31, 0.94);
-        stroke: rgba(255, 255, 255, 0.08);
-        stroke-width: 1;
-      }
-
-      .sphere-node.playable.active circle {
-        fill: var(--tile-active);
-      }
-
-      .sphere-node.playable.found circle {
-        fill: var(--tile-found);
-      }
-
-      .sphere-node.playable.hinted:not(.found):not(.active) circle {
-        fill: color-mix(in srgb, var(--tile) 68%, var(--tile-hint));
-      }
-
-      .sphere-node.playable.invalid circle {
-        fill: var(--danger);
-      }
-
-      .sphere-node.playable text {
-        fill: var(--ink);
-      }
-
-      .sphere-node.playable.active text,
-      .sphere-node.playable.found text,
-      .sphere-node.playable.invalid text {
-        fill: white;
-      }
-
-      .sphere-step {
-        fill: rgba(23, 35, 31, 0.72);
-        font-size: 10px;
       }
 
       .tile,
@@ -524,39 +342,6 @@
           linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent),
           var(--wall);
         border: 1px solid var(--wall-edge);
-      }
-
-      .board.sphere-board .tile,
-      .board.sphere-board .block {
-        position: absolute;
-        left: 0;
-        top: 0;
-        transform: translate(-50%, -50%);
-        margin: 0;
-        border-radius: 50%;
-      }
-
-      .board.sphere-board .tile {
-        box-shadow:
-          inset 0 -3px 0 rgba(23, 35, 31, 0.06),
-          0 6px 10px rgba(0, 0, 0, 0.18);
-      }
-
-      .board.sphere-board .block {
-        box-shadow:
-          inset 0 2px 3px rgba(255, 255, 255, 0.1),
-          0 5px 8px rgba(0, 0, 0, 0.24);
-      }
-
-      .board.sphere-board .occluded {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .sphere-note {
-        margin-top: 12px;
-        color: var(--muted);
-        font-size: 0.94rem;
       }
 
       .legend {
@@ -679,11 +464,15 @@
       <section class="hero">
         <div class="hero-meta">
           <div class="eyebrow">WordFinder Requirements Build</div>
-          <div class="version-chip" id="version-chip">v00.00.15</div>
+          <div class="version-chip" id="version-chip">v00.00.12</div>
           <a class="link-chip" href="./v1.html">Open v1.html</a>
         </div>
-        <h1>WordFinder</h1>
-        <p class="subtitle">A path-partition word puzzle with flat and sphere-wrapped boards.</p>
+        <h1>Generated from the spec, not the old page.</h1>
+        <p class="subtitle">
+          This build is a clean rewrite from <code>REQUIREMENTS.md</code>: deterministic daily and
+          practice boards, blocked cells, exact path validation, local progress, scalable large
+          grids, and a single contiguous hidden path partitioned into multiple words.
+        </p>
       </section>
 
       <section class="layout">
@@ -693,10 +482,9 @@
             <div class="mode-pill" id="puzzle-pill">Puzzle</div>
           </div>
 
-          <div class="board-shell" id="board-shell">
+          <div class="board-shell">
             <div class="board" id="board" aria-label="Word grid"></div>
           </div>
-          <div class="sphere-note" id="sphere-note" hidden>Drag the globe background or blocked cells to rotate it.</div>
 
           <div class="legend">
             <span><i class="dot" style="background: var(--tile-active)"></i> Current path</span>
@@ -730,17 +518,6 @@
           <div class="field">
             <label for="grid-size">Grid size</label>
             <select id="grid-size"></select>
-          </div>
-
-          <div class="toggle-field">
-            <div class="toggle-copy">
-              <strong>Sphere wrap</strong>
-              <span>Connect opposite edges while generating and tracing paths.</span>
-            </div>
-            <label class="toggle-switch" for="wrap-sphere">
-              <input id="wrap-sphere" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </label>
           </div>
 
           <div class="actions">
@@ -779,7 +556,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.16";
+      const APP_VERSION = "v00.00.12";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -801,7 +578,6 @@
       const state = {
         mode: "daily",
         selectedGridSize: "5x5",
-        wrapSphere: false,
         practiceIndex: 0,
         puzzle: null,
         foundWords: [],
@@ -812,18 +588,11 @@
         startTime: Date.now(),
         timerHandle: null,
         draggingPointerId: null,
-        gestureExtended: false,
-        rotatingPointerId: null,
-        sphereYaw: -0.55,
-        spherePitch: -0.3,
-        rotateLastX: 0,
-        rotateLastY: 0
+        gestureExtended: false
       };
 
       const els = {
         board: document.getElementById("board"),
-        boardShell: document.getElementById("board-shell"),
-        sphereNote: document.getElementById("sphere-note"),
         slots: document.getElementById("slots"),
         modePill: document.getElementById("mode-pill"),
         puzzlePill: document.getElementById("puzzle-pill"),
@@ -835,7 +604,6 @@
         successBanner: document.getElementById("success-banner"),
         successText: document.getElementById("success-text"),
         gridSize: document.getElementById("grid-size"),
-        wrapSphere: document.getElementById("wrap-sphere"),
         dailyBtn: document.getElementById("daily-btn"),
         practiceBtn: document.getElementById("practice-btn"),
         submitBtn: document.getElementById("submit-btn"),
@@ -850,11 +618,6 @@
 
       function clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
-      }
-
-      function resetSphereRotation() {
-        state.sphereYaw = -0.55;
-        state.spherePitch = -0.3;
       }
 
       function hashText(text) {
@@ -878,41 +641,29 @@
         return min + Math.floor(rng() * (max - min + 1));
       }
 
-      function neighborIndexes(index, rows, cols, wrap = false) {
+      function neighborIndexes(index, rows, cols) {
         const [row, col] = toCoord(index, cols);
         const neighbors = [];
-        if (wrap || row > 0) neighbors.push(((row - 1 + rows) % rows) * cols + col);
-        if (wrap || row < rows - 1) neighbors.push(((row + 1) % rows) * cols + col);
-        if (wrap || col > 0) neighbors.push(row * cols + ((col - 1 + cols) % cols));
-        if (wrap || col < cols - 1) neighbors.push(row * cols + ((col + 1) % cols));
-        return [...new Set(neighbors)];
+        if (row > 0) neighbors.push(index - cols);
+        if (row < rows - 1) neighbors.push(index + cols);
+        if (col > 0) neighbors.push(index - 1);
+        if (col < cols - 1) neighbors.push(index + 1);
+        return neighbors;
       }
 
-      function wrapDelta(fromValue, toValue, size, wrap) {
-        let delta = toValue - fromValue;
-        if (!wrap) return delta;
-        if (delta > 1) delta -= size;
-        if (delta < -1) delta += size;
-        return delta;
-      }
-
-      function directionBetween(from, to, cols, rows = null, wrap = false) {
+      function directionBetween(from, to, cols) {
         const [fromRow, fromCol] = toCoord(from, cols);
         const [toRow, toCol] = toCoord(to, cols);
-        const totalRows = rows ?? cols;
-        return [
-          wrapDelta(fromRow, toRow, totalRows, wrap),
-          wrapDelta(fromCol, toCol, cols, wrap)
-        ];
+        return [toRow - fromRow, toCol - fromCol];
       }
 
-      function reachableCount(start, visited, rows, cols, wrap = false) {
+      function reachableCount(start, visited, rows, cols) {
         const seen = new Set([start]);
         const queue = [start];
 
         while (queue.length > 0) {
           const current = queue.pop();
-          for (const next of neighborIndexes(current, rows, cols, wrap)) {
+          for (const next of neighborIndexes(current, rows, cols)) {
             if (seen.has(next)) continue;
             if (visited.has(next) && next !== start) continue;
             seen.add(next);
@@ -923,13 +674,13 @@
         return seen.size;
       }
 
-      function reachableCountInSet(start, visited, allowedSet, rows, cols, wrap = false) {
+      function reachableCountInSet(start, visited, allowedSet, rows, cols) {
         const seen = new Set([start]);
         const queue = [start];
 
         while (queue.length > 0) {
           const current = queue.pop();
-          for (const next of neighborIndexes(current, rows, cols, wrap)) {
+          for (const next of neighborIndexes(current, rows, cols)) {
             if (!allowedSet.has(next) || seen.has(next)) continue;
             if (visited.has(next) && next !== start) continue;
             seen.add(next);
@@ -969,7 +720,7 @@
         return playable;
       }
 
-      function isPlayableConnected(playableSet, rows, cols, wrap = false) {
+      function isPlayableConnected(playableSet, rows, cols) {
         const [start] = playableSet;
         if (start === undefined) return false;
         const seen = new Set([start]);
@@ -977,7 +728,7 @@
 
         while (queue.length > 0) {
           const current = queue.pop();
-          for (const next of neighborIndexes(current, rows, cols, wrap)) {
+          for (const next of neighborIndexes(current, rows, cols)) {
             if (!playableSet.has(next) || seen.has(next)) continue;
             seen.add(next);
             queue.push(next);
@@ -1145,13 +896,13 @@
         return blocked;
       }
 
-      function growPathOnAvailable(availableSet, rows, cols, targetLength, seedLabel, wrap = false) {
+      function growPathOnAvailable(availableSet, rows, cols, targetLength, seedLabel) {
         const rng = makeRng(hashText(`${seedLabel}:available-path`));
         const startCandidates = [...availableSet]
           .map((index) => ({
             index,
             noise: rng(),
-            blockedNeighbors: neighborIndexes(index, rows, cols, wrap).filter((neighbor) => !availableSet.has(neighbor)).length
+            blockedNeighbors: neighborIndexes(index, rows, cols).filter((neighbor) => !availableSet.has(neighbor)).length
           }))
           .sort((a, b) => b.blockedNeighbors - a.blockedNeighbors || a.noise - b.noise)
           .map((entry) => entry.index);
@@ -1168,20 +919,20 @@
             if (path.length === targetLength) return true;
 
             const previous = path[path.length - 2];
-            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols, rows, wrap);
+            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols);
 
-            const candidates = neighborIndexes(current, rows, cols, wrap)
+            const candidates = neighborIndexes(current, rows, cols)
               .filter((next) => availableSet.has(next) && !visited.has(next))
               .map((next) => {
-                const nextDirection = directionBetween(current, next, cols, rows, wrap);
+                const nextDirection = directionBetween(current, next, cols);
                 const turnBonus = previousDirection &&
                   (previousDirection[0] !== nextDirection[0] || previousDirection[1] !== nextDirection[1])
                   ? 2.2
                   : 0;
-                const onward = neighborIndexes(next, rows, cols, wrap)
+                const onward = neighborIndexes(next, rows, cols)
                   .filter((candidate) => availableSet.has(candidate) && !visited.has(candidate) && candidate !== current)
                   .length;
-                const wallHug = neighborIndexes(next, rows, cols, wrap)
+                const wallHug = neighborIndexes(next, rows, cols)
                   .filter((candidate) => !availableSet.has(candidate))
                   .length;
 
@@ -1194,7 +945,7 @@
 
             for (const candidate of candidates) {
               visited.add(candidate.next);
-              const reachable = reachableCountInSet(candidate.next, visited, availableSet, rows, cols, wrap);
+              const reachable = reachableCountInSet(candidate.next, visited, availableSet, rows, cols);
               visited.delete(candidate.next);
               const remaining = targetLength - path.length;
               if (reachable < remaining) continue;
@@ -1212,7 +963,7 @@
         return null;
       }
 
-      function buildFallbackLayout(rows, cols, seedLabel, wrap = false) {
+      function buildFallbackLayout(rows, cols, seedLabel) {
         const rng = makeRng(hashText(`${seedLabel}:fallback`));
         const targetLength = chooseTargetLength(rows, cols);
         const startCandidates = Array.from({ length: rows * cols }, (_, index) => index)
@@ -1230,17 +981,17 @@
             if (path.length === targetLength) return true;
 
             const previous = path[path.length - 2];
-            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols, rows, wrap);
+            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols);
 
-            const candidates = neighborIndexes(current, rows, cols, wrap)
+            const candidates = neighborIndexes(current, rows, cols)
               .filter((next) => !visited.has(next))
               .map((next) => {
-                const nextDirection = directionBetween(current, next, cols, rows, wrap);
+                const nextDirection = directionBetween(current, next, cols);
                 const turns = previousDirection &&
                   (previousDirection[0] !== nextDirection[0] || previousDirection[1] !== nextDirection[1])
                   ? 2.4
                   : 0;
-                const onward = neighborIndexes(next, rows, cols, wrap)
+                const onward = neighborIndexes(next, rows, cols)
                   .filter((candidate) => !visited.has(candidate) && candidate !== current)
                   .length;
                 const [row, col] = toCoord(next, cols);
@@ -1255,7 +1006,7 @@
 
             for (const candidate of candidates) {
               visited.add(candidate.next);
-              const reachable = reachableCount(candidate.next, visited, rows, cols, wrap);
+              const reachable = reachableCount(candidate.next, visited, rows, cols);
               visited.delete(candidate.next);
               const remaining = targetLength - path.length;
               if (reachable < remaining) continue;
@@ -1291,7 +1042,7 @@
         return target;
       }
 
-      function buildPlayableLayout(rows, cols, seedLabel, wrap = false) {
+      function buildPlayableLayout(rows, cols, seedLabel) {
         const targetLength = chooseTargetLength(rows, cols);
         for (let attempt = 0; attempt < 10; attempt += 1) {
           const blocked = generateBlockedMask(rows, cols, `${seedLabel}:mask:${attempt}`, targetLength);
@@ -1303,8 +1054,7 @@
             rows,
             cols,
             targetLength,
-            `${seedLabel}:path:${attempt}`,
-            wrap
+            `${seedLabel}:path:${attempt}`
           );
           if (!path) continue;
 
@@ -1315,7 +1065,7 @@
           };
         }
 
-        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`, wrap);
+        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`);
       }
 
       function generateFallbackWord(length, rng) {
@@ -1403,9 +1153,9 @@
         return lengths;
       }
 
-      function materializePuzzle(rows, cols, mode, variant, wrap = false) {
-        const seedLabel = `${mode}:${rows}x${cols}:${variant}:${wrap ? "sphere" : "flat"}`;
-        const layout = buildPlayableLayout(rows, cols, seedLabel, wrap);
+      function materializePuzzle(rows, cols, mode, variant) {
+        const seedLabel = `${mode}:${rows}x${cols}:${variant}`;
+        const layout = buildPlayableLayout(rows, cols, seedLabel);
         const lengths = chooseWordLengths(layout.path.length, cols, seedLabel);
         let offset = 0;
 
@@ -1430,11 +1180,10 @@
         });
 
         return {
-          id: `${rows}x${cols}-${mode}-${variant}-${wrap ? "sphere" : "flat"}`,
-          name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}${wrap ? " Sphere" : ""}`,
+          id: `${rows}x${cols}-${mode}-${variant}`,
+          name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
           rows,
           cols,
-          wrap,
           cells,
           words,
           playableCount: layout.path.length
@@ -1444,10 +1193,6 @@
       function currentGridSize() {
         const [rows, cols] = state.selectedGridSize.split("x").map(Number);
         return { rows, cols };
-      }
-
-      function currentWrapMode() {
-        return state.wrapSphere;
       }
 
       function getDailyVariant() {
@@ -1480,7 +1225,7 @@
 
       function getDailyPuzzle() {
         const { rows, cols } = currentGridSize();
-        return materializePuzzle(rows, cols, "daily", getDailyVariant(), currentWrapMode());
+        return materializePuzzle(rows, cols, "daily", getDailyVariant());
       }
 
       function isSolvedWord(wordIndex) {
@@ -1493,16 +1238,19 @@
       }
 
       function isAdjacent(a, b) {
-        return neighborIndexes(a, state.puzzle.rows, state.puzzle.cols, state.puzzle.wrap).includes(b);
+        const [r1, c1] = toCoord(a, state.puzzle.cols);
+        const [r2, c2] = toCoord(b, state.puzzle.cols);
+        return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
       }
 
-      function arrowForStep(from, to, cols, rows, wrap = false) {
+      function arrowForStep(from, to, cols) {
         if (to === undefined) return null;
-        const [dr, dc] = directionBetween(from, to, cols, rows, wrap);
-        if (dr === -1) return "↑";
-        if (dr === 1) return "↓";
-        if (dc === -1) return "←";
-        if (dc === 1) return "→";
+        const [r1, c1] = toCoord(from, cols);
+        const [r2, c2] = toCoord(to, cols);
+        if (r2 === r1 - 1) return "↑";
+        if (r2 === r1 + 1) return "↓";
+        if (c2 === c1 - 1) return "←";
+        if (c2 === c1 + 1) return "→";
         return null;
       }
 
@@ -1515,14 +1263,14 @@
           for (let index = 0; index < word.path.length - 1; index += 1) {
             const from = word.path[index];
             const to = word.path[index + 1];
-            solved.set(from, arrowForStep(from, to, state.puzzle.cols, state.puzzle.rows, state.puzzle.wrap));
+            solved.set(from, arrowForStep(from, to, state.puzzle.cols));
           }
         });
 
         for (let index = 0; index < state.activePath.length - 1; index += 1) {
           const from = state.activePath[index];
           const to = state.activePath[index + 1];
-          active.set(from, arrowForStep(from, to, state.puzzle.cols, state.puzzle.rows, state.puzzle.wrap));
+          active.set(from, arrowForStep(from, to, state.puzzle.cols));
         }
 
         return { solved, active };
@@ -1563,9 +1311,7 @@
         state.activePath = [];
         state.invalidTiles = [];
         state.draggingPointerId = null;
-        state.rotatingPointerId = null;
         state.gestureExtended = false;
-        if (puzzle.wrap) resetSphereRotation();
         const saved = loadStateForPuzzle(puzzle);
         state.foundWords = saved?.foundWords || [];
         state.hints = saved?.hints || {};
@@ -1673,33 +1419,6 @@
         state.gestureExtended = false;
       }
 
-      function handleBoardPointerDown(event) {
-        if (!state.puzzle?.wrap) return;
-        if (event.target.closest(".interactive-tile")) return;
-        state.rotatingPointerId = event.pointerId;
-        state.rotateLastX = event.clientX;
-        state.rotateLastY = event.clientY;
-        els.board.classList.add("rotating");
-        event.preventDefault();
-      }
-
-      function handleWindowPointerMove(event) {
-        if (state.rotatingPointerId !== event.pointerId) return;
-        const dx = event.clientX - state.rotateLastX;
-        const dy = event.clientY - state.rotateLastY;
-        state.rotateLastX = event.clientX;
-        state.rotateLastY = event.clientY;
-        state.sphereYaw += dx * 0.01;
-        state.spherePitch = clamp(state.spherePitch + dy * 0.008, -1.2, 1.2);
-        renderBoard();
-      }
-
-      function handleWindowPointerUp(event) {
-        if (state.rotatingPointerId !== event.pointerId) return;
-        state.rotatingPointerId = null;
-        els.board.classList.remove("rotating");
-      }
-
       function handleTileClick(index) {
         const cell = state.puzzle.cells[index];
         if (!cell || cell.type !== "tile" || isLockedTile(index)) return;
@@ -1763,107 +1482,9 @@
         };
       }
 
-      function createTileElement(cell, index, arrowMap) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "tile";
-        button.setAttribute("aria-label", `Letter ${cell.letter}`);
-
-        const letter = document.createElement("span");
-        letter.className = "tile-letter";
-        letter.textContent = cell.letter;
-        button.appendChild(letter);
-
-        if (state.activePath.includes(index)) button.classList.add("active");
-        if (isSolvedWord(cell.wordIndex)) button.classList.add("found", "locked");
-        if (state.invalidTiles.includes(index)) button.classList.add("invalid");
-        if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
-          button.classList.add("hinted");
-        }
-
-        const badge = document.createElement("span");
-        badge.className = "tile-index";
-        if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
-          badge.textContent = cell.step;
-        }
-        button.appendChild(badge);
-
-        const activeArrow = arrowMap.active.get(index);
-        const solvedArrow = arrowMap.solved.get(index);
-        const arrow = activeArrow || solvedArrow;
-        if (arrow) {
-          const arrowEl = document.createElement("span");
-          arrowEl.className = `path-arrow ${activeArrow ? "active" : "solved"}`;
-          arrowEl.textContent = arrow;
-          button.appendChild(arrowEl);
-        }
-
-        button.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
-        button.addEventListener("pointerenter", (event) => handlePointerEnter(index, event));
-        button.addEventListener("pointerup", handlePointerUp);
-        button.addEventListener("click", () => handleTileClick(index));
-        return button;
-      }
-
-      function projectSpherePoint(index, width) {
-        const [row, col] = toCoord(index, state.puzzle.cols);
-        const rowPhase = row % 2 === 0 ? 0 : 0.5;
-        const u = (((col + 0.5 + rowPhase) / state.puzzle.cols) % 1 + 1) % 1;
-        const v = (row + 0.5) / state.puzzle.rows;
-        const lon = (u - 0.5) * Math.PI * 2;
-        const lat = Math.asin(clamp(v * 2 - 1, -0.98, 0.98)) * 0.96;
-
-        const cosLat = Math.cos(lat);
-        let x = cosLat * Math.sin(lon);
-        let y = Math.sin(lat);
-        let z = cosLat * Math.cos(lon);
-
-        const cosYaw = Math.cos(state.sphereYaw);
-        const sinYaw = Math.sin(state.sphereYaw);
-        const yawX = x * cosYaw - z * sinYaw;
-        const yawZ = x * sinYaw + z * cosYaw;
-        x = yawX;
-        z = yawZ;
-
-        const cosPitch = Math.cos(state.spherePitch);
-        const sinPitch = Math.sin(state.spherePitch);
-        const pitchY = y * cosPitch - z * sinPitch;
-        const pitchZ = y * sinPitch + z * cosPitch;
-        y = pitchY;
-        z = pitchZ;
-
-        const center = width / 2;
-        const radius = width * 0.395;
-        const orbit = radius * 0.93;
-        const depth = (z + 1) / 2;
-        const scale = 0.68 + depth * 0.44;
-
-        return {
-          x: center + x * orbit,
-          y: center + y * orbit,
-          z,
-          scale,
-          depth,
-          visible: z > -0.24
-        };
-      }
-
-      function svgEl(tag) {
-        return document.createElementNS("http://www.w3.org/2000/svg", tag);
-      }
-
-      function buildSpherePoints(width) {
-        return state.puzzle.cells.map((cell, index) => ({
-          cell,
-          index,
-          projection: projectSpherePoint(index, width)
-        }));
-      }
-
-      function renderFlatBoard() {
+      function renderBoard() {
+        if (!state.puzzle) return;
         const metrics = computeTileMetrics();
-        els.board.className = "board flat-board";
-        els.boardShell.classList.remove("sphere-mode");
         els.board.style.gridTemplateColumns = `repeat(${state.puzzle.cols}, minmax(0, 1fr))`;
         els.board.style.gap = `${metrics.gap}px`;
         els.board.style.setProperty("--tile-font-size", `${metrics.fontSize}px`);
@@ -1881,155 +1502,46 @@
             return;
           }
 
-          els.board.appendChild(createTileElement(cell, index, arrowMap));
-        });
-      }
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "tile";
+          button.setAttribute("aria-label", `Letter ${cell.letter}`);
 
-      function renderSphereBoard() {
-        const width =
-          els.board.getBoundingClientRect().width ||
-          els.boardShell.getBoundingClientRect().width - 36;
-        const totalCells = state.puzzle.cells.length;
-        const baseRadius = clamp((width * 0.7) / Math.sqrt(totalCells), 9, 24);
-        const arrowMap = buildArrowMap();
-        els.board.className = `board sphere-board${state.rotatingPointerId !== null ? " rotating" : ""}`;
-        els.boardShell.classList.add("sphere-mode");
-        els.board.style.gridTemplateColumns = "";
-        els.board.style.gap = "0";
-        els.board.innerHTML = "";
-        const projected = buildSpherePoints(width);
-        const projectionByIndex = new Map(projected.map((item) => [item.index, item.projection]));
-        const svg = svgEl("svg");
-        svg.setAttribute("class", "sphere-svg");
-        svg.setAttribute("viewBox", `0 0 ${width} ${width}`);
-        svg.setAttribute("aria-label", "Sphere board");
+          const letter = document.createElement("span");
+          letter.className = "tile-letter";
+          letter.textContent = cell.letter;
+          button.appendChild(letter);
 
-        const edges = svgEl("g");
-        const solvedPaths = svgEl("g");
-        const activePaths = svgEl("g");
-        const nodes = svgEl("g");
-
-        for (let index = 0; index < projected.length; index += 1) {
-          const from = projectionByIndex.get(index);
-          if (!from || !from.visible) continue;
-          for (const neighbor of neighborIndexes(index, state.puzzle.rows, state.puzzle.cols, state.puzzle.wrap)) {
-            if (neighbor <= index) continue;
-            const to = projectionByIndex.get(neighbor);
-            if (!to || !to.visible) continue;
-            const line = svgEl("line");
-            line.setAttribute("class", "sphere-edge");
-            line.setAttribute("x1", from.x);
-            line.setAttribute("y1", from.y);
-            line.setAttribute("x2", to.x);
-            line.setAttribute("y2", to.y);
-            line.setAttribute("stroke-width", clamp(baseRadius * 0.22 * ((from.scale + to.scale) / 2), 1, 4));
-            line.setAttribute("opacity", String(0.16 + ((from.depth + to.depth) / 2) * 0.24));
-            edges.appendChild(line);
+          if (state.activePath.includes(index)) button.classList.add("active");
+          if (isSolvedWord(cell.wordIndex)) button.classList.add("found", "locked");
+          if (state.invalidTiles.includes(index)) button.classList.add("invalid");
+          if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
+            button.classList.add("hinted");
           }
-        }
 
-        state.puzzle.words.forEach((word, wordIndex) => {
-          if (!isSolvedWord(wordIndex)) return;
-          for (let i = 0; i < word.path.length - 1; i += 1) {
-            const from = projectionByIndex.get(word.path[i]);
-            const to = projectionByIndex.get(word.path[i + 1]);
-            if (!from?.visible || !to?.visible) continue;
-            const line = svgEl("line");
-            line.setAttribute("class", "sphere-path-solved");
-            line.setAttribute("x1", from.x);
-            line.setAttribute("y1", from.y);
-            line.setAttribute("x2", to.x);
-            line.setAttribute("y2", to.y);
-            line.setAttribute("stroke-width", clamp(baseRadius * 0.34 * ((from.scale + to.scale) / 2), 2, 6));
-            solvedPaths.appendChild(line);
+          const badge = document.createElement("span");
+          badge.className = "tile-index";
+          if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
+            badge.textContent = cell.step;
           }
+          button.appendChild(badge);
+
+          const activeArrow = arrowMap.active.get(index);
+          const solvedArrow = arrowMap.solved.get(index);
+          const arrow = activeArrow || solvedArrow;
+          if (arrow) {
+            const arrowEl = document.createElement("span");
+            arrowEl.className = `path-arrow ${activeArrow ? "active" : "solved"}`;
+            arrowEl.textContent = arrow;
+            button.appendChild(arrowEl);
+          }
+
+          button.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
+          button.addEventListener("pointerenter", (event) => handlePointerEnter(index, event));
+          button.addEventListener("pointerup", handlePointerUp);
+          button.addEventListener("click", () => handleTileClick(index));
+          els.board.appendChild(button);
         });
-
-        for (let i = 0; i < state.activePath.length - 1; i += 1) {
-          const from = projectionByIndex.get(state.activePath[i]);
-          const to = projectionByIndex.get(state.activePath[i + 1]);
-          if (!from?.visible || !to?.visible) continue;
-          const line = svgEl("line");
-          line.setAttribute("class", "sphere-path-active");
-          line.setAttribute("x1", from.x);
-          line.setAttribute("y1", from.y);
-          line.setAttribute("x2", to.x);
-          line.setAttribute("y2", to.y);
-          line.setAttribute("stroke-width", clamp(baseRadius * 0.38 * ((from.scale + to.scale) / 2), 2, 7));
-          activePaths.appendChild(line);
-        }
-
-        projected
-          .filter(({ projection }) => projection.visible)
-          .sort((a, b) => a.projection.z - b.projection.z)
-          .forEach(({ cell, index, projection }) => {
-            const radius = clamp(baseRadius * projection.scale, 9, 28);
-            const fontSize = clamp(radius * 0.92, 8, 24);
-            const group = svgEl("g");
-            const classes = ["sphere-node", cell.type === "block" ? "blocked" : "playable"];
-            if (cell.type === "tile") {
-              classes.push("interactive-tile");
-              if (state.activePath.includes(index)) classes.push("active");
-              if (isSolvedWord(cell.wordIndex)) classes.push("found");
-              if (state.invalidTiles.includes(index)) classes.push("invalid");
-              if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
-                classes.push("hinted");
-              }
-            }
-            group.setAttribute("class", classes.join(" "));
-            group.setAttribute("transform", `translate(${projection.x} ${projection.y})`);
-            group.setAttribute("data-index", String(index));
-
-            const circle = svgEl("circle");
-            circle.setAttribute("r", radius);
-            circle.setAttribute("opacity", String(0.52 + projection.depth * 0.48));
-            group.appendChild(circle);
-
-            if (cell.type === "tile") {
-              const letter = svgEl("text");
-              letter.setAttribute("font-size", fontSize);
-              letter.textContent = cell.letter;
-              group.appendChild(letter);
-
-              if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
-                const hint = svgEl("text");
-                hint.setAttribute("class", "sphere-step");
-                hint.setAttribute("x", radius * 0.54);
-                hint.setAttribute("y", -radius * 0.48);
-                hint.setAttribute("font-size", clamp(radius * 0.42, 6, 11));
-                hint.textContent = cell.step;
-                group.appendChild(hint);
-              }
-
-              const arrow = arrowMap.active.get(index) || arrowMap.solved.get(index);
-              if (arrow) {
-                const arrowText = svgEl("text");
-                arrowText.setAttribute("y", radius * 0.56);
-                arrowText.setAttribute("font-size", clamp(radius * 0.56, 7, 13));
-                arrowText.textContent = arrow;
-                group.appendChild(arrowText);
-              }
-
-              group.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
-              group.addEventListener("pointerenter", (event) => handlePointerEnter(index, event));
-              group.addEventListener("pointerup", handlePointerUp);
-              group.addEventListener("click", () => handleTileClick(index));
-            }
-
-            nodes.appendChild(group);
-          });
-
-        svg.append(edges, solvedPaths, activePaths, nodes);
-        els.board.appendChild(svg);
-      }
-
-      function renderBoard() {
-        if (!state.puzzle) return;
-        if (state.puzzle.wrap) {
-          renderSphereBoard();
-          return;
-        }
-        renderFlatBoard();
       }
 
       function hintedDisplay(word, wordIndex) {
@@ -2076,8 +1588,6 @@
           Object.values(state.hints).reduce((sum, value) => sum + value, 0)
         );
         els.gridSize.value = state.selectedGridSize;
-        els.wrapSphere.checked = state.wrapSphere;
-        els.sphereNote.hidden = !state.puzzle.wrap;
 
         const solved = state.foundWords.length === state.puzzle.words.length;
         els.successBanner.hidden = !solved;
@@ -2096,7 +1606,7 @@
       function nextPracticePuzzle() {
         const { rows, cols } = currentGridSize();
         state.practiceIndex += 1;
-        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex, currentWrapMode()), "practice");
+        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
       }
 
       function applyGridSize(value) {
@@ -2104,18 +1614,7 @@
         state.practiceIndex = 0;
         if (state.mode === "practice") {
           const { rows, cols } = currentGridSize();
-          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex, currentWrapMode()), "practice");
-        } else {
-          startPuzzle(getDailyPuzzle(), "daily");
-        }
-      }
-
-      function applyWrapSphere(value) {
-        state.wrapSphere = value;
-        state.practiceIndex = 0;
-        if (state.mode === "practice") {
-          const { rows, cols } = currentGridSize();
-          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex, currentWrapMode()), "practice");
+          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
         } else {
           startPuzzle(getDailyPuzzle(), "daily");
         }
@@ -2139,11 +1638,7 @@
       els.hintBtn.addEventListener("click", revealHint);
       els.resetBtn.addEventListener("click", resetProgress);
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
-      els.wrapSphere.addEventListener("change", (event) => applyWrapSphere(event.target.checked));
-      els.board.addEventListener("pointerdown", handleBoardPointerDown);
       window.addEventListener("pointerup", handlePointerUp);
-      window.addEventListener("pointermove", handleWindowPointerMove);
-      window.addEventListener("pointerup", handleWindowPointerUp);
       window.addEventListener("resize", renderBoard);
 
       populateGridSizeOptions();
