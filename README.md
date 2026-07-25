@@ -14,3 +14,4 @@ Open `index.html` in a browser to play the first single-page prototype locally.
 
 - `index.html` contains the full HTML, CSS, and JavaScript for the first playable prototype.
 - The prototype currently ships with a tiny daily/practice puzzle set focused on the core mechanic.
+- `scripts/build-worker.mjs` packages the single-page prototype into `dist/index.js` for Sites deployment.
