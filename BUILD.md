@@ -33,6 +33,13 @@ and follow-up iterations.
 - Created Shlink for the requirements note:
   `https://sh.tam.net/wordfinder-requirements`
 
+### `fe24cc0` `docs: add build log`
+
+- Created `BUILD.md` in the repository to track the project timeline.
+- Soft-linked `BUILD.md` into the vault project folder.
+- Created Shlink for the build log:
+  `https://sh.tam.net/wordfinder-build`
+
 ## Playable Prototype
 
 ### `9b14de3` `feat: add playable single-page prototype`
@@ -99,7 +106,7 @@ and follow-up iterations.
 - Added generated daily/practice board logic for larger sizes.
 - Tightened board spacing for denser large-grid rendering.
 
-### `v00.00.03` large-grid pathing and legibility fix
+### `8c61e56` `fix: generate winding boards and scale large grids` (`v00.00.03`)
 
 - Reworked generated-board construction so each board is partitioned into seeded multi-word
   paths across the full grid instead of trivial row-only strips.
@@ -109,7 +116,7 @@ and follow-up iterations.
   down for dense boards including `20x20`.
 - Republished the GitHub Pages build with the corrected generator and UI scaling.
 
-### `v00.00.04` blocked-cell layout and distribution fix
+### `4307f81` `fix: add blocked cells and varied word lengths` (`v00.00.04`)
 
 - Replaced the full-open square generator with a shaped playable-area generator that inserts
   real black blocked cells into every generated board.
@@ -119,7 +126,7 @@ and follow-up iterations.
   content in its own centered span.
 - Revalidated generated boards across multiple sizes before republishing GitHub Pages.
 
-### `v00.00.05` harder irregular board generation
+### `2e9dbf2` `feat: make generated boards more challenging` (`v00.00.05`)
 
 - Replaced the row-band playable-area generator with an irregular self-avoiding path generator.
 - This makes blocked-cell silhouettes less artificial and makes the underlying answer path less
@@ -133,7 +140,8 @@ and follow-up iterations.
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
 - Current version: `v00.00.05`
-- Latest recorded commit at the time of this log: pending next push for the `v00.00.05` fix
+- Latest recorded commit at the time of this log: `2e9dbf2`
+- Latest published tag: `v00.00.05`
 
 ## Notes
 
