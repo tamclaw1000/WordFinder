@@ -554,6 +554,31 @@
             <select id="grid-size"></select>
           </div>
 
+          <div class="field">
+            <label for="color-mode">Solved colors</label>
+            <select id="color-mode">
+              <option value="hue">Different hues</option>
+              <option value="saturation">Different saturation</option>
+              <option value="value">Different values</option>
+              <option value="palette-1">Palette 1</option>
+              <option value="palette-2">Palette 2</option>
+              <option value="palette-3">Palette 3</option>
+              <option value="palette-4">Palette 4</option>
+              <option value="palette-5">Palette 5</option>
+              <option value="palette-6">Palette 6</option>
+              <option value="palette-7">Palette 7</option>
+              <option value="palette-8">Palette 8</option>
+              <option value="palette-9">Palette 9</option>
+              <option value="palette-10">Palette 10</option>
+              <option value="palette-11">Palette 11</option>
+              <option value="palette-12">Palette 12</option>
+              <option value="palette-13">Palette 13</option>
+              <option value="palette-14">Palette 14</option>
+              <option value="palette-15">Palette 15</option>
+              <option value="palette-16">Palette 16</option>
+            </select>
+          </div>
+
           <div class="actions">
             <button class="primary" id="submit-btn">Submit path</button>
             <button class="ghost" id="undo-btn">Undo</button>
@@ -591,7 +616,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.24";
+      const APP_VERSION = "v00.00.25";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -607,12 +632,32 @@
         "12": ["ABBREVIATION", "ACCESSIBILITY", "ACCOMMODATED", "ADMINISTRATOR", "ALPHABETICAL", "AUTHENTICATED", "CONFIGURABLE", "DETERMINISTIC", "ORTHOGONALITY", "RESPONSIVENESS", "TRANSPARENCY", "VISUALIZATION"]
       };
 
+      const COLOR_PALETTES = {
+        "palette-1": [8, 28, 48, 68, 88, 108, 128, 148],
+        "palette-2": [18, 48, 78, 108, 138, 168, 198, 228],
+        "palette-3": [198, 214, 230, 246, 262, 278, 294, 310],
+        "palette-4": [330, 350, 10, 30, 50, 70, 90, 110],
+        "palette-5": [12, 42, 72, 102, 132, 162, 192, 222],
+        "palette-6": [190, 200, 210, 220, 230, 240, 250, 260],
+        "palette-7": [340, 20, 60, 100, 140, 180, 220, 260],
+        "palette-8": [24, 54, 84, 144, 174, 204, 264, 324],
+        "palette-9": [356, 16, 36, 56, 176, 196, 216, 236],
+        "palette-10": [44, 64, 84, 104, 124, 144, 164, 184],
+        "palette-11": [205, 245, 285, 325, 5, 45, 85, 125],
+        "palette-12": [15, 75, 135, 195, 255, 315, 35, 95],
+        "palette-13": [355, 25, 55, 145, 175, 205, 235, 325],
+        "palette-14": [30, 90, 150, 210, 270, 330, 50, 110],
+        "palette-15": [12, 92, 172, 252, 332, 52, 132, 212],
+        "palette-16": [348, 28, 68, 108, 188, 228, 268, 308]
+      };
+
       document.title = `WordFinder ${APP_VERSION}`;
       document.getElementById("version-chip").textContent = APP_VERSION;
 
       const state = {
         mode: "daily",
         selectedGridSize: "5x5",
+        selectedColorMode: "value",
         practiceIndex: 0,
         puzzle: null,
         foundWords: [],
@@ -639,6 +684,7 @@
         successBanner: document.getElementById("success-banner"),
         successText: document.getElementById("success-text"),
         gridSize: document.getElementById("grid-size"),
+        colorMode: document.getElementById("color-mode"),
         dailyBtn: document.getElementById("daily-btn"),
         practiceBtn: document.getElementById("practice-btn"),
         submitBtn: document.getElementById("submit-btn"),
@@ -1346,11 +1392,43 @@
         return wordIndex % 2 === 0 ? 34 : 58;
       }
 
+      function currentColorMode() {
+        return state.selectedColorMode;
+      }
+
       function solvedWordColor(wordIndex) {
+        const mode = currentColorMode();
+        if (mode === "hue") {
+          return `hsl(${(wordIndex * 67 + 204) % 360} 62% 46%)`;
+        }
+        if (mode === "saturation") {
+          return `hsl(204 ${solvedWordSaturation(wordIndex)}% 44%)`;
+        }
+        if (mode === "value") {
+          return `hsl(204 62% ${wordIndex % 2 === 0 ? 34 : 58}%)`;
+        }
+        const palette = COLOR_PALETTES[mode];
+        if (palette) {
+          return `hsl(${palette[wordIndex % palette.length]} 62% 46%)`;
+        }
         return `hsl(204 ${solvedWordSaturation(wordIndex)}% ${solvedWordLightness(wordIndex)}%)`;
       }
 
       function solvedWordAccent(wordIndex) {
+        const mode = currentColorMode();
+        if (mode === "hue") {
+          return `hsl(${(wordIndex * 67 + 204) % 360} 78% 72%)`;
+        }
+        if (mode === "saturation") {
+          return `hsl(204 ${Math.min(96, solvedWordSaturation(wordIndex) + 18)}% 68%)`;
+        }
+        if (mode === "value") {
+          return `hsl(204 78% ${wordIndex % 2 === 0 ? 72 : 28}%)`;
+        }
+        const palette = COLOR_PALETTES[mode];
+        if (palette) {
+          return `hsl(${palette[wordIndex % palette.length]} 78% 72%)`;
+        }
         const accentLightness = wordIndex % 2 === 0 ? 72 : 28;
         return `hsl(204 ${Math.min(96, solvedWordSaturation(wordIndex) + 16)}% ${accentLightness}%)`;
       }
@@ -1384,14 +1462,14 @@
         els.timer.textContent = `${minutes}:${seconds}`;
       }
 
-      function startPuzzle(puzzle, mode) {
+      function startPuzzle(puzzle, mode, options = {}) {
         state.mode = mode;
         state.puzzle = puzzle;
         state.activePath = [];
         state.invalidTiles = [];
         state.draggingPointerId = null;
         state.gestureExtended = false;
-        const saved = loadStateForPuzzle(puzzle);
+        const saved = options.ignoreSavedState ? null : loadStateForPuzzle(puzzle);
         state.foundWords = saved?.foundWords || [];
         state.hints = saved?.hints || {};
         state.startTime = saved?.startTime || Date.now();
@@ -1729,6 +1807,7 @@
           Object.values(state.hints).reduce((sum, value) => sum + value, 0)
         );
         els.gridSize.value = state.selectedGridSize;
+        els.colorMode.value = state.selectedColorMode;
 
         const solved = state.foundWords.length === state.puzzle.words.length;
         els.successBanner.hidden = !solved;
@@ -1747,7 +1826,7 @@
       function nextPracticePuzzle() {
         const { rows, cols } = currentGridSize();
         state.practiceIndex += 1;
-        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
+        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice", { ignoreSavedState: true });
       }
 
       function applyGridSize(value) {
@@ -1755,10 +1834,15 @@
         state.practiceIndex = 0;
         if (state.mode === "practice") {
           const { rows, cols } = currentGridSize();
-          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
+          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice", { ignoreSavedState: true });
         } else {
           startPuzzle(getDailyPuzzle(), "daily");
         }
+      }
+
+      function applyColorMode(value) {
+        state.selectedColorMode = value;
+        render();
       }
 
       function populateGridSizeOptions() {
@@ -1780,6 +1864,7 @@
       els.solveBtn.addEventListener("click", solvePuzzle);
       els.resetBtn.addEventListener("click", resetProgress);
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
+      els.colorMode.addEventListener("change", (event) => applyColorMode(event.target.value));
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("resize", renderBoard);
 
