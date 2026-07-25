@@ -590,7 +590,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.22";
+      const APP_VERSION = "v00.00.23";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1340,12 +1340,17 @@
         return 44 + (wordIndex * 11) % 40;
       }
 
+      function solvedWordLightness(wordIndex) {
+        return wordIndex % 2 === 0 ? 34 : 58;
+      }
+
       function solvedWordColor(wordIndex) {
-        return `hsl(204 ${solvedWordSaturation(wordIndex)}% 40%)`;
+        return `hsl(204 ${solvedWordSaturation(wordIndex)}% ${solvedWordLightness(wordIndex)}%)`;
       }
 
       function solvedWordAccent(wordIndex) {
-        return `hsl(204 ${Math.min(96, solvedWordSaturation(wordIndex) + 16)}% 66%)`;
+        const accentLightness = wordIndex % 2 === 0 ? 72 : 28;
+        return `hsl(204 ${Math.min(96, solvedWordSaturation(wordIndex) + 16)}% ${accentLightness}%)`;
       }
 
       function activeWordPath() {
