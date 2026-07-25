@@ -58,6 +58,24 @@
         font-weight: 700;
       }
 
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .version-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(26, 42, 36, 0.08);
+        color: var(--ink);
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
       h1 {
         margin: 0;
         font-family: Georgia, "Times New Roman", serif;
@@ -406,7 +424,10 @@
   <body>
     <main>
       <section class="hero">
-        <div class="eyebrow">WordFinder Prototype</div>
+        <div class="hero-meta">
+          <div class="eyebrow">WordFinder Prototype</div>
+          <div class="version-chip" id="version-chip">v00.00.01</div>
+        </div>
         <h1>Trace hidden words. Use every tile once.</h1>
         <p class="subtitle">
           Single-page prototype of the core Wend-style mechanic: drag or tap through adjacent
@@ -489,6 +510,11 @@
     </main>
 
     <script>
+      const APP_VERSION = "v00.00.01";
+
+      document.title = `WordFinder Prototype ${APP_VERSION}`;
+      document.getElementById("version-chip").textContent = APP_VERSION;
+
       const puzzleSeeds = [
         {
           id: "pocket-1",
