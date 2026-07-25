@@ -318,6 +318,25 @@
         opacity: 0.78;
       }
 
+      .path-arrow {
+        position: absolute;
+        left: 6px;
+        bottom: 5px;
+        font-size: var(--tile-arrow-size, 10px);
+        font-weight: 900;
+        line-height: 1;
+        opacity: 0.92;
+        pointer-events: none;
+      }
+
+      .path-arrow.solved {
+        color: rgba(255, 255, 255, 0.94);
+      }
+
+      .path-arrow.active {
+        color: rgba(255, 255, 255, 0.96);
+      }
+
       .block {
         background:
           linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent),
@@ -445,7 +464,7 @@
       <section class="hero">
         <div class="hero-meta">
           <div class="eyebrow">WordFinder Requirements Build</div>
-          <div class="version-chip" id="version-chip">v00.00.11</div>
+          <div class="version-chip" id="version-chip">v00.00.12</div>
           <a class="link-chip" href="./v1.html">Open v1.html</a>
         </div>
         <h1>Generated from the spec, not the old page.</h1>
@@ -537,7 +556,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.11";
+      const APP_VERSION = "v00.00.12";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1224,6 +1243,39 @@
         return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
       }
 
+      function arrowForStep(from, to, cols) {
+        if (to === undefined) return null;
+        const [r1, c1] = toCoord(from, cols);
+        const [r2, c2] = toCoord(to, cols);
+        if (r2 === r1 - 1) return "↑";
+        if (r2 === r1 + 1) return "↓";
+        if (c2 === c1 - 1) return "←";
+        if (c2 === c1 + 1) return "→";
+        return null;
+      }
+
+      function buildArrowMap() {
+        const solved = new Map();
+        const active = new Map();
+
+        state.puzzle.words.forEach((word, wordIndex) => {
+          if (!isSolvedWord(wordIndex)) return;
+          for (let index = 0; index < word.path.length - 1; index += 1) {
+            const from = word.path[index];
+            const to = word.path[index + 1];
+            solved.set(from, arrowForStep(from, to, state.puzzle.cols));
+          }
+        });
+
+        for (let index = 0; index < state.activePath.length - 1; index += 1) {
+          const from = state.activePath[index];
+          const to = state.activePath[index + 1];
+          active.set(from, arrowForStep(from, to, state.puzzle.cols));
+        }
+
+        return { solved, active };
+      }
+
       function activeWordPath() {
         return state.activePath
           .map((index) => state.puzzle.cells[index].letter)
@@ -1425,6 +1477,7 @@
           gap,
           fontSize: clamp(tileSize * 0.46, 8, 24),
           hintSize: clamp(tileSize * 0.22, 6, 11),
+          arrowSize: clamp(tileSize * 0.24, 7, 12),
           radius: clamp(tileSize * 0.2, 4, 18)
         };
       }
@@ -1436,8 +1489,10 @@
         els.board.style.gap = `${metrics.gap}px`;
         els.board.style.setProperty("--tile-font-size", `${metrics.fontSize}px`);
         els.board.style.setProperty("--tile-index-size", `${metrics.hintSize}px`);
+        els.board.style.setProperty("--tile-arrow-size", `${metrics.arrowSize}px`);
         els.board.style.setProperty("--tile-radius", `${metrics.radius}px`);
         els.board.innerHTML = "";
+        const arrowMap = buildArrowMap();
 
         state.puzzle.cells.forEach((cell, index) => {
           if (cell.type === "block") {
@@ -1470,6 +1525,16 @@
             badge.textContent = cell.step;
           }
           button.appendChild(badge);
+
+          const activeArrow = arrowMap.active.get(index);
+          const solvedArrow = arrowMap.solved.get(index);
+          const arrow = activeArrow || solvedArrow;
+          if (arrow) {
+            const arrowEl = document.createElement("span");
+            arrowEl.className = `path-arrow ${activeArrow ? "active" : "solved"}`;
+            arrowEl.textContent = arrow;
+            button.appendChild(arrowEl);
+          }
 
           button.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
           button.addEventListener("pointerenter", (event) => handlePointerEnter(index, event));
