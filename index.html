@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WordFinder Prototype</title>
+    <style>
+      :root {
+        --bg: #f2efe4;
+        --panel: rgba(255, 252, 245, 0.84);
+        --ink: #1a2a24;
+        --muted: #607066;
+        --accent: #1f7a5c;
+        --accent-2: #d96c3f;
+        --accent-3: #f4c95d;
+        --tile: #fffdf7;
+        --tile-edge: rgba(26, 42, 36, 0.12);
+        --tile-active: #1f7a5c;
+        --tile-found: #274c77;
+        --tile-hint: #f4c95d;
+        --block: #29443a;
+        --danger: #b3432f;
+        --shadow: 0 24px 60px rgba(32, 37, 31, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(244, 201, 93, 0.45), transparent 25%),
+          radial-gradient(circle at top right, rgba(31, 122, 92, 0.28), transparent 28%),
+          linear-gradient(180deg, #f7f2e5 0%, #ebe2ce 100%);
+      }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 48px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 22px;
+      }
+
+      .eyebrow {
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(2.4rem, 6vw, 4.4rem);
+        line-height: 0.94;
+        max-width: 10ch;
+      }
+
+      .subtitle {
+        margin: 0;
+        max-width: 60ch;
+        color: var(--muted);
+        font-size: 1.02rem;
+        line-height: 1.5;
+      }
+
+      .layout {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: minmax(320px, 560px) minmax(260px, 1fr);
+        align-items: start;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+        border-radius: 28px;
+      }
+
+      .game-panel {
+        padding: 18px;
+      }
+
+      .sidebar {
+        padding: 18px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .topline,
+      .controls,
+      .progress-metrics,
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .topline {
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(31, 122, 92, 0.1);
+        color: var(--accent);
+        font-size: 0.86rem;
+        font-weight: 700;
+      }
+
+      .metric {
+        min-width: 108px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(26, 42, 36, 0.08);
+      }
+
+      .metric-label {
+        display: block;
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .metric-value {
+        font-size: 1.18rem;
+        font-weight: 800;
+      }
+
+      button {
+        border: 0;
+        border-radius: 16px;
+        padding: 12px 16px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button:focus-visible {
+        outline: 3px solid rgba(31, 122, 92, 0.3);
+        outline-offset: 2px;
+      }
+
+      .primary {
+        background: var(--accent);
+        color: white;
+        box-shadow: 0 14px 24px rgba(31, 122, 92, 0.24);
+      }
+
+      .secondary {
+        background: rgba(39, 76, 119, 0.12);
+        color: #274c77;
+      }
+
+      .ghost {
+        background: rgba(26, 42, 36, 0.08);
+        color: var(--ink);
+      }
+
+      .warning {
+        background: rgba(217, 108, 63, 0.14);
+        color: var(--accent-2);
+      }
+
+      .board-shell {
+        position: relative;
+        padding: 14px;
+        border-radius: 26px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(242, 239, 228, 0.9));
+        border: 1px solid rgba(26, 42, 36, 0.08);
+      }
+
+      .board {
+        display: grid;
+        gap: 10px;
+        touch-action: none;
+        user-select: none;
+      }
+
+      .tile,
+      .block {
+        aspect-ratio: 1;
+        border-radius: 18px;
+      }
+
+      .tile {
+        position: relative;
+        display: grid;
+        place-items: center;
+        background: var(--tile);
+        border: 1px solid var(--tile-edge);
+        color: var(--ink);
+        font-size: clamp(1.12rem, 3vw, 1.5rem);
+        font-weight: 800;
+        box-shadow: inset 0 -4px 0 rgba(26, 42, 36, 0.03);
+      }
+
+      .tile.active {
+        background: var(--tile-active);
+        color: white;
+      }
+
+      .tile.found {
+        background: var(--tile-found);
+        color: white;
+      }
+
+      .tile.hinted:not(.found):not(.active) {
+        background: color-mix(in srgb, var(--tile) 72%, var(--tile-hint));
+      }
+
+      .tile.invalid {
+        background: var(--danger);
+        color: white;
+        animation: shake 260ms ease;
+      }
+
+      .tile.locked {
+        cursor: default;
+      }
+
+      .tile-index {
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        font-size: 0.68rem;
+        opacity: 0.74;
+      }
+
+      .block {
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent),
+          var(--block);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .legend {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        display: inline-block;
+      }
+
+      .slots {
+        display: grid;
+        gap: 10px;
+      }
+
+      .slot {
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(26, 42, 36, 0.08);
+      }
+
+      .slot-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        margin-bottom: 8px;
+      }
+
+      .slot-title {
+        font-size: 0.82rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .slot-value {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.24rem;
+        letter-spacing: 0.2em;
+      }
+
+      .slot.solved {
+        border-color: rgba(39, 76, 119, 0.2);
+        background: rgba(39, 76, 119, 0.1);
+      }
+
+      .message-box {
+        min-height: 76px;
+        padding: 14px 16px;
+        border-radius: 20px;
+        background: rgba(26, 42, 36, 0.05);
+      }
+
+      .message-box strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .helper {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .current-path {
+        font-size: 1.18rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+      }
+
+      .success-banner {
+        padding: 14px 16px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(31, 122, 92, 0.16), rgba(244, 201, 93, 0.24));
+        border: 1px solid rgba(31, 122, 92, 0.12);
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-3px); }
+        40% { transform: translateX(4px); }
+        60% { transform: translateX(-2px); }
+        80% { transform: translateX(2px); }
+      }
+
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          max-width: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="eyebrow">WordFinder Prototype</div>
+        <h1>Trace hidden words. Use every tile once.</h1>
+        <p class="subtitle">
+          Single-page prototype of the core Wend-style mechanic: drag or tap through adjacent
+          letters, avoid blocked cells, and partition the board into the right set of words.
+        </p>
+      </section>
+
+      <section class="layout">
+        <div class="panel game-panel">
+          <div class="topline">
+            <div class="pill" id="mode-pill">Daily puzzle</div>
+            <div class="pill" id="puzzle-pill">Puzzle 1</div>
+          </div>
+
+          <div class="board-shell">
+            <div class="board" id="board" aria-label="Word grid"></div>
+          </div>
+
+          <div class="legend">
+            <span><i class="dot" style="background: var(--tile-active)"></i> Current path</span>
+            <span><i class="dot" style="background: var(--tile-found)"></i> Solved word</span>
+            <span><i class="dot" style="background: var(--tile-hint)"></i> Hint</span>
+          </div>
+        </div>
+
+        <aside class="panel sidebar">
+          <div class="progress-metrics">
+            <div class="metric">
+              <span class="metric-label">Found</span>
+              <span class="metric-value" id="found-count">0 / 4</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Hints</span>
+              <span class="metric-value" id="hint-count">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Time</span>
+              <span class="metric-value" id="timer">00:00</span>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button class="primary" id="daily-btn">Daily board</button>
+            <button class="secondary" id="practice-btn">New practice board</button>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="submit-btn">Submit path</button>
+            <button class="ghost" id="undo-btn">Undo</button>
+            <button class="warning" id="hint-btn">Hint</button>
+            <button class="ghost" id="reset-btn">Reset</button>
+          </div>
+
+          <div class="message-box" id="message-box">
+            <strong>Current path</strong>
+            <div class="current-path" id="current-path">—</div>
+            <div class="helper" id="message-text">
+              Drag through neighboring letters or tap tiles to build a path, then submit it.
+            </div>
+          </div>
+
+          <div class="slots" id="slots"></div>
+
+          <div class="success-banner" id="success-banner" hidden>
+            <strong>Board solved.</strong>
+            <div id="success-text"></div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      const puzzleSeeds = [
+        {
+          id: "garden-1",
+          name: "Winding Start",
+          rows: 5,
+          cols: 5,
+          words: [
+            { text: "CAT", path: [0, 1, 2] },
+            { text: "WIND", path: [4, 9, 14, 19] },
+            { text: "RIVER", path: [24, 23, 22, 21, 20] },
+            { text: "PLANET", path: [5, 6, 7, 8, 13, 18] },
+          ],
+        },
+        {
+          id: "garden-2",
+          name: "Practice Loop",
+          rows: 5,
+          cols: 5,
+          words: [
+            { text: "SUN", path: [0, 1, 2] },
+            { text: "MIST", path: [4, 9, 14, 19] },
+            { text: "BRICK", path: [24, 23, 22, 21, 20] },
+            { text: "GARDEN", path: [5, 6, 7, 8, 13, 18] },
+          ],
+        },
+      ];
+
+      const state = {
+        mode: "daily",
+        practiceIndex: 1,
+        puzzle: null,
+        activePath: [],
+        foundWords: [],
+        hints: {},
+        invalidTiles: [],
+        message: "Drag through neighboring letters or tap tiles to build a path, then submit it.",
+        startTime: Date.now(),
+        timerHandle: null,
+        gestureExtended: false,
+        draggingPointerId: null,
+      };
+
+      const els = {
+        board: document.getElementById("board"),
+        slots: document.getElementById("slots"),
+        modePill: document.getElementById("mode-pill"),
+        puzzlePill: document.getElementById("puzzle-pill"),
+        foundCount: document.getElementById("found-count"),
+        hintCount: document.getElementById("hint-count"),
+        timer: document.getElementById("timer"),
+        currentPath: document.getElementById("current-path"),
+        messageText: document.getElementById("message-text"),
+        successBanner: document.getElementById("success-banner"),
+        successText: document.getElementById("success-text"),
+        dailyBtn: document.getElementById("daily-btn"),
+        practiceBtn: document.getElementById("practice-btn"),
+        submitBtn: document.getElementById("submit-btn"),
+        undoBtn: document.getElementById("undo-btn"),
+        hintBtn: document.getElementById("hint-btn"),
+        resetBtn: document.getElementById("reset-btn"),
+      };
+
+      function hydratePuzzles() {
+        return puzzleSeeds.map((seed) => {
+          const occupied = new Map();
+
+          seed.words.forEach((word, wordIndex) => {
+            if (word.path.length !== word.text.length) {
+              throw new Error(`Path length mismatch in ${seed.id}:${word.text}`);
+            }
+
+            word.path.forEach((cellIndex, letterIndex) => {
+              const next = word.path[letterIndex + 1];
+              if (next !== undefined) {
+                const [r1, c1] = toCoord(cellIndex, seed.cols);
+                const [r2, c2] = toCoord(next, seed.cols);
+                const delta = Math.abs(r1 - r2) + Math.abs(c1 - c2);
+                if (delta !== 1) {
+                  throw new Error(`Non-adjacent step in ${seed.id}:${word.text}`);
+                }
+              }
+
+              if (occupied.has(cellIndex)) {
+                throw new Error(`Overlapping tile in ${seed.id} at ${cellIndex}`);
+              }
+
+              occupied.set(cellIndex, {
+                letter: word.text[letterIndex],
+                wordIndex,
+                step: letterIndex + 1,
+              });
+            });
+          });
+
+          const totalCells = seed.rows * seed.cols;
+          const cells = Array.from({ length: totalCells }, (_, index) =>
+            occupied.has(index)
+              ? { type: "tile", ...occupied.get(index) }
+              : { type: "block" }
+          );
+
+          return {
+            ...seed,
+            cells,
+            playableCount: occupied.size,
+          };
+        });
+      }
+
+      function toCoord(index, cols) {
+        return [Math.floor(index / cols), index % cols];
+      }
+
+      const puzzles = hydratePuzzles();
+
+      function storageKeyFor(puzzle) {
+        return `wordfinder:${puzzle.id}`;
+      }
+
+      function saveState() {
+        const payload = {
+          foundWords: state.foundWords,
+          hints: state.hints,
+          startTime: state.startTime,
+        };
+        localStorage.setItem(storageKeyFor(state.puzzle), JSON.stringify(payload));
+      }
+
+      function loadStateForPuzzle(puzzle) {
+        try {
+          const raw = localStorage.getItem(storageKeyFor(puzzle));
+          if (!raw) return null;
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      }
+
+      function getDailyPuzzle() {
+        const day = Math.floor(Date.now() / 86400000);
+        return puzzles[day % puzzles.length];
+      }
+
+      function startPuzzle(puzzle, mode) {
+        state.mode = mode;
+        state.puzzle = puzzle;
+        state.activePath = [];
+        state.invalidTiles = [];
+        state.gestureExtended = false;
+        state.draggingPointerId = null;
+        state.message = "Trace a word path. Every playable tile must end up in exactly one answer.";
+        const saved = loadStateForPuzzle(puzzle);
+        state.foundWords = saved?.foundWords || [];
+        state.hints = saved?.hints || {};
+        state.startTime = saved?.startTime || Date.now();
+        ensureTimer();
+        render();
+      }
+
+      function ensureTimer() {
+        if (state.timerHandle) {
+          clearInterval(state.timerHandle);
+        }
+        updateTimer();
+        state.timerHandle = setInterval(updateTimer, 1000);
+      }
+
+      function updateTimer() {
+        const elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+        const minutes = String(Math.floor(elapsedSeconds / 60)).padStart(2, "0");
+        const seconds = String(elapsedSeconds % 60).padStart(2, "0");
+        els.timer.textContent = `${minutes}:${seconds}`;
+      }
+
+      function activeWordPath() {
+        return state.activePath.map((index) => state.puzzle.cells[index].letter).join("");
+      }
+
+      function isSolvedWord(wordIndex) {
+        return state.foundWords.includes(wordIndex);
+      }
+
+      function isLockedTile(index) {
+        const cell = state.puzzle.cells[index];
+        return cell.type === "tile" && isSolvedWord(cell.wordIndex);
+      }
+
+      function isAdjacent(a, b) {
+        const [r1, c1] = toCoord(a, state.puzzle.cols);
+        const [r2, c2] = toCoord(b, state.puzzle.cols);
+        return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
+      }
+
+      function setMessage(text) {
+        state.message = text;
+        renderMessage();
+      }
+
+      function renderMessage() {
+        els.currentPath.textContent = activeWordPath() || "—";
+        els.messageText.textContent = state.message;
+      }
+
+      function revealHint() {
+        const nextWordIndex = state.puzzle.words.findIndex((_, index) => !isSolvedWord(index));
+        if (nextWordIndex === -1) return;
+
+        const revealed = state.hints[nextWordIndex] || 0;
+        state.hints[nextWordIndex] = Math.min(
+          state.puzzle.words[nextWordIndex].text.length,
+          revealed + 1
+        );
+        saveState();
+        setMessage(
+          `Hint revealed for ${
+            state.puzzle.words[nextWordIndex].text.length
+          }-letter word. Follow the glowing tile.`
+        );
+        render();
+      }
+
+      function resetProgress() {
+        state.activePath = [];
+        state.foundWords = [];
+        state.hints = {};
+        state.invalidTiles = [];
+        state.startTime = Date.now();
+        saveState();
+        setMessage("Board reset. Start from any open tile.");
+        render();
+      }
+
+      function undoPath() {
+        if (state.activePath.length > 0) {
+          state.activePath.pop();
+          setMessage("Last step removed.");
+          render();
+        }
+      }
+
+      function clearInvalidTiles() {
+        if (state.invalidTiles.length === 0) return;
+        state.invalidTiles = [];
+        render();
+      }
+
+      function submitPath() {
+        if (state.activePath.length === 0) {
+          setMessage("Start a path before submitting.");
+          return;
+        }
+
+        const matchedWordIndex = state.puzzle.words.findIndex((word, index) => {
+          if (isSolvedWord(index)) return false;
+          if (word.path.length !== state.activePath.length) return false;
+          return word.path.every((cellIndex, pathIndex) => cellIndex === state.activePath[pathIndex]);
+        });
+
+        if (matchedWordIndex === -1) {
+          state.invalidTiles = [...state.activePath];
+          state.activePath = [];
+          setMessage("Not one of the hidden answer paths. Try a different partition.");
+          render();
+          window.setTimeout(clearInvalidTiles, 420);
+          return;
+        }
+
+        state.foundWords = [...state.foundWords, matchedWordIndex].sort((a, b) => a - b);
+        state.activePath = [];
+        saveState();
+
+        if (state.foundWords.length === state.puzzle.words.length) {
+          setMessage("Solved. Every playable tile is accounted for.");
+        } else {
+          const remaining = state.puzzle.words.length - state.foundWords.length;
+          setMessage(`Correct. ${remaining} word${remaining === 1 ? "" : "s"} left.`);
+        }
+
+        render();
+      }
+
+      function extendPath(index) {
+        const cell = state.puzzle.cells[index];
+        if (!cell || cell.type !== "tile" || isLockedTile(index)) return;
+
+        const last = state.activePath[state.activePath.length - 1];
+        const previous = state.activePath[state.activePath.length - 2];
+
+        if (last === index) return;
+
+        if (previous === index) {
+          state.activePath.pop();
+          state.gestureExtended = true;
+          renderMessage();
+          renderBoard();
+          return;
+        }
+
+        if (state.activePath.includes(index)) return;
+
+        if (last !== undefined && !isAdjacent(last, index)) return;
+
+        state.activePath.push(index);
+        if (last !== undefined) {
+          state.gestureExtended = true;
+        }
+        renderMessage();
+        renderBoard();
+      }
+
+      function beginPath(index, pointerId = null) {
+        clearInvalidTiles();
+        if (state.activePath.length === 0) {
+          state.activePath = [index];
+        } else {
+          extendPath(index);
+        }
+        state.draggingPointerId = pointerId;
+        state.gestureExtended = false;
+        setMessage("Build a path through neighboring tiles, then release or submit.");
+        render();
+      }
+
+      function handlePointerDown(index, event) {
+        const cell = state.puzzle.cells[index];
+        if (!cell || cell.type !== "tile" || isLockedTile(index)) return;
+        beginPath(index, event.pointerId);
+      }
+
+      function handlePointerEnter(index, event) {
+        if (state.draggingPointerId !== event.pointerId) return;
+        extendPath(index);
+      }
+
+      function handlePointerUp(event) {
+        if (state.draggingPointerId !== event.pointerId) return;
+        if (state.gestureExtended && state.activePath.length > 0) {
+          submitPath();
+        }
+        state.draggingPointerId = null;
+        state.gestureExtended = false;
+      }
+
+      function handleTileClick(index) {
+        const cell = state.puzzle.cells[index];
+        if (!cell || cell.type !== "tile" || isLockedTile(index)) return;
+
+        if (state.activePath.length === 0) {
+          state.activePath = [index];
+          setMessage("Tap adjacent tiles to build a path, then submit.");
+        } else {
+          extendPath(index);
+        }
+        render();
+      }
+
+      function renderBoard() {
+        els.board.style.gridTemplateColumns = `repeat(${state.puzzle.cols}, minmax(0, 1fr))`;
+        els.board.innerHTML = "";
+
+        state.puzzle.cells.forEach((cell, index) => {
+          if (cell.type === "block") {
+            const block = document.createElement("div");
+            block.className = "block";
+            els.board.appendChild(block);
+            return;
+          }
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "tile";
+          button.textContent = cell.letter;
+          button.setAttribute("aria-label", `Letter ${cell.letter}`);
+
+          if (state.activePath.includes(index)) button.classList.add("active");
+          if (isSolvedWord(cell.wordIndex)) button.classList.add("found", "locked");
+          if (state.invalidTiles.includes(index)) button.classList.add("invalid");
+          if ((state.hints[cell.wordIndex] || 0) >= cell.step) button.classList.add("hinted");
+
+          const hintBadge = document.createElement("span");
+          hintBadge.className = "tile-index";
+          if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
+            hintBadge.textContent = cell.step;
+          }
+          button.appendChild(hintBadge);
+
+          button.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
+          button.addEventListener("pointerenter", (event) => handlePointerEnter(index, event));
+          button.addEventListener("pointerup", handlePointerUp);
+          button.addEventListener("click", () => handleTileClick(index));
+
+          els.board.appendChild(button);
+        });
+      }
+
+      function hintedDisplay(word, wordIndex) {
+        const count = state.hints[wordIndex] || 0;
+        return word.text
+          .split("")
+          .map((letter, index) => (index < count ? letter : "•"))
+          .join(" ");
+      }
+
+      function renderSlots() {
+        els.slots.innerHTML = "";
+
+        state.puzzle.words.forEach((word, index) => {
+          const solved = isSolvedWord(index);
+          const slot = document.createElement("div");
+          slot.className = `slot${solved ? " solved" : ""}`;
+
+          const header = document.createElement("div");
+          header.className = "slot-header";
+
+          const label = document.createElement("span");
+          label.className = "slot-title";
+          label.textContent = `${word.text.length} letters`;
+
+          const stateText = document.createElement("span");
+          stateText.className = "slot-title";
+          stateText.textContent = solved ? "Solved" : "Hidden";
+
+          header.append(label, stateText);
+
+          const value = document.createElement("div");
+          value.className = "slot-value";
+          value.textContent = solved ? word.text.split("").join(" ") : hintedDisplay(word, index);
+
+          slot.append(header, value);
+          els.slots.appendChild(slot);
+        });
+      }
+
+      function renderSummary() {
+        els.modePill.textContent = state.mode === "daily" ? "Daily puzzle" : "Practice puzzle";
+        els.puzzlePill.textContent = state.puzzle.name;
+        els.foundCount.textContent = `${state.foundWords.length} / ${state.puzzle.words.length}`;
+        els.hintCount.textContent = String(
+          Object.values(state.hints).reduce((sum, value) => sum + value, 0)
+        );
+
+        const solved = state.foundWords.length === state.puzzle.words.length;
+        els.successBanner.hidden = !solved;
+        if (solved) {
+          els.successText.textContent = `Solved in ${els.timer.textContent} with ${els.hintCount.textContent} hint(s).`;
+        }
+      }
+
+      function render() {
+        renderBoard();
+        renderSlots();
+        renderSummary();
+        renderMessage();
+      }
+
+      function nextPracticePuzzle() {
+        state.practiceIndex = (state.practiceIndex + 1) % puzzles.length;
+        startPuzzle(puzzles[state.practiceIndex], "practice");
+      }
+
+      els.dailyBtn.addEventListener("click", () => startPuzzle(getDailyPuzzle(), "daily"));
+      els.practiceBtn.addEventListener("click", nextPracticePuzzle);
+      els.submitBtn.addEventListener("click", submitPath);
+      els.undoBtn.addEventListener("click", undoPath);
+      els.hintBtn.addEventListener("click", revealHint);
+      els.resetBtn.addEventListener("click", resetProgress);
+      window.addEventListener("pointerup", handlePointerUp);
+
+      startPuzzle(getDailyPuzzle(), "daily");
+    </script>
+  </body>
+</html>
