@@ -1,6 +1,6 @@
 # WordFinder Build Log
 
-Current prototype version: `v00.00.04`
+Current prototype version: `v00.00.05`
 
 ## Summary
 
@@ -119,12 +119,21 @@ and follow-up iterations.
   content in its own centered span.
 - Revalidated generated boards across multiple sizes before republishing GitHub Pages.
 
+### `v00.00.05` harder irregular board generation
+
+- Replaced the row-band playable-area generator with an irregular self-avoiding path generator.
+- This makes blocked-cell silhouettes less artificial and makes the underlying answer path less
+  obvious at a glance.
+- Kept deterministic seeded generation so daily and practice boards still reproduce cleanly for a
+  given size and seed.
+- Revalidated representative board sizes locally before republishing GitHub Pages.
+
 ## Current State
 
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
-- Current version: `v00.00.04`
-- Latest recorded commit at the time of this log: pending next push for the `v00.00.04` fix
+- Current version: `v00.00.05`
+- Latest recorded commit at the time of this log: pending next push for the `v00.00.05` fix
 
 ## Notes
 

@@ -438,7 +438,7 @@
       <section class="hero">
         <div class="hero-meta">
           <div class="eyebrow">WordFinder Prototype</div>
-          <div class="version-chip" id="version-chip">v00.00.04</div>
+          <div class="version-chip" id="version-chip">v00.00.05</div>
         </div>
         <h1>Trace hidden words. Use every tile once.</h1>
         <p class="subtitle">
@@ -519,7 +519,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.04";
+      const APP_VERSION = "v00.00.05";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -576,54 +576,121 @@
         return min + Math.floor(rng() * (max - min + 1));
       }
 
-      function buildPlayableLayout(rows, cols, seedLabel) {
-        const rng = makeRng(hashText(`${seedLabel}:layout`));
-        const minWidth = Math.max(3, Math.min(cols - 1, Math.floor(cols * 0.55)));
-        const maxWidth = Math.max(minWidth, cols - 2);
-        const segments = [];
-        const path = [];
+      function neighborIndexes(index, rows, cols) {
+        const [row, col] = toCoord(index, cols);
+        const neighbors = [];
+        if (row > 0) neighbors.push(index - cols);
+        if (row < rows - 1) neighbors.push(index + cols);
+        if (col > 0) neighbors.push(index - 1);
+        if (col < cols - 1) neighbors.push(index + 1);
+        return neighbors;
+      }
 
-        for (let row = 0; row < rows; row += 1) {
-          const previous = segments[row - 1];
-          let width =
-            row === 0
-              ? randInt(rng, minWidth, maxWidth)
-              : clamp(previous.width + randInt(rng, -2, 2), minWidth, maxWidth);
+      function directionBetween(from, to, cols) {
+        const [fromRow, fromCol] = toCoord(from, cols);
+        const [toRow, toCol] = toCoord(to, cols);
+        return [toRow - fromRow, toCol - fromCol];
+      }
 
-          if (row % 3 === 1) {
-            width = Math.max(minWidth, width - randInt(rng, 1, Math.min(3, width - minWidth + 1)));
-          }
+      function reachableCount(start, visited, rows, cols) {
+        const seen = new Set([start]);
+        const queue = [start];
 
-          const validStartMin = previous
-            ? Math.max(0, previous.exitCol - width + 1)
-            : 0;
-          const validStartMax = previous
-            ? Math.min(cols - width, previous.exitCol)
-            : cols - width;
-
-          const start = randInt(rng, validStartMin, validStartMax);
-          const end = start + width - 1;
-          const exitCol = row % 2 === 0 ? end : start;
-
-          segments.push({ row, start, end, width, exitCol });
-
-          if (row % 2 === 0) {
-            for (let col = start; col <= end; col += 1) {
-              path.push(row * cols + col);
-            }
-          } else {
-            for (let col = end; col >= start; col -= 1) {
-              path.push(row * cols + col);
-            }
+        while (queue.length > 0) {
+          const current = queue.pop();
+          for (const next of neighborIndexes(current, rows, cols)) {
+            if (seen.has(next)) continue;
+            if (visited.has(next) && next !== start) continue;
+            seen.add(next);
+            queue.push(next);
           }
         }
 
-        const openCells = new Set(path);
+        return seen.size;
+      }
+
+      function buildPlayableLayout(rows, cols, seedLabel) {
+        const rng = makeRng(hashText(`${seedLabel}:layout`));
+        const density = clamp(0.82 - cols * 0.012, 0.5, 0.78);
+        let targetLength = Math.max(10, Math.floor(rows * cols * density));
+        while (targetLength > 8 && targetLength % 2 === 1) {
+          targetLength -= 1;
+        }
+
+        const startCandidates = Array.from({ length: rows * cols }, (_, index) => index)
+          .sort(() => rng() - 0.5);
+
+        for (let attempt = 0; attempt < 30; attempt += 1) {
+          const visited = new Set();
+          const path = [];
+          const start = startCandidates[attempt % startCandidates.length];
+
+          function dfs(current) {
+            path.push(current);
+            visited.add(current);
+
+            if (path.length === targetLength) {
+              return true;
+            }
+
+            const previous = path[path.length - 2];
+            const previousDirection = previous === undefined
+              ? null
+              : directionBetween(previous, current, cols);
+
+            const candidates = neighborIndexes(current, rows, cols)
+              .filter((next) => !visited.has(next))
+              .map((next) => {
+                const nextDirection = directionBetween(current, next, cols);
+                const turnBonus = previousDirection &&
+                  (previousDirection[0] !== nextDirection[0] || previousDirection[1] !== nextDirection[1])
+                    ? 2.5
+                    : 0;
+                const onward = neighborIndexes(next, rows, cols)
+                  .filter((candidate) => !visited.has(candidate) && candidate !== current)
+                  .length;
+
+                return {
+                  next,
+                  score: onward - turnBonus + rng() * 0.75,
+                };
+              })
+              .sort((a, b) => a.score - b.score);
+
+            for (const candidate of candidates) {
+              visited.add(candidate.next);
+              const reachable = reachableCount(candidate.next, visited, rows, cols);
+              visited.delete(candidate.next);
+
+              const remaining = targetLength - path.length;
+              if (reachable < remaining) continue;
+
+              if (dfs(candidate.next)) {
+                return true;
+              }
+            }
+
+            visited.delete(current);
+            path.pop();
+            return false;
+          }
+
+          if (dfs(start)) {
+            const openCells = new Set(path);
+            const cells = Array.from({ length: rows * cols }, (_, index) =>
+              openCells.has(index) ? { type: "tile" } : { type: "block" }
+            );
+
+            return { path: [...path], cells };
+          }
+        }
+
+        const fallbackPath = Array.from({ length: targetLength }, (_, index) => index);
+        const openCells = new Set(fallbackPath);
         const cells = Array.from({ length: rows * cols }, (_, index) =>
           openCells.has(index) ? { type: "tile" } : { type: "block" }
         );
-
-        return { path, cells };
+        return { path: fallbackPath, cells };
       }
 
       function makeRng(seed) {
