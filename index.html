@@ -560,22 +560,22 @@
               <option value="hue">Different hues</option>
               <option value="saturation">Different saturation</option>
               <option value="value">Different values</option>
-              <option value="palette-1">Palette 1</option>
-              <option value="palette-2">Palette 2</option>
-              <option value="palette-3">Palette 3</option>
-              <option value="palette-4">Palette 4</option>
-              <option value="palette-5">Palette 5</option>
-              <option value="palette-6">Palette 6</option>
-              <option value="palette-7">Palette 7</option>
-              <option value="palette-8">Palette 8</option>
-              <option value="palette-9">Palette 9</option>
-              <option value="palette-10">Palette 10</option>
-              <option value="palette-11">Palette 11</option>
-              <option value="palette-12">Palette 12</option>
-              <option value="palette-13">Palette 13</option>
-              <option value="palette-14">Palette 14</option>
-              <option value="palette-15">Palette 15</option>
-              <option value="palette-16">Palette 16</option>
+              <option value="palette-citrus-grove">Citrus Grove</option>
+              <option value="palette-seaside-glass">Seaside Glass</option>
+              <option value="palette-desert-bloom">Desert Bloom</option>
+              <option value="palette-berry-market">Berry Market</option>
+              <option value="palette-forest-canopy">Forest Canopy</option>
+              <option value="palette-sunset-drive">Sunset Drive</option>
+              <option value="palette-vintage-poster">Vintage Poster</option>
+              <option value="palette-candy-shop">Candy Shop</option>
+              <option value="palette-library-ink">Library Ink</option>
+              <option value="palette-tropical-punch">Tropical Punch</option>
+              <option value="palette-harvest-table">Harvest Table</option>
+              <option value="palette-aurora-pop">Aurora Pop</option>
+              <option value="palette-espresso-mint">Espresso Mint</option>
+              <option value="palette-boardwalk">Boardwalk</option>
+              <option value="palette-studio-paint">Studio Paint</option>
+              <option value="palette-midnight-neon">Midnight Neon</option>
             </select>
           </div>
 
@@ -616,7 +616,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.25";
+      const APP_VERSION = "v00.00.26";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -633,22 +633,166 @@
       };
 
       const COLOR_PALETTES = {
-        "palette-1": [8, 28, 48, 68, 88, 108, 128, 148],
-        "palette-2": [18, 48, 78, 108, 138, 168, 198, 228],
-        "palette-3": [198, 214, 230, 246, 262, 278, 294, 310],
-        "palette-4": [330, 350, 10, 30, 50, 70, 90, 110],
-        "palette-5": [12, 42, 72, 102, 132, 162, 192, 222],
-        "palette-6": [190, 200, 210, 220, 230, 240, 250, 260],
-        "palette-7": [340, 20, 60, 100, 140, 180, 220, 260],
-        "palette-8": [24, 54, 84, 144, 174, 204, 264, 324],
-        "palette-9": [356, 16, 36, 56, 176, 196, 216, 236],
-        "palette-10": [44, 64, 84, 104, 124, 144, 164, 184],
-        "palette-11": [205, 245, 285, 325, 5, 45, 85, 125],
-        "palette-12": [15, 75, 135, 195, 255, 315, 35, 95],
-        "palette-13": [355, 25, 55, 145, 175, 205, 235, 325],
-        "palette-14": [30, 90, 150, 210, 270, 330, 50, 110],
-        "palette-15": [12, 92, 172, 252, 332, 52, 132, 212],
-        "palette-16": [348, 28, 68, 108, 188, 228, 268, 308]
+        "palette-citrus-grove": [
+          { fill: "hsl(18 78% 44%)", accent: "hsl(18 90% 76%)" },
+          { fill: "hsl(42 88% 48%)", accent: "hsl(42 96% 78%)" },
+          { fill: "hsl(82 64% 36%)", accent: "hsl(82 78% 72%)" },
+          { fill: "hsl(128 58% 34%)", accent: "hsl(128 72% 70%)" },
+          { fill: "hsl(154 56% 40%)", accent: "hsl(154 72% 74%)" },
+          { fill: "hsl(196 72% 40%)", accent: "hsl(196 88% 76%)" },
+          { fill: "hsl(226 66% 44%)", accent: "hsl(226 82% 78%)" },
+          { fill: "hsl(332 62% 46%)", accent: "hsl(332 80% 80%)" }
+        ],
+        "palette-seaside-glass": [
+          { fill: "hsl(188 58% 36%)", accent: "hsl(188 70% 72%)" },
+          { fill: "hsl(196 80% 44%)", accent: "hsl(196 92% 80%)" },
+          { fill: "hsl(206 62% 34%)", accent: "hsl(206 80% 72%)" },
+          { fill: "hsl(170 44% 42%)", accent: "hsl(170 62% 76%)" },
+          { fill: "hsl(156 56% 36%)", accent: "hsl(156 72% 72%)" },
+          { fill: "hsl(216 58% 44%)", accent: "hsl(216 76% 78%)" },
+          { fill: "hsl(28 72% 48%)", accent: "hsl(28 88% 78%)" },
+          { fill: "hsl(344 54% 48%)", accent: "hsl(344 72% 80%)" }
+        ],
+        "palette-desert-bloom": [
+          { fill: "hsl(16 68% 42%)", accent: "hsl(16 84% 76%)" },
+          { fill: "hsl(28 78% 50%)", accent: "hsl(28 94% 82%)" },
+          { fill: "hsl(40 72% 48%)", accent: "hsl(40 88% 80%)" },
+          { fill: "hsl(336 58% 46%)", accent: "hsl(336 78% 80%)" },
+          { fill: "hsl(318 48% 42%)", accent: "hsl(318 68% 78%)" },
+          { fill: "hsl(144 44% 36%)", accent: "hsl(144 62% 72%)" },
+          { fill: "hsl(196 56% 40%)", accent: "hsl(196 74% 76%)" },
+          { fill: "hsl(224 52% 42%)", accent: "hsl(224 70% 78%)" }
+        ],
+        "palette-berry-market": [
+          { fill: "hsl(346 70% 44%)", accent: "hsl(346 86% 78%)" },
+          { fill: "hsl(332 58% 40%)", accent: "hsl(332 76% 74%)" },
+          { fill: "hsl(312 48% 42%)", accent: "hsl(312 68% 76%)" },
+          { fill: "hsl(276 54% 44%)", accent: "hsl(276 74% 78%)" },
+          { fill: "hsl(246 50% 40%)", accent: "hsl(246 70% 74%)" },
+          { fill: "hsl(206 62% 42%)", accent: "hsl(206 82% 78%)" },
+          { fill: "hsl(168 50% 38%)", accent: "hsl(168 68% 74%)" },
+          { fill: "hsl(28 74% 48%)", accent: "hsl(28 90% 80%)" }
+        ],
+        "palette-forest-canopy": [
+          { fill: "hsl(118 38% 30%)", accent: "hsl(118 56% 66%)" },
+          { fill: "hsl(130 48% 34%)", accent: "hsl(130 68% 72%)" },
+          { fill: "hsl(146 40% 30%)", accent: "hsl(146 58% 68%)" },
+          { fill: "hsl(164 42% 34%)", accent: "hsl(164 60% 70%)" },
+          { fill: "hsl(186 56% 38%)", accent: "hsl(186 74% 74%)" },
+          { fill: "hsl(34 62% 38%)", accent: "hsl(34 80% 72%)" },
+          { fill: "hsl(20 56% 34%)", accent: "hsl(20 72% 70%)" },
+          { fill: "hsl(220 44% 40%)", accent: "hsl(220 64% 76%)" }
+        ],
+        "palette-sunset-drive": [
+          { fill: "hsl(10 78% 46%)", accent: "hsl(10 94% 80%)" },
+          { fill: "hsl(24 86% 52%)", accent: "hsl(24 100% 84%)" },
+          { fill: "hsl(40 92% 50%)", accent: "hsl(40 100% 82%)" },
+          { fill: "hsl(326 70% 48%)", accent: "hsl(326 88% 82%)" },
+          { fill: "hsl(294 54% 44%)", accent: "hsl(294 72% 78%)" },
+          { fill: "hsl(256 52% 42%)", accent: "hsl(256 70% 76%)" },
+          { fill: "hsl(210 68% 44%)", accent: "hsl(210 86% 80%)" },
+          { fill: "hsl(188 56% 40%)", accent: "hsl(188 74% 76%)" }
+        ],
+        "palette-vintage-poster": [
+          { fill: "hsl(12 64% 40%)", accent: "hsl(12 80% 74%)" },
+          { fill: "hsl(34 72% 44%)", accent: "hsl(34 88% 76%)" },
+          { fill: "hsl(52 58% 42%)", accent: "hsl(52 74% 74%)" },
+          { fill: "hsl(88 38% 36%)", accent: "hsl(88 56% 70%)" },
+          { fill: "hsl(196 52% 36%)", accent: "hsl(196 70% 72%)" },
+          { fill: "hsl(216 48% 34%)", accent: "hsl(216 66% 70%)" },
+          { fill: "hsl(338 46% 38%)", accent: "hsl(338 64% 74%)" },
+          { fill: "hsl(278 38% 42%)", accent: "hsl(278 56% 76%)" }
+        ],
+        "palette-candy-shop": [
+          { fill: "hsl(338 82% 54%)", accent: "hsl(338 100% 84%)" },
+          { fill: "hsl(318 70% 52%)", accent: "hsl(318 88% 84%)" },
+          { fill: "hsl(284 74% 56%)", accent: "hsl(284 92% 84%)" },
+          { fill: "hsl(248 70% 54%)", accent: "hsl(248 88% 84%)" },
+          { fill: "hsl(198 72% 50%)", accent: "hsl(198 90% 84%)" },
+          { fill: "hsl(172 58% 46%)", accent: "hsl(172 76% 80%)" },
+          { fill: "hsl(42 86% 54%)", accent: "hsl(42 100% 84%)" },
+          { fill: "hsl(16 84% 54%)", accent: "hsl(16 100% 84%)" }
+        ],
+        "palette-library-ink": [
+          { fill: "hsl(218 42% 28%)", accent: "hsl(218 60% 64%)" },
+          { fill: "hsl(236 34% 30%)", accent: "hsl(236 52% 66%)" },
+          { fill: "hsl(268 28% 34%)", accent: "hsl(268 46% 68%)" },
+          { fill: "hsl(330 34% 38%)", accent: "hsl(330 52% 74%)" },
+          { fill: "hsl(14 50% 40%)", accent: "hsl(14 68% 74%)" },
+          { fill: "hsl(32 56% 42%)", accent: "hsl(32 74% 76%)" },
+          { fill: "hsl(166 34% 34%)", accent: "hsl(166 52% 70%)" },
+          { fill: "hsl(194 44% 36%)", accent: "hsl(194 62% 72%)" }
+        ],
+        "palette-tropical-punch": [
+          { fill: "hsl(354 80% 48%)", accent: "hsl(354 96% 82%)" },
+          { fill: "hsl(22 88% 52%)", accent: "hsl(22 100% 84%)" },
+          { fill: "hsl(48 92% 50%)", accent: "hsl(48 100% 82%)" },
+          { fill: "hsl(152 62% 42%)", accent: "hsl(152 80% 78%)" },
+          { fill: "hsl(176 66% 40%)", accent: "hsl(176 84% 76%)" },
+          { fill: "hsl(198 74% 44%)", accent: "hsl(198 92% 80%)" },
+          { fill: "hsl(226 66% 44%)", accent: "hsl(226 84% 80%)" },
+          { fill: "hsl(290 64% 48%)", accent: "hsl(290 82% 82%)" }
+        ],
+        "palette-harvest-table": [
+          { fill: "hsl(22 68% 40%)", accent: "hsl(22 84% 74%)" },
+          { fill: "hsl(34 74% 44%)", accent: "hsl(34 90% 78%)" },
+          { fill: "hsl(48 72% 42%)", accent: "hsl(48 88% 76%)" },
+          { fill: "hsl(76 46% 34%)", accent: "hsl(76 64% 68%)" },
+          { fill: "hsl(96 42% 32%)", accent: "hsl(96 60% 66%)" },
+          { fill: "hsl(182 42% 36%)", accent: "hsl(182 60% 72%)" },
+          { fill: "hsl(214 48% 38%)", accent: "hsl(214 66% 74%)" },
+          { fill: "hsl(348 44% 42%)", accent: "hsl(348 62% 76%)" }
+        ],
+        "palette-aurora-pop": [
+          { fill: "hsl(164 70% 40%)", accent: "hsl(164 88% 78%)" },
+          { fill: "hsl(184 78% 44%)", accent: "hsl(184 96% 80%)" },
+          { fill: "hsl(208 74% 46%)", accent: "hsl(208 92% 82%)" },
+          { fill: "hsl(238 68% 48%)", accent: "hsl(238 86% 82%)" },
+          { fill: "hsl(274 64% 50%)", accent: "hsl(274 82% 84%)" },
+          { fill: "hsl(308 62% 50%)", accent: "hsl(308 80% 84%)" },
+          { fill: "hsl(340 72% 50%)", accent: "hsl(340 90% 84%)" },
+          { fill: "hsl(34 88% 52%)", accent: "hsl(34 100% 84%)" }
+        ],
+        "palette-espresso-mint": [
+          { fill: "hsl(18 36% 24%)", accent: "hsl(18 52% 58%)" },
+          { fill: "hsl(28 44% 30%)", accent: "hsl(28 60% 64%)" },
+          { fill: "hsl(160 52% 34%)", accent: "hsl(160 70% 70%)" },
+          { fill: "hsl(176 50% 36%)", accent: "hsl(176 68% 72%)" },
+          { fill: "hsl(196 44% 38%)", accent: "hsl(196 62% 74%)" },
+          { fill: "hsl(220 34% 34%)", accent: "hsl(220 52% 70%)" },
+          { fill: "hsl(336 42% 38%)", accent: "hsl(336 60% 74%)" },
+          { fill: "hsl(44 64% 46%)", accent: "hsl(44 82% 80%)" }
+        ],
+        "palette-boardwalk": [
+          { fill: "hsl(192 68% 44%)", accent: "hsl(192 86% 80%)" },
+          { fill: "hsl(206 62% 40%)", accent: "hsl(206 80% 76%)" },
+          { fill: "hsl(224 56% 42%)", accent: "hsl(224 74% 78%)" },
+          { fill: "hsl(10 68% 48%)", accent: "hsl(10 84% 80%)" },
+          { fill: "hsl(24 78% 50%)", accent: "hsl(24 94% 82%)" },
+          { fill: "hsl(40 84% 48%)", accent: "hsl(40 100% 80%)" },
+          { fill: "hsl(154 50% 40%)", accent: "hsl(154 68% 76%)" },
+          { fill: "hsl(326 54% 48%)", accent: "hsl(326 72% 82%)" }
+        ],
+        "palette-studio-paint": [
+          { fill: "hsl(350 70% 48%)", accent: "hsl(350 88% 82%)" },
+          { fill: "hsl(18 78% 50%)", accent: "hsl(18 94% 84%)" },
+          { fill: "hsl(48 82% 50%)", accent: "hsl(48 100% 82%)" },
+          { fill: "hsl(132 54% 40%)", accent: "hsl(132 72% 76%)" },
+          { fill: "hsl(196 72% 44%)", accent: "hsl(196 90% 80%)" },
+          { fill: "hsl(226 66% 46%)", accent: "hsl(226 84% 82%)" },
+          { fill: "hsl(270 60% 48%)", accent: "hsl(270 78% 82%)" },
+          { fill: "hsl(316 62% 50%)", accent: "hsl(316 80% 84%)" }
+        ],
+        "palette-midnight-neon": [
+          { fill: "hsl(218 54% 26%)", accent: "hsl(218 72% 66%)" },
+          { fill: "hsl(188 84% 42%)", accent: "hsl(188 100% 78%)" },
+          { fill: "hsl(162 72% 40%)", accent: "hsl(162 90% 76%)" },
+          { fill: "hsl(124 68% 42%)", accent: "hsl(124 86% 78%)" },
+          { fill: "hsl(42 92% 50%)", accent: "hsl(42 100% 82%)" },
+          { fill: "hsl(16 88% 52%)", accent: "hsl(16 100% 84%)" },
+          { fill: "hsl(332 76% 50%)", accent: "hsl(332 94% 84%)" },
+          { fill: "hsl(286 72% 52%)", accent: "hsl(286 90% 84%)" }
+        ]
       };
 
       document.title = `WordFinder ${APP_VERSION}`;
@@ -1392,6 +1536,12 @@
         return wordIndex % 2 === 0 ? 34 : 58;
       }
 
+      function paletteColorSet(mode, wordIndex) {
+        const palette = COLOR_PALETTES[mode];
+        if (!palette) return null;
+        return palette[wordIndex % palette.length];
+      }
+
       function currentColorMode() {
         return state.selectedColorMode;
       }
@@ -1407,9 +1557,9 @@
         if (mode === "value") {
           return `hsl(204 62% ${wordIndex % 2 === 0 ? 34 : 58}%)`;
         }
-        const palette = COLOR_PALETTES[mode];
-        if (palette) {
-          return `hsl(${palette[wordIndex % palette.length]} 62% 46%)`;
+        const paletteSet = paletteColorSet(mode, wordIndex);
+        if (paletteSet) {
+          return paletteSet.fill;
         }
         return `hsl(204 ${solvedWordSaturation(wordIndex)}% ${solvedWordLightness(wordIndex)}%)`;
       }
@@ -1425,9 +1575,9 @@
         if (mode === "value") {
           return `hsl(204 78% ${wordIndex % 2 === 0 ? 72 : 28}%)`;
         }
-        const palette = COLOR_PALETTES[mode];
-        if (palette) {
-          return `hsl(${palette[wordIndex % palette.length]} 78% 72%)`;
+        const paletteSet = paletteColorSet(mode, wordIndex);
+        if (paletteSet) {
+          return paletteSet.accent;
         }
         const accentLightness = wordIndex % 2 === 0 ? 72 : 28;
         return `hsl(204 ${Math.min(96, solvedWordSaturation(wordIndex) + 16)}% ${accentLightness}%)`;
