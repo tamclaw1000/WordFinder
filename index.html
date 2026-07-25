@@ -655,8 +655,9 @@
       </section>
     </main>
 
+    <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.28";
+      const APP_VERSION = "v00.00.29";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1313,6 +1314,7 @@
       }
 
       function chooseTargetLength(rows, cols, wordSettings) {
+        const lengths = allowedWordLengths(wordSettings);
         const density = clamp(0.82 - cols * 0.012, 0.5, 0.78);
         let target = Math.max(10, Math.floor(rows * cols * density));
         if (wordSettings?.mode === "fixed-length") {
@@ -1321,7 +1323,13 @@
           if (target < fixedLength) target = fixedLength;
           return target;
         }
+        while (target >= 4 && !canPartitionLengths(target, lengths)) {
+          target -= 1;
+        }
         while (target > 8 && target % 2 === 1) target -= 1;
+        while (target >= 4 && !canPartitionLengths(target, lengths)) {
+          target -= 1;
+        }
         return target;
       }
 
@@ -1349,48 +1357,6 @@
         }
 
         return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`, wordSettings);
-      }
-
-      function generateFallbackWord(length, rng, wordSettings) {
-        const consonants = "BCDFGHJKLMNPRSTVWZ";
-        const vowels = "AEIOUY";
-        const letters = [];
-        for (let index = 0; index < length; index += 1) {
-          const source = index % 2 === 0 ? consonants : vowels;
-          letters.push(source[Math.floor(rng() * source.length)]);
-        }
-
-        switch (wordSettings.mode) {
-          case "contains-z":
-            letters[Math.floor(rng() * length)] = "Z";
-            break;
-          case "contains-x":
-            letters[Math.floor(rng() * length)] = "X";
-            break;
-          case "contains-q":
-            letters[Math.floor(rng() * length)] = "Q";
-            break;
-          case "contains-ing":
-            if (length >= 3) {
-              letters[length - 3] = "I";
-              letters[length - 2] = "N";
-              letters[length - 1] = "G";
-            }
-            break;
-          case "contains-mm": {
-            const start = Math.max(0, Math.floor(length / 2) - 1);
-            letters[start] = "M";
-            letters[Math.min(length - 1, start + 1)] = "M";
-            break;
-          }
-          case "starts-with":
-            letters[0] = wordSettings.startLetter;
-            break;
-          default:
-            break;
-        }
-
-        return letters.join("");
       }
 
       function sanitizeStartLetter(value) {
@@ -1431,15 +1397,70 @@
         }
       }
 
+      function uniqueWords(words) {
+        return [...new Set(words)];
+      }
+
+      function baseWordsForLength(length) {
+        return uniqueWords([
+          ...(WORD_BANK[String(length)] || []),
+          ...(GENERAL_WORD_BANK[String(length)] || [])
+        ]);
+      }
+
+      function getWordCandidatesForLength(length, wordSettings) {
+        if (wordSettings.mode === "contains-z" ||
+            wordSettings.mode === "contains-x" ||
+            wordSettings.mode === "contains-q" ||
+            wordSettings.mode === "contains-ing" ||
+            wordSettings.mode === "contains-mm") {
+          return uniqueWords([
+            ...((SPECIAL_WORD_BANK[wordSettings.mode] || {})[String(length)] || []),
+            ...baseWordsForLength(length).filter((word) => matchesWordMode(word, wordSettings))
+          ]);
+        }
+
+        if (wordSettings.mode === "starts-with") {
+          return baseWordsForLength(length).filter((word) => matchesWordMode(word, wordSettings));
+        }
+
+        return baseWordsForLength(length).filter((word) => matchesWordMode(word, wordSettings));
+      }
+
+      function allowedWordLengths(wordSettings) {
+        const lengths = [];
+        for (let length = 4; length <= 12; length += 1) {
+          if (getWordCandidatesForLength(length, wordSettings).length > 0) {
+            lengths.push(length);
+          }
+        }
+        return lengths;
+      }
+
+      function canPartitionLengths(remaining, lengths, memo = new Map()) {
+        if (remaining === 0) return true;
+        if (remaining < 0) return false;
+        const key = `${remaining}:${lengths.join(",")}`;
+        if (memo.has(key)) return memo.get(key);
+
+        for (const length of lengths) {
+          if (length > remaining) continue;
+          if (canPartitionLengths(remaining - length, lengths, memo)) {
+            memo.set(key, true);
+            return true;
+          }
+        }
+
+        memo.set(key, false);
+        return false;
+      }
+
       function pickWord(length, slotIndex, seedLabel, wordSettings) {
-        const bank = (WORD_BANK[String(length)] || [])
-          .filter((word) => word.length === length)
-          .filter((word) => matchesWordMode(word, wordSettings));
+        const bank = getWordCandidatesForLength(length, wordSettings);
         const seed = hashText(`${seedLabel}:word:${length}:${slotIndex}`);
-        const rng = makeRng(seed);
 
         if (bank.length === 0) {
-          return generateFallbackWord(length, rng, wordSettings);
+          return baseWordsForLength(length)[seed % baseWordsForLength(length).length] || "WORD";
         }
 
         return bank[(seed + slotIndex * 11) % bank.length];
@@ -1454,6 +1475,8 @@
       }
 
       function chooseWordLengths(totalCells, cols, seedLabel, wordSettings) {
+        const allowedLengths = allowedWordLengths(wordSettings);
+
         if (wordSettings.mode === "fixed-length") {
           return Array.from(
             { length: Math.floor(totalCells / wordSettings.fixedLength) },
@@ -1461,8 +1484,11 @@
           );
         }
 
-        const minLen = 4;
-        const maxLen = Math.min(12, Math.max(7, Math.floor(cols * 0.7)));
+        const minLen = allowedLengths[0] || 4;
+        const maxLen = Math.min(
+          allowedLengths[allowedLengths.length - 1] || 12,
+          Math.max(7, Math.floor(cols * 0.7))
+        );
         const rng = makeRng(hashText(`${seedLabel}:lengths`));
         const lengths = [];
         const counts = new Map();
@@ -1472,10 +1498,11 @@
         while (remaining > 0) {
           const candidates = [];
 
-          for (let length = minLen; length <= Math.min(maxLen, remaining); length += 1) {
+          for (const length of allowedLengths) {
+            if (length > Math.min(maxLen, remaining)) continue;
             const leftover = remaining - length;
             if (leftover !== 0 && leftover < minLen) continue;
-            if (!canPartition(leftover, minLen, maxLen)) continue;
+            if (!canPartitionLengths(leftover, allowedLengths)) continue;
 
             const usage = counts.get(length) || 0;
             const band =
