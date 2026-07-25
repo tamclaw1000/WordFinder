@@ -337,6 +337,25 @@
         color: rgba(255, 255, 255, 0.96);
       }
 
+      .path-end {
+        position: absolute;
+        right: 7px;
+        bottom: 5px;
+        font-size: var(--tile-arrow-size, 10px);
+        font-weight: 900;
+        line-height: 1;
+        opacity: 0.95;
+        pointer-events: none;
+      }
+
+      .path-end.solved {
+        color: rgba(255, 255, 255, 0.94);
+      }
+
+      .path-end.active {
+        color: rgba(255, 255, 255, 0.96);
+      }
+
       .block {
         background:
           linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent),
@@ -556,7 +575,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.12";
+      const APP_VERSION = "v00.00.19";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1257,23 +1276,31 @@
       function buildArrowMap() {
         const solved = new Map();
         const active = new Map();
+        const solvedEnds = new Set();
+        const activeEnds = new Set();
 
         state.puzzle.words.forEach((word, wordIndex) => {
           if (!isSolvedWord(wordIndex)) return;
           for (let index = 0; index < word.path.length - 1; index += 1) {
             const from = word.path[index];
             const to = word.path[index + 1];
-            solved.set(from, arrowForStep(from, to, state.puzzle.cols));
+            const arrow = arrowForStep(from, to, state.puzzle.cols);
+            solved.set(from, index === 0 ? `○${arrow}` : arrow);
           }
+          solvedEnds.add(word.path[word.path.length - 1]);
         });
 
         for (let index = 0; index < state.activePath.length - 1; index += 1) {
           const from = state.activePath[index];
           const to = state.activePath[index + 1];
-          active.set(from, arrowForStep(from, to, state.puzzle.cols));
+          const arrow = arrowForStep(from, to, state.puzzle.cols);
+          active.set(from, index === 0 ? `○${arrow}` : arrow);
+        }
+        if (state.activePath.length > 0) {
+          activeEnds.add(state.activePath[state.activePath.length - 1]);
         }
 
-        return { solved, active };
+        return { solved, active, solvedEnds, activeEnds };
       }
 
       function activeWordPath() {
@@ -1534,6 +1561,15 @@
             arrowEl.className = `path-arrow ${activeArrow ? "active" : "solved"}`;
             arrowEl.textContent = arrow;
             button.appendChild(arrowEl);
+          }
+
+          const isActiveEnd = arrowMap.activeEnds.has(index);
+          const isSolvedEnd = arrowMap.solvedEnds.has(index);
+          if (isActiveEnd || isSolvedEnd) {
+            const endEl = document.createElement("span");
+            endEl.className = `path-end ${isActiveEnd ? "active" : "solved"}`;
+            endEl.textContent = "●";
+            button.appendChild(endEl);
           }
 
           button.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
