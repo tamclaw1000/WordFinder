@@ -1,6 +1,6 @@
 # WordFinder Build Log
 
-Current prototype version: `v00.00.01`
+Current prototype version: `v00.00.03`
 
 ## Summary
 
@@ -99,16 +99,26 @@ and follow-up iterations.
 - Added generated daily/practice board logic for larger sizes.
 - Tightened board spacing for denser large-grid rendering.
 
+### `v00.00.03` large-grid pathing and legibility fix
+
+- Reworked generated-board construction so each board is partitioned into seeded multi-word
+  paths across the full grid instead of trivial row-only strips.
+- Added path-length planning that favors bends across row transitions, producing visibly winding
+  answer paths on generated boards.
+- Added board-dependent tile sizing so letters, hint indices, spacing, and corner radii scale
+  down for dense boards including `20x20`.
+- Republished the GitHub Pages build with the corrected generator and UI scaling.
+
 ## Current State
 
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
-- Current version: `v00.00.01`
-- Latest recorded commit at the time of this log: `a5daaa4`
+- Current version: `v00.00.03`
+- Latest recorded commit at the time of this log: pending next push for the `v00.00.03` fix
 
 ## Notes
 
-- The current large-grid implementation is generation-based and optimized for prototype speed,
-  not final puzzle quality.
+- The current large-grid implementation is still generation-based and optimized for prototype speed,
+  but now preserves a real path-partition puzzle structure across generated boards.
 - The GitHub Pages deployment is the public-facing version.
 - The OpenAI Sites deployment remains useful for internal workspace-hosted iteration.
