@@ -101,6 +101,7 @@
 
       .topline,
       .controls,
+      .options-row,
       .progress-metrics,
       .actions {
         display: flex;
@@ -176,6 +177,39 @@
       .secondary {
         background: rgba(39, 76, 119, 0.12);
         color: #274c77;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+        min-width: 150px;
+      }
+
+      .field label {
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      select {
+        appearance: none;
+        border: 1px solid rgba(26, 42, 36, 0.12);
+        border-radius: 16px;
+        padding: 12px 38px 12px 14px;
+        background:
+          linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 20px) calc(50% - 2px) / 8px 8px no-repeat,
+          linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 14px) calc(50% - 2px) / 8px 8px no-repeat,
+          rgba(255, 255, 255, 0.72);
+        color: var(--ink);
+        font: inherit;
+        font-weight: 700;
+      }
+
+      select:focus-visible {
+        outline: 3px solid rgba(31, 122, 92, 0.3);
+        outline-offset: 2px;
       }
 
       .ghost {
@@ -419,6 +453,16 @@
             <button class="secondary" id="practice-btn">New practice board</button>
           </div>
 
+          <div class="options-row">
+            <div class="field">
+              <label for="grid-size">Grid size</label>
+              <select id="grid-size">
+                <option value="4x4">4 x 4</option>
+                <option value="5x5" selected>5 x 5</option>
+              </select>
+            </div>
+          </div>
+
           <div class="actions">
             <button class="primary" id="submit-btn">Submit path</button>
             <button class="ghost" id="undo-btn">Undo</button>
@@ -446,6 +490,30 @@
 
     <script>
       const puzzleSeeds = [
+        {
+          id: "pocket-1",
+          name: "Pocket Grid",
+          rows: 4,
+          cols: 4,
+          words: [
+            { text: "MOON", path: [0, 1, 2, 3] },
+            { text: "TIDE", path: [4, 5, 6, 7] },
+            { text: "STAR", path: [8, 9, 10, 11] },
+            { text: "WAVE", path: [12, 13, 14, 15] },
+          ],
+        },
+        {
+          id: "pocket-2",
+          name: "Mini Circuit",
+          rows: 4,
+          cols: 4,
+          words: [
+            { text: "LAMP", path: [0, 1, 2, 3] },
+            { text: "FERN", path: [4, 5, 6, 7] },
+            { text: "COVE", path: [8, 9, 10, 11] },
+            { text: "BARK", path: [12, 13, 14, 15] },
+          ],
+        },
         {
           id: "garden-1",
           name: "Winding Start",
@@ -475,6 +543,7 @@
       const state = {
         mode: "daily",
         practiceIndex: 1,
+        selectedGridSize: "5x5",
         puzzle: null,
         activePath: [],
         foundWords: [],
@@ -505,6 +574,7 @@
         undoBtn: document.getElementById("undo-btn"),
         hintBtn: document.getElementById("hint-btn"),
         resetBtn: document.getElementById("reset-btn"),
+        gridSize: document.getElementById("grid-size"),
       };
 
       function hydratePuzzles() {
@@ -560,6 +630,12 @@
 
       const puzzles = hydratePuzzles();
 
+      function puzzlesForSelectedSize() {
+        return puzzles.filter(
+          (puzzle) => `${puzzle.rows}x${puzzle.cols}` === state.selectedGridSize
+        );
+      }
+
       function storageKeyFor(puzzle) {
         return `wordfinder:${puzzle.id}`;
       }
@@ -585,7 +661,8 @@
 
       function getDailyPuzzle() {
         const day = Math.floor(Date.now() / 86400000);
-        return puzzles[day % puzzles.length];
+        const filtered = puzzlesForSelectedSize();
+        return filtered[day % filtered.length];
       }
 
       function startPuzzle(puzzle, mode) {
@@ -880,11 +957,12 @@
 
       function renderSummary() {
         els.modePill.textContent = state.mode === "daily" ? "Daily puzzle" : "Practice puzzle";
-        els.puzzlePill.textContent = state.puzzle.name;
+        els.puzzlePill.textContent = `${state.puzzle.name} • ${state.puzzle.rows}x${state.puzzle.cols}`;
         els.foundCount.textContent = `${state.foundWords.length} / ${state.puzzle.words.length}`;
         els.hintCount.textContent = String(
           Object.values(state.hints).reduce((sum, value) => sum + value, 0)
         );
+        els.gridSize.value = state.selectedGridSize;
 
         const solved = state.foundWords.length === state.puzzle.words.length;
         els.successBanner.hidden = !solved;
@@ -901,8 +979,15 @@
       }
 
       function nextPracticePuzzle() {
-        state.practiceIndex = (state.practiceIndex + 1) % puzzles.length;
-        startPuzzle(puzzles[state.practiceIndex], "practice");
+        const filtered = puzzlesForSelectedSize();
+        state.practiceIndex = (state.practiceIndex + 1) % filtered.length;
+        startPuzzle(filtered[state.practiceIndex], "practice");
+      }
+
+      function applyGridSize(value) {
+        state.selectedGridSize = value;
+        state.practiceIndex = 0;
+        startPuzzle(getDailyPuzzle(), state.mode);
       }
 
       els.dailyBtn.addEventListener("click", () => startPuzzle(getDailyPuzzle(), "daily"));
@@ -911,6 +996,7 @@
       els.undoBtn.addEventListener("click", undoPath);
       els.hintBtn.addEventListener("click", revealHint);
       els.resetBtn.addEventListener("click", resetProgress);
+      els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
       window.addEventListener("pointerup", handlePointerUp);
 
       startPuzzle(getDailyPuzzle(), "daily");
