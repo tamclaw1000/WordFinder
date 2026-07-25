@@ -265,12 +265,24 @@
         position: relative;
         display: grid;
         place-items: center;
+        appearance: none;
+        -webkit-appearance: none;
+        padding: 0;
         background: var(--tile);
         border: 1px solid var(--tile-edge);
         color: var(--ink);
         font-size: var(--tile-font-size, clamp(1.12rem, 3vw, 1.5rem));
         font-weight: 800;
+        line-height: 1;
+        text-align: center;
         box-shadow: inset 0 -4px 0 rgba(26, 42, 36, 0.03);
+      }
+
+      .tile-letter {
+        display: block;
+        line-height: 1;
+        transform: translateY(-1px);
+        pointer-events: none;
       }
 
       .tile.active {
@@ -426,7 +438,7 @@
       <section class="hero">
         <div class="hero-meta">
           <div class="eyebrow">WordFinder Prototype</div>
-          <div class="version-chip" id="version-chip">v00.00.03</div>
+          <div class="version-chip" id="version-chip">v00.00.04</div>
         </div>
         <h1>Trace hidden words. Use every tile once.</h1>
         <p class="subtitle">
@@ -507,7 +519,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.03";
+      const APP_VERSION = "v00.00.04";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -556,20 +568,62 @@
         return [Math.floor(index / cols), index % cols];
       }
 
-      function fullBoardPath(rows, cols) {
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function randInt(rng, min, max) {
+        return min + Math.floor(rng() * (max - min + 1));
+      }
+
+      function buildPlayableLayout(rows, cols, seedLabel) {
+        const rng = makeRng(hashText(`${seedLabel}:layout`));
+        const minWidth = Math.max(3, Math.min(cols - 1, Math.floor(cols * 0.55)));
+        const maxWidth = Math.max(minWidth, cols - 2);
+        const segments = [];
         const path = [];
+
         for (let row = 0; row < rows; row += 1) {
+          const previous = segments[row - 1];
+          let width =
+            row === 0
+              ? randInt(rng, minWidth, maxWidth)
+              : clamp(previous.width + randInt(rng, -2, 2), minWidth, maxWidth);
+
+          if (row % 3 === 1) {
+            width = Math.max(minWidth, width - randInt(rng, 1, Math.min(3, width - minWidth + 1)));
+          }
+
+          const validStartMin = previous
+            ? Math.max(0, previous.exitCol - width + 1)
+            : 0;
+          const validStartMax = previous
+            ? Math.min(cols - width, previous.exitCol)
+            : cols - width;
+
+          const start = randInt(rng, validStartMin, validStartMax);
+          const end = start + width - 1;
+          const exitCol = row % 2 === 0 ? end : start;
+
+          segments.push({ row, start, end, width, exitCol });
+
           if (row % 2 === 0) {
-            for (let col = 0; col < cols; col += 1) {
+            for (let col = start; col <= end; col += 1) {
               path.push(row * cols + col);
             }
           } else {
-            for (let col = cols - 1; col >= 0; col -= 1) {
+            for (let col = end; col >= start; col -= 1) {
               path.push(row * cols + col);
             }
           }
         }
-        return path;
+
+        const openCells = new Set(path);
+        const cells = Array.from({ length: rows * cols }, (_, index) =>
+          openCells.has(index) ? { type: "tile" } : { type: "block" }
+        );
+
+        return { path, cells };
       }
 
       function makeRng(seed) {
@@ -632,104 +686,68 @@
         return minWords <= maxWords;
       }
 
-      function countTurningSegments(lengths, cols) {
-        let offset = 0;
-        let turningSegments = 0;
-
-        lengths.forEach((length) => {
-          const rowOffset = offset % cols;
-          if (rowOffset + length > cols) {
-            turningSegments += 1;
-          }
-          offset += length;
-        });
-
-        return turningSegments;
-      }
-
       function chooseWordLengths(totalCells, cols, seedLabel) {
         const minLen = 4;
-        const maxLen = Math.min(20, Math.max(7, cols + 3));
-
-        for (let attempt = 0; attempt < 24; attempt += 1) {
-          const rng = makeRng(hashText(`${seedLabel}:lengths:${attempt}`));
-          const failed = new Set();
-
-          function search(position) {
-            const remaining = totalCells - position;
-            if (remaining === 0) return [];
-
-            const failureKey = `${position}`;
-            if (failed.has(failureKey)) return null;
-
-            const rowOffset = position % cols;
-            const remainingToTurn = cols - rowOffset;
-            const candidates = [];
-
-            for (let length = minLen; length <= Math.min(maxLen, remaining); length += 1) {
-              const leftover = remaining - length;
-              if (leftover !== 0 && leftover < minLen) continue;
-              if (!canPartition(leftover, minLen, maxLen)) continue;
-
-              const crossesTurn = rowOffset + length > cols;
-              const score =
-                (crossesTurn ? 100 : 0) -
-                (length === cols ? 25 : 0) -
-                Math.abs(length - (cols + 1)) +
-                rng() * 6;
-
-              candidates.push({ length, score });
-            }
-
-            candidates.sort((a, b) => b.score - a.score);
-
-            for (const candidate of candidates) {
-              const rest = search(position + candidate.length);
-              if (rest) {
-                return [candidate.length, ...rest];
-              }
-            }
-
-            failed.add(failureKey);
-            return null;
-          }
-
-          const plan = search(0);
-          if (!plan) continue;
-
-          const minimumTurns =
-            cols <= 4 ? 1 :
-            cols <= 6 ? 2 :
-            Math.max(3, Math.floor(plan.length * 0.6));
-
-          if (countTurningSegments(plan, cols) >= minimumTurns) {
-            return plan;
-          }
-        }
-
-        const fallback = [];
+        const maxLen = Math.min(12, Math.max(7, Math.floor(cols * 0.7)));
+        const rng = makeRng(hashText(`${seedLabel}:lengths`));
+        const lengths = [];
+        const counts = new Map();
         let remaining = totalCells;
+        let previousLength = null;
+
         while (remaining > 0) {
-          const length = Math.min(Math.max(4, cols + 1), remaining);
-          const leftover = remaining - length;
-          if (leftover !== 0 && leftover < 4) {
-            fallback[fallback.length - 1] += leftover;
-            break;
+          const candidates = [];
+
+          for (let length = minLen; length <= Math.min(maxLen, remaining); length += 1) {
+            const leftover = remaining - length;
+            if (leftover !== 0 && leftover < minLen) continue;
+            if (!canPartition(leftover, minLen, maxLen)) continue;
+
+            const usage = counts.get(length) || 0;
+            const band =
+              lengths.length % 3 === 0 ? minLen + randInt(rng, 0, 2) :
+              lengths.length % 3 === 1 ? Math.floor((minLen + maxLen) / 2) + randInt(rng, -1, 1) :
+              maxLen - randInt(rng, 0, 2);
+            const score =
+              -Math.abs(length - band) * 3
+              - usage * 5
+              - (length === previousLength ? 4 : 0)
+              + rng() * 2;
+
+            candidates.push({ length, score });
           }
-          fallback.push(length);
-          remaining -= length;
+
+          candidates.sort((a, b) => b.score - a.score);
+          const choice = candidates[0];
+          lengths.push(choice.length);
+          counts.set(choice.length, (counts.get(choice.length) || 0) + 1);
+          previousLength = choice.length;
+          remaining -= choice.length;
         }
-        return fallback;
+
+        if (new Set(lengths).size < Math.min(4, lengths.length)) {
+          for (let index = 0; index < lengths.length - 1; index += 2) {
+            if (lengths[index] < maxLen && lengths[index + 1] > minLen) {
+              lengths[index] += 1;
+              lengths[index + 1] -= 1;
+            } else if (lengths[index] > minLen && lengths[index + 1] < maxLen) {
+              lengths[index] -= 1;
+              lengths[index + 1] += 1;
+            }
+          }
+        }
+
+        return lengths;
       }
 
       function materializePuzzle(rows, cols, seedLabel, variantIndex) {
         const variantSeed = `${seedLabel}:${variantIndex}`;
-        const lengths = chooseWordLengths(rows * cols, cols, variantSeed);
-        const boardPath = fullBoardPath(rows, cols);
+        const layout = buildPlayableLayout(rows, cols, variantSeed);
+        const lengths = chooseWordLengths(layout.path.length, cols, variantSeed);
         let pathOffset = 0;
         const words = lengths.map((length, wordIndex) => {
           const text = pickWord(length, wordIndex, variantSeed);
-          const path = boardPath.slice(pathOffset, pathOffset + length);
+          const path = layout.path.slice(pathOffset, pathOffset + length);
           pathOffset += length;
           return {
             text,
@@ -737,21 +755,17 @@
           };
         });
 
-        const occupied = new Map();
+        const cells = layout.cells.map((cell) => ({ ...cell }));
         words.forEach((word, wordIndex) => {
           word.path.forEach((cellIndex, letterIndex) => {
-            occupied.set(cellIndex, {
+            cells[cellIndex] = {
+              ...cells[cellIndex],
               letter: word.text[letterIndex],
               wordIndex,
               step: letterIndex + 1,
-            });
+            };
           });
         });
-
-        const cells = Array.from({ length: rows * cols }, (_, index) => ({
-          type: "tile",
-          ...occupied.get(index),
-        }));
 
         return {
           id: `${rows}x${cols}-${seedLabel}-${variantIndex}`,
@@ -760,7 +774,7 @@
           cols,
           words,
           cells,
-          playableCount: rows * cols,
+          playableCount: layout.path.length,
         };
       }
 
@@ -1045,8 +1059,12 @@
           const button = document.createElement("button");
           button.type = "button";
           button.className = "tile";
-          button.textContent = cell.letter;
           button.setAttribute("aria-label", `Letter ${cell.letter}`);
+
+          const letter = document.createElement("span");
+          letter.className = "tile-letter";
+          letter.textContent = cell.letter;
+          button.appendChild(letter);
 
           if (state.activePath.includes(index)) button.classList.add("active");
           if (isSolvedWord(cell.wordIndex)) button.classList.add("found", "locked");

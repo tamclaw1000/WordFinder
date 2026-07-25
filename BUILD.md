@@ -1,6 +1,6 @@
 # WordFinder Build Log
 
-Current prototype version: `v00.00.03`
+Current prototype version: `v00.00.04`
 
 ## Summary
 
@@ -109,12 +109,22 @@ and follow-up iterations.
   down for dense boards including `20x20`.
 - Republished the GitHub Pages build with the corrected generator and UI scaling.
 
+### `v00.00.04` blocked-cell layout and distribution fix
+
+- Replaced the full-open square generator with a shaped playable-area generator that inserts
+  real black blocked cells into every generated board.
+- Broadened word-length distribution so generated boards mix shorter and longer words instead of
+  clustering around one repeated length.
+- Centered tile letters explicitly by resetting button appearance/padding and rendering the letter
+  content in its own centered span.
+- Revalidated generated boards across multiple sizes before republishing GitHub Pages.
+
 ## Current State
 
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
-- Current version: `v00.00.03`
-- Latest recorded commit at the time of this log: pending next push for the `v00.00.03` fix
+- Current version: `v00.00.04`
+- Latest recorded commit at the time of this log: pending next push for the `v00.00.04` fix
 
 ## Notes
 
