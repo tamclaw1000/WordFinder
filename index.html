@@ -176,6 +176,78 @@
         min-width: 164px;
       }
 
+      .toggle-field {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(23, 35, 31, 0.08);
+      }
+
+      .toggle-copy {
+        display: grid;
+        gap: 3px;
+      }
+
+      .toggle-copy strong {
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .toggle-copy span {
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-flex;
+        width: 54px;
+        height: 32px;
+      }
+
+      .toggle-switch input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .toggle-slider {
+        width: 100%;
+        height: 100%;
+        border-radius: 999px;
+        background: rgba(23, 35, 31, 0.14);
+        box-shadow: inset 0 0 0 1px rgba(23, 35, 31, 0.08);
+        transition: background 140ms ease;
+      }
+
+      .toggle-slider::after {
+        content: "";
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(23, 35, 31, 0.18);
+        transition: transform 140ms ease;
+      }
+
+      .toggle-switch input:checked + .toggle-slider {
+        background: rgba(29, 122, 98, 0.74);
+      }
+
+      .toggle-switch input:checked + .toggle-slider::after {
+        transform: translateX(22px);
+      }
+
       .field label {
         font-size: 0.74rem;
         letter-spacing: 0.08em;
@@ -464,7 +536,7 @@
       <section class="hero">
         <div class="hero-meta">
           <div class="eyebrow">WordFinder Requirements Build</div>
-          <div class="version-chip" id="version-chip">v00.00.12</div>
+          <div class="version-chip" id="version-chip">v00.00.13</div>
           <a class="link-chip" href="./v1.html">Open v1.html</a>
         </div>
         <h1>Generated from the spec, not the old page.</h1>
@@ -520,6 +592,17 @@
             <select id="grid-size"></select>
           </div>
 
+          <div class="toggle-field">
+            <div class="toggle-copy">
+              <strong>Sphere wrap</strong>
+              <span>Connect opposite edges while generating and tracing paths.</span>
+            </div>
+            <label class="toggle-switch" for="wrap-sphere">
+              <input id="wrap-sphere" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
           <div class="actions">
             <button class="primary" id="submit-btn">Submit path</button>
             <button class="ghost" id="undo-btn">Undo</button>
@@ -556,7 +639,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.12";
+      const APP_VERSION = "v00.00.13";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -578,6 +661,7 @@
       const state = {
         mode: "daily",
         selectedGridSize: "5x5",
+        wrapSphere: false,
         practiceIndex: 0,
         puzzle: null,
         foundWords: [],
@@ -604,6 +688,7 @@
         successBanner: document.getElementById("success-banner"),
         successText: document.getElementById("success-text"),
         gridSize: document.getElementById("grid-size"),
+        wrapSphere: document.getElementById("wrap-sphere"),
         dailyBtn: document.getElementById("daily-btn"),
         practiceBtn: document.getElementById("practice-btn"),
         submitBtn: document.getElementById("submit-btn"),
@@ -641,29 +726,41 @@
         return min + Math.floor(rng() * (max - min + 1));
       }
 
-      function neighborIndexes(index, rows, cols) {
+      function neighborIndexes(index, rows, cols, wrap = false) {
         const [row, col] = toCoord(index, cols);
         const neighbors = [];
-        if (row > 0) neighbors.push(index - cols);
-        if (row < rows - 1) neighbors.push(index + cols);
-        if (col > 0) neighbors.push(index - 1);
-        if (col < cols - 1) neighbors.push(index + 1);
-        return neighbors;
+        if (wrap || row > 0) neighbors.push(((row - 1 + rows) % rows) * cols + col);
+        if (wrap || row < rows - 1) neighbors.push(((row + 1) % rows) * cols + col);
+        if (wrap || col > 0) neighbors.push(row * cols + ((col - 1 + cols) % cols));
+        if (wrap || col < cols - 1) neighbors.push(row * cols + ((col + 1) % cols));
+        return [...new Set(neighbors)];
       }
 
-      function directionBetween(from, to, cols) {
+      function wrapDelta(fromValue, toValue, size, wrap) {
+        let delta = toValue - fromValue;
+        if (!wrap) return delta;
+        if (delta > 1) delta -= size;
+        if (delta < -1) delta += size;
+        return delta;
+      }
+
+      function directionBetween(from, to, cols, rows = null, wrap = false) {
         const [fromRow, fromCol] = toCoord(from, cols);
         const [toRow, toCol] = toCoord(to, cols);
-        return [toRow - fromRow, toCol - fromCol];
+        const totalRows = rows ?? cols;
+        return [
+          wrapDelta(fromRow, toRow, totalRows, wrap),
+          wrapDelta(fromCol, toCol, cols, wrap)
+        ];
       }
 
-      function reachableCount(start, visited, rows, cols) {
+      function reachableCount(start, visited, rows, cols, wrap = false) {
         const seen = new Set([start]);
         const queue = [start];
 
         while (queue.length > 0) {
           const current = queue.pop();
-          for (const next of neighborIndexes(current, rows, cols)) {
+          for (const next of neighborIndexes(current, rows, cols, wrap)) {
             if (seen.has(next)) continue;
             if (visited.has(next) && next !== start) continue;
             seen.add(next);
@@ -674,13 +771,13 @@
         return seen.size;
       }
 
-      function reachableCountInSet(start, visited, allowedSet, rows, cols) {
+      function reachableCountInSet(start, visited, allowedSet, rows, cols, wrap = false) {
         const seen = new Set([start]);
         const queue = [start];
 
         while (queue.length > 0) {
           const current = queue.pop();
-          for (const next of neighborIndexes(current, rows, cols)) {
+          for (const next of neighborIndexes(current, rows, cols, wrap)) {
             if (!allowedSet.has(next) || seen.has(next)) continue;
             if (visited.has(next) && next !== start) continue;
             seen.add(next);
@@ -720,7 +817,7 @@
         return playable;
       }
 
-      function isPlayableConnected(playableSet, rows, cols) {
+      function isPlayableConnected(playableSet, rows, cols, wrap = false) {
         const [start] = playableSet;
         if (start === undefined) return false;
         const seen = new Set([start]);
@@ -728,7 +825,7 @@
 
         while (queue.length > 0) {
           const current = queue.pop();
-          for (const next of neighborIndexes(current, rows, cols)) {
+          for (const next of neighborIndexes(current, rows, cols, wrap)) {
             if (!playableSet.has(next) || seen.has(next)) continue;
             seen.add(next);
             queue.push(next);
@@ -896,13 +993,13 @@
         return blocked;
       }
 
-      function growPathOnAvailable(availableSet, rows, cols, targetLength, seedLabel) {
+      function growPathOnAvailable(availableSet, rows, cols, targetLength, seedLabel, wrap = false) {
         const rng = makeRng(hashText(`${seedLabel}:available-path`));
         const startCandidates = [...availableSet]
           .map((index) => ({
             index,
             noise: rng(),
-            blockedNeighbors: neighborIndexes(index, rows, cols).filter((neighbor) => !availableSet.has(neighbor)).length
+            blockedNeighbors: neighborIndexes(index, rows, cols, wrap).filter((neighbor) => !availableSet.has(neighbor)).length
           }))
           .sort((a, b) => b.blockedNeighbors - a.blockedNeighbors || a.noise - b.noise)
           .map((entry) => entry.index);
@@ -919,20 +1016,20 @@
             if (path.length === targetLength) return true;
 
             const previous = path[path.length - 2];
-            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols);
+            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols, rows, wrap);
 
-            const candidates = neighborIndexes(current, rows, cols)
+            const candidates = neighborIndexes(current, rows, cols, wrap)
               .filter((next) => availableSet.has(next) && !visited.has(next))
               .map((next) => {
-                const nextDirection = directionBetween(current, next, cols);
+                const nextDirection = directionBetween(current, next, cols, rows, wrap);
                 const turnBonus = previousDirection &&
                   (previousDirection[0] !== nextDirection[0] || previousDirection[1] !== nextDirection[1])
                   ? 2.2
                   : 0;
-                const onward = neighborIndexes(next, rows, cols)
+                const onward = neighborIndexes(next, rows, cols, wrap)
                   .filter((candidate) => availableSet.has(candidate) && !visited.has(candidate) && candidate !== current)
                   .length;
-                const wallHug = neighborIndexes(next, rows, cols)
+                const wallHug = neighborIndexes(next, rows, cols, wrap)
                   .filter((candidate) => !availableSet.has(candidate))
                   .length;
 
@@ -945,7 +1042,7 @@
 
             for (const candidate of candidates) {
               visited.add(candidate.next);
-              const reachable = reachableCountInSet(candidate.next, visited, availableSet, rows, cols);
+              const reachable = reachableCountInSet(candidate.next, visited, availableSet, rows, cols, wrap);
               visited.delete(candidate.next);
               const remaining = targetLength - path.length;
               if (reachable < remaining) continue;
@@ -963,7 +1060,7 @@
         return null;
       }
 
-      function buildFallbackLayout(rows, cols, seedLabel) {
+      function buildFallbackLayout(rows, cols, seedLabel, wrap = false) {
         const rng = makeRng(hashText(`${seedLabel}:fallback`));
         const targetLength = chooseTargetLength(rows, cols);
         const startCandidates = Array.from({ length: rows * cols }, (_, index) => index)
@@ -981,17 +1078,17 @@
             if (path.length === targetLength) return true;
 
             const previous = path[path.length - 2];
-            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols);
+            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols, rows, wrap);
 
-            const candidates = neighborIndexes(current, rows, cols)
+            const candidates = neighborIndexes(current, rows, cols, wrap)
               .filter((next) => !visited.has(next))
               .map((next) => {
-                const nextDirection = directionBetween(current, next, cols);
+                const nextDirection = directionBetween(current, next, cols, rows, wrap);
                 const turns = previousDirection &&
                   (previousDirection[0] !== nextDirection[0] || previousDirection[1] !== nextDirection[1])
                   ? 2.4
                   : 0;
-                const onward = neighborIndexes(next, rows, cols)
+                const onward = neighborIndexes(next, rows, cols, wrap)
                   .filter((candidate) => !visited.has(candidate) && candidate !== current)
                   .length;
                 const [row, col] = toCoord(next, cols);
@@ -1006,7 +1103,7 @@
 
             for (const candidate of candidates) {
               visited.add(candidate.next);
-              const reachable = reachableCount(candidate.next, visited, rows, cols);
+              const reachable = reachableCount(candidate.next, visited, rows, cols, wrap);
               visited.delete(candidate.next);
               const remaining = targetLength - path.length;
               if (reachable < remaining) continue;
@@ -1042,7 +1139,7 @@
         return target;
       }
 
-      function buildPlayableLayout(rows, cols, seedLabel) {
+      function buildPlayableLayout(rows, cols, seedLabel, wrap = false) {
         const targetLength = chooseTargetLength(rows, cols);
         for (let attempt = 0; attempt < 10; attempt += 1) {
           const blocked = generateBlockedMask(rows, cols, `${seedLabel}:mask:${attempt}`, targetLength);
@@ -1054,7 +1151,8 @@
             rows,
             cols,
             targetLength,
-            `${seedLabel}:path:${attempt}`
+            `${seedLabel}:path:${attempt}`,
+            wrap
           );
           if (!path) continue;
 
@@ -1065,7 +1163,7 @@
           };
         }
 
-        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`);
+        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`, wrap);
       }
 
       function generateFallbackWord(length, rng) {
@@ -1153,9 +1251,9 @@
         return lengths;
       }
 
-      function materializePuzzle(rows, cols, mode, variant) {
-        const seedLabel = `${mode}:${rows}x${cols}:${variant}`;
-        const layout = buildPlayableLayout(rows, cols, seedLabel);
+      function materializePuzzle(rows, cols, mode, variant, wrap = false) {
+        const seedLabel = `${mode}:${rows}x${cols}:${variant}:${wrap ? "sphere" : "flat"}`;
+        const layout = buildPlayableLayout(rows, cols, seedLabel, wrap);
         const lengths = chooseWordLengths(layout.path.length, cols, seedLabel);
         let offset = 0;
 
@@ -1180,10 +1278,11 @@
         });
 
         return {
-          id: `${rows}x${cols}-${mode}-${variant}`,
-          name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
+          id: `${rows}x${cols}-${mode}-${variant}-${wrap ? "sphere" : "flat"}`,
+          name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}${wrap ? " Sphere" : ""}`,
           rows,
           cols,
+          wrap,
           cells,
           words,
           playableCount: layout.path.length
@@ -1193,6 +1292,10 @@
       function currentGridSize() {
         const [rows, cols] = state.selectedGridSize.split("x").map(Number);
         return { rows, cols };
+      }
+
+      function currentWrapMode() {
+        return state.wrapSphere;
       }
 
       function getDailyVariant() {
@@ -1225,7 +1328,7 @@
 
       function getDailyPuzzle() {
         const { rows, cols } = currentGridSize();
-        return materializePuzzle(rows, cols, "daily", getDailyVariant());
+        return materializePuzzle(rows, cols, "daily", getDailyVariant(), currentWrapMode());
       }
 
       function isSolvedWord(wordIndex) {
@@ -1238,19 +1341,16 @@
       }
 
       function isAdjacent(a, b) {
-        const [r1, c1] = toCoord(a, state.puzzle.cols);
-        const [r2, c2] = toCoord(b, state.puzzle.cols);
-        return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
+        return neighborIndexes(a, state.puzzle.rows, state.puzzle.cols, state.puzzle.wrap).includes(b);
       }
 
-      function arrowForStep(from, to, cols) {
+      function arrowForStep(from, to, cols, rows, wrap = false) {
         if (to === undefined) return null;
-        const [r1, c1] = toCoord(from, cols);
-        const [r2, c2] = toCoord(to, cols);
-        if (r2 === r1 - 1) return "↑";
-        if (r2 === r1 + 1) return "↓";
-        if (c2 === c1 - 1) return "←";
-        if (c2 === c1 + 1) return "→";
+        const [dr, dc] = directionBetween(from, to, cols, rows, wrap);
+        if (dr === -1) return "↑";
+        if (dr === 1) return "↓";
+        if (dc === -1) return "←";
+        if (dc === 1) return "→";
         return null;
       }
 
@@ -1263,14 +1363,14 @@
           for (let index = 0; index < word.path.length - 1; index += 1) {
             const from = word.path[index];
             const to = word.path[index + 1];
-            solved.set(from, arrowForStep(from, to, state.puzzle.cols));
+            solved.set(from, arrowForStep(from, to, state.puzzle.cols, state.puzzle.rows, state.puzzle.wrap));
           }
         });
 
         for (let index = 0; index < state.activePath.length - 1; index += 1) {
           const from = state.activePath[index];
           const to = state.activePath[index + 1];
-          active.set(from, arrowForStep(from, to, state.puzzle.cols));
+          active.set(from, arrowForStep(from, to, state.puzzle.cols, state.puzzle.rows, state.puzzle.wrap));
         }
 
         return { solved, active };
@@ -1588,6 +1688,7 @@
           Object.values(state.hints).reduce((sum, value) => sum + value, 0)
         );
         els.gridSize.value = state.selectedGridSize;
+        els.wrapSphere.checked = state.wrapSphere;
 
         const solved = state.foundWords.length === state.puzzle.words.length;
         els.successBanner.hidden = !solved;
@@ -1606,7 +1707,7 @@
       function nextPracticePuzzle() {
         const { rows, cols } = currentGridSize();
         state.practiceIndex += 1;
-        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
+        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex, currentWrapMode()), "practice");
       }
 
       function applyGridSize(value) {
@@ -1614,7 +1715,18 @@
         state.practiceIndex = 0;
         if (state.mode === "practice") {
           const { rows, cols } = currentGridSize();
-          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
+          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex, currentWrapMode()), "practice");
+        } else {
+          startPuzzle(getDailyPuzzle(), "daily");
+        }
+      }
+
+      function applyWrapSphere(value) {
+        state.wrapSphere = value;
+        state.practiceIndex = 0;
+        if (state.mode === "practice") {
+          const { rows, cols } = currentGridSize();
+          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex, currentWrapMode()), "practice");
         } else {
           startPuzzle(getDailyPuzzle(), "daily");
         }
@@ -1638,6 +1750,7 @@
       els.hintBtn.addEventListener("click", revealHint);
       els.resetBtn.addEventListener("click", resetProgress);
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
+      els.wrapSphere.addEventListener("change", (event) => applyWrapSphere(event.target.checked));
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("resize", renderBoard);
 
