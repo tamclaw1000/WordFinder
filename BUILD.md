@@ -1,6 +1,6 @@
 # WordFinder Build Log
 
-Current prototype version: `v00.00.05`
+Current prototype version: `v00.00.10`
 
 ## Summary
 
@@ -135,12 +135,21 @@ and follow-up iterations.
   given size and seed.
 - Revalidated representative board sizes locally before republishing GitHub Pages.
 
+### `v00.00.10` requirements-driven rebuild
+
+- Archived the previous prototype implementation as `v1.html`.
+- Replaced `index.html` with a fresh single-page build derived from `REQUIREMENTS.md` rather than
+  incrementally patching the existing UI.
+- Reimplemented deterministic daily/practice generation, blocked cells, exact path validation,
+  local progress persistence, scalable grid rendering, and requirements-aligned messaging/layout.
+- Kept the implementation static-site friendly and rebuilt the deployment artifact from the new page.
+
 ## Current State
 
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
-- Current version: `v00.00.05`
-- Latest recorded commit at the time of this log: `2e9dbf2`
+- Current version: `v00.00.10`
+- Latest recorded commit at the time of this log: pending next push for the `v00.00.10` rebuild
 - Latest published tag: `v00.00.05`
 
 ## Notes

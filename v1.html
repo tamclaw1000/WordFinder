@@ -3,26 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WordFinder v00.00.10</title>
+    <title>WordFinder Prototype</title>
     <style>
       :root {
-        --bg: #f4eedf;
-        --bg-deep: #e3d5b8;
-        --panel: rgba(255, 251, 243, 0.92);
-        --ink: #17231f;
-        --muted: #65746e;
-        --accent: #1d7a62;
-        --accent-strong: #115342;
-        --accent-soft: rgba(29, 122, 98, 0.12);
-        --wall: #314840;
-        --wall-edge: rgba(255, 255, 255, 0.08);
-        --tile: #fffdfa;
-        --tile-edge: rgba(23, 35, 31, 0.1);
-        --tile-active: #1d7a62;
-        --tile-found: #284f7a;
-        --tile-hint: #f2c861;
-        --danger: #b34a39;
-        --shadow: 0 28px 70px rgba(43, 48, 37, 0.16);
+        --bg: #f2efe4;
+        --panel: rgba(255, 252, 245, 0.84);
+        --ink: #1a2a24;
+        --muted: #607066;
+        --accent: #1f7a5c;
+        --accent-2: #d96c3f;
+        --accent-3: #f4c95d;
+        --tile: #fffdf7;
+        --tile-edge: rgba(26, 42, 36, 0.12);
+        --tile-active: #1f7a5c;
+        --tile-found: #274c77;
+        --tile-hint: #f4c95d;
+        --block: #29443a;
+        --danger: #b3432f;
+        --shadow: 0 24px 60px rgba(32, 37, 31, 0.18);
       }
 
       * {
@@ -35,28 +33,21 @@
         font-family: "Avenir Next", "Trebuchet MS", sans-serif;
         color: var(--ink);
         background:
-          radial-gradient(circle at top left, rgba(242, 200, 97, 0.42), transparent 26%),
-          radial-gradient(circle at right 12%, rgba(29, 122, 98, 0.18), transparent 24%),
-          linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+          radial-gradient(circle at top left, rgba(244, 201, 93, 0.45), transparent 25%),
+          radial-gradient(circle at top right, rgba(31, 122, 92, 0.28), transparent 28%),
+          linear-gradient(180deg, #f7f2e5 0%, #ebe2ce 100%);
       }
 
       main {
-        width: min(1180px, calc(100% - 28px));
+        width: min(1120px, calc(100% - 32px));
         margin: 0 auto;
-        padding: 24px 0 40px;
+        padding: 28px 0 48px;
       }
 
       .hero {
         display: grid;
         gap: 10px;
-        margin-bottom: 18px;
-      }
-
-      .hero-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
+        margin-bottom: 22px;
       }
 
       .eyebrow {
@@ -64,61 +55,59 @@
         text-transform: uppercase;
         color: var(--accent);
         font-size: 0.78rem;
-        font-weight: 800;
+        font-weight: 700;
       }
 
-      .version-chip,
-      .link-chip,
-      .mode-pill {
-        display: inline-flex;
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        border-radius: 999px;
-        padding: 7px 12px;
-        font-size: 0.82rem;
-        font-weight: 800;
+        gap: 10px;
       }
 
       .version-chip {
-        background: rgba(23, 35, 31, 0.08);
-      }
-
-      .link-chip {
-        color: var(--accent-strong);
-        text-decoration: none;
-        background: rgba(255, 255, 255, 0.66);
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(26, 42, 36, 0.08);
+        color: var(--ink);
+        font-size: 0.8rem;
+        font-weight: 700;
       }
 
       h1 {
         margin: 0;
         font-family: Georgia, "Times New Roman", serif;
-        font-size: clamp(2.3rem, 6vw, 4.2rem);
-        line-height: 0.93;
+        font-size: clamp(2.4rem, 6vw, 4.4rem);
+        line-height: 0.94;
         max-width: 10ch;
       }
 
       .subtitle {
         margin: 0;
-        max-width: 68ch;
+        max-width: 60ch;
         color: var(--muted);
-        line-height: 1.55;
+        font-size: 1.02rem;
+        line-height: 1.5;
       }
 
       .layout {
         display: grid;
-        gap: 18px;
-        grid-template-columns: minmax(340px, 1.05fr) minmax(280px, 0.8fr);
+        gap: 20px;
+        grid-template-columns: minmax(320px, 560px) minmax(260px, 1fr);
         align-items: start;
       }
 
       .panel {
         background: var(--panel);
-        border: 1px solid rgba(255, 255, 255, 0.58);
-        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.55);
         box-shadow: var(--shadow);
         backdrop-filter: blur(14px);
+        border-radius: 28px;
       }
 
-      .board-panel {
+      .game-panel {
         padding: 18px;
       }
 
@@ -129,8 +118,9 @@
       }
 
       .topline,
-      .stats,
       .controls,
+      .options-row,
+      .progress-metrics,
       .actions {
         display: flex;
         flex-wrap: wrap;
@@ -143,26 +133,33 @@
         margin-bottom: 14px;
       }
 
-      .mode-pill {
-        background: var(--accent-soft);
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(31, 122, 92, 0.1);
         color: var(--accent);
+        font-size: 0.86rem;
+        font-weight: 700;
       }
 
       .metric {
-        min-width: 112px;
+        min-width: 108px;
         padding: 12px 14px;
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(23, 35, 31, 0.08);
+        border: 1px solid rgba(26, 42, 36, 0.08);
       }
 
       .metric-label {
         display: block;
-        margin-bottom: 6px;
-        font-size: 0.73rem;
+        font-size: 0.74rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--muted);
+        margin-bottom: 6px;
       }
 
       .metric-value {
@@ -170,43 +167,12 @@
         font-weight: 800;
       }
 
-      .field {
-        display: grid;
-        gap: 6px;
-        min-width: 164px;
-      }
-
-      .field label {
-        font-size: 0.74rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--muted);
-        font-weight: 800;
-      }
-
-      select,
-      button {
-        font: inherit;
-      }
-
-      select {
-        appearance: none;
-        border: 1px solid rgba(23, 35, 31, 0.12);
-        border-radius: 16px;
-        padding: 12px 38px 12px 14px;
-        background:
-          linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 20px) calc(50% - 2px) / 8px 8px no-repeat,
-          linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 14px) calc(50% - 2px) / 8px 8px no-repeat,
-          rgba(255, 255, 255, 0.76);
-        color: var(--ink);
-        font-weight: 800;
-      }
-
       button {
         border: 0;
         border-radius: 16px;
         padding: 12px 16px;
-        font-weight: 800;
+        font: inherit;
+        font-weight: 700;
         cursor: pointer;
         transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
       }
@@ -215,44 +181,76 @@
         transform: translateY(-1px);
       }
 
-      button:focus-visible,
-      select:focus-visible,
-      .tile:focus-visible {
-        outline: 3px solid rgba(29, 122, 98, 0.28);
+      button:focus-visible {
+        outline: 3px solid rgba(31, 122, 92, 0.3);
         outline-offset: 2px;
       }
 
       .primary {
         background: var(--accent);
         color: white;
-        box-shadow: 0 16px 24px rgba(29, 122, 98, 0.22);
+        box-shadow: 0 14px 24px rgba(31, 122, 92, 0.24);
       }
 
       .secondary {
-        background: rgba(40, 79, 122, 0.12);
-        color: #284f7a;
+        background: rgba(39, 76, 119, 0.12);
+        color: #274c77;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+        min-width: 150px;
+      }
+
+      .field label {
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      select {
+        appearance: none;
+        border: 1px solid rgba(26, 42, 36, 0.12);
+        border-radius: 16px;
+        padding: 12px 38px 12px 14px;
+        background:
+          linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 20px) calc(50% - 2px) / 8px 8px no-repeat,
+          linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 14px) calc(50% - 2px) / 8px 8px no-repeat,
+          rgba(255, 255, 255, 0.72);
+        color: var(--ink);
+        font: inherit;
+        font-weight: 700;
+      }
+
+      select:focus-visible {
+        outline: 3px solid rgba(31, 122, 92, 0.3);
+        outline-offset: 2px;
       }
 
       .ghost {
-        background: rgba(23, 35, 31, 0.08);
+        background: rgba(26, 42, 36, 0.08);
         color: var(--ink);
       }
 
       .warning {
-        background: rgba(242, 200, 97, 0.22);
-        color: #8d5e0a;
+        background: rgba(217, 108, 63, 0.14);
+        color: var(--accent-2);
       }
 
       .board-shell {
+        position: relative;
         padding: 14px;
         border-radius: 26px;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(245, 239, 226, 0.94));
-        border: 1px solid rgba(23, 35, 31, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(242, 239, 228, 0.9));
+        border: 1px solid rgba(26, 42, 36, 0.08);
       }
 
       .board {
         display: grid;
-        gap: 6px;
+        gap: 10px;
         touch-action: none;
         user-select: none;
       }
@@ -260,23 +258,24 @@
       .tile,
       .block {
         aspect-ratio: 1;
-        border-radius: var(--tile-radius, 16px);
+        border-radius: var(--tile-radius, 18px);
       }
 
       .tile {
-        appearance: none;
-        -webkit-appearance: none;
-        border: 1px solid var(--tile-edge);
-        background: var(--tile);
-        color: var(--ink);
+        position: relative;
         display: grid;
         place-items: center;
+        appearance: none;
+        -webkit-appearance: none;
         padding: 0;
-        position: relative;
-        font-size: var(--tile-font-size, 18px);
+        background: var(--tile);
+        border: 1px solid var(--tile-edge);
+        color: var(--ink);
+        font-size: var(--tile-font-size, clamp(1.12rem, 3vw, 1.5rem));
         font-weight: 800;
         line-height: 1;
-        box-shadow: inset 0 -4px 0 rgba(23, 35, 31, 0.03);
+        text-align: center;
+        box-shadow: inset 0 -4px 0 rgba(26, 42, 36, 0.03);
       }
 
       .tile-letter {
@@ -297,13 +296,13 @@
       }
 
       .tile.hinted:not(.found):not(.active) {
-        background: color-mix(in srgb, var(--tile) 68%, var(--tile-hint));
+        background: color-mix(in srgb, var(--tile) 72%, var(--tile-hint));
       }
 
       .tile.invalid {
         background: var(--danger);
         color: white;
-        animation: shake 240ms ease;
+        animation: shake 260ms ease;
       }
 
       .tile.locked {
@@ -312,17 +311,17 @@
 
       .tile-index {
         position: absolute;
-        top: 6px;
-        right: 8px;
-        font-size: var(--tile-index-size, 10px);
-        opacity: 0.78;
+        top: 8px;
+        right: 10px;
+        font-size: var(--tile-index-size, 0.68rem);
+        opacity: 0.74;
       }
 
       .block {
         background:
-          linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent),
-          var(--wall);
-        border: 1px solid var(--wall-edge);
+          linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent),
+          var(--block);
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .legend {
@@ -331,6 +330,7 @@
         flex-wrap: wrap;
         margin-top: 14px;
         color: var(--muted);
+        font-size: 0.9rem;
       }
 
       .legend span {
@@ -346,30 +346,6 @@
         display: inline-block;
       }
 
-      .message-box,
-      .algorithm-box {
-        padding: 14px 16px;
-        border-radius: 22px;
-        background: rgba(23, 35, 31, 0.05);
-      }
-
-      .message-box strong,
-      .algorithm-box strong {
-        display: block;
-        margin-bottom: 8px;
-      }
-
-      .helper {
-        color: var(--muted);
-        line-height: 1.5;
-      }
-
-      .current-path {
-        font-size: 1.14rem;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-      }
-
       .slots {
         display: grid;
         gap: 10px;
@@ -379,23 +355,19 @@
         padding: 12px 14px;
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(23, 35, 31, 0.08);
-      }
-
-      .slot.solved {
-        border-color: rgba(40, 79, 122, 0.2);
-        background: rgba(40, 79, 122, 0.1);
+        border: 1px solid rgba(26, 42, 36, 0.08);
       }
 
       .slot-header {
         display: flex;
         justify-content: space-between;
-        gap: 10px;
+        gap: 12px;
+        align-items: baseline;
         margin-bottom: 8px;
       }
 
       .slot-title {
-        font-size: 0.76rem;
+        font-size: 0.82rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--muted);
@@ -403,22 +375,43 @@
 
       .slot-value {
         font-family: Georgia, "Times New Roman", serif;
-        font-size: 1.16rem;
-        letter-spacing: 0.16em;
+        font-size: 1.24rem;
+        letter-spacing: 0.2em;
+      }
+
+      .slot.solved {
+        border-color: rgba(39, 76, 119, 0.2);
+        background: rgba(39, 76, 119, 0.1);
+      }
+
+      .message-box {
+        min-height: 76px;
+        padding: 14px 16px;
+        border-radius: 20px;
+        background: rgba(26, 42, 36, 0.05);
+      }
+
+      .message-box strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .helper {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .current-path {
+        font-size: 1.18rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
       }
 
       .success-banner {
         padding: 14px 16px;
         border-radius: 20px;
-        background: linear-gradient(135deg, rgba(29, 122, 98, 0.16), rgba(242, 200, 97, 0.24));
-        border: 1px solid rgba(29, 122, 98, 0.14);
-      }
-
-      .algorithm-box ul {
-        margin: 0;
-        padding-left: 18px;
-        color: var(--muted);
-        line-height: 1.45;
+        background: linear-gradient(135deg, rgba(31, 122, 92, 0.16), rgba(244, 201, 93, 0.24));
+        border: 1px solid rgba(31, 122, 92, 0.12);
       }
 
       @keyframes shake {
@@ -429,7 +422,7 @@
         80% { transform: translateX(2px); }
       }
 
-      @media (max-width: 960px) {
+      @media (max-width: 900px) {
         .layout {
           grid-template-columns: 1fr;
         }
@@ -444,23 +437,21 @@
     <main>
       <section class="hero">
         <div class="hero-meta">
-          <div class="eyebrow">WordFinder Requirements Build</div>
-          <div class="version-chip" id="version-chip">v00.00.10</div>
-          <a class="link-chip" href="./v1.html">Open v1.html</a>
+          <div class="eyebrow">WordFinder Prototype</div>
+          <div class="version-chip" id="version-chip">v00.00.05</div>
         </div>
-        <h1>Generated from the spec, not the old page.</h1>
+        <h1>Trace hidden words. Use every tile once.</h1>
         <p class="subtitle">
-          This build is a clean rewrite from <code>REQUIREMENTS.md</code>: deterministic daily and
-          practice boards, blocked cells, exact path validation, local progress, scalable large
-          grids, and a single contiguous hidden path partitioned into multiple words.
+          Single-page prototype of the core Wend-style mechanic: drag or tap through adjacent
+          letters, avoid blocked cells, and partition the board into the right set of words.
         </p>
       </section>
 
       <section class="layout">
-        <div class="panel board-panel">
+        <div class="panel game-panel">
           <div class="topline">
-            <div class="mode-pill" id="mode-pill">Daily puzzle</div>
-            <div class="mode-pill" id="puzzle-pill">Puzzle</div>
+            <div class="pill" id="mode-pill">Daily puzzle</div>
+            <div class="pill" id="puzzle-pill">Puzzle 1</div>
           </div>
 
           <div class="board-shell">
@@ -471,15 +462,14 @@
             <span><i class="dot" style="background: var(--tile-active)"></i> Current path</span>
             <span><i class="dot" style="background: var(--tile-found)"></i> Solved word</span>
             <span><i class="dot" style="background: var(--tile-hint)"></i> Hint</span>
-            <span><i class="dot" style="background: var(--wall)"></i> Blocked cell</span>
           </div>
         </div>
 
         <aside class="panel sidebar">
-          <div class="stats">
+          <div class="progress-metrics">
             <div class="metric">
               <span class="metric-label">Found</span>
-              <span class="metric-value" id="found-count">0 / 0</span>
+              <span class="metric-value" id="found-count">0 / 4</span>
             </div>
             <div class="metric">
               <span class="metric-label">Hints</span>
@@ -496,9 +486,11 @@
             <button class="secondary" id="practice-btn">New practice board</button>
           </div>
 
-          <div class="field">
-            <label for="grid-size">Grid size</label>
-            <select id="grid-size"></select>
+          <div class="options-row">
+            <div class="field">
+              <label for="grid-size">Grid size</label>
+              <select id="grid-size"></select>
+            </div>
           </div>
 
           <div class="actions">
@@ -508,68 +500,47 @@
             <button class="ghost" id="reset-btn">Reset</button>
           </div>
 
-          <div class="message-box">
+          <div class="message-box" id="message-box">
             <strong>Current path</strong>
             <div class="current-path" id="current-path">—</div>
             <div class="helper" id="message-text">
-              Drag or tap through orthogonally adjacent letters, then submit the exact hidden path.
+              Drag through neighboring letters or tap tiles to build a path, then submit it.
             </div>
-          </div>
-
-          <div class="success-banner" id="success-banner" hidden>
-            <strong>Board solved.</strong>
-            <div id="success-text"></div>
           </div>
 
           <div class="slots" id="slots"></div>
 
-          <div class="algorithm-box">
-            <strong>Spec-driven build</strong>
-            <ul>
-              <li>Deterministic daily and practice generation by size and seed</li>
-              <li>Single contiguous playable path with blocked cells</li>
-              <li>Word lengths planned between 4 and 12 with anti-uniform bias</li>
-              <li>Exact path matching instead of free-form dictionary entry</li>
-            </ul>
+          <div class="success-banner" id="success-banner" hidden>
+            <strong>Board solved.</strong>
+            <div id="success-text"></div>
           </div>
         </aside>
       </section>
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.10";
+      const APP_VERSION = "v00.00.05";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
-      const WORD_BANK = {
-        "4": ["ABLE", "ABLY", "ACHE", "ACID", "ACRE", "ACTS", "ADAM", "AERO", "ALTO", "ARCH", "ATOM", "AURA"],
-        "5": ["ABIDE", "ABODE", "ABOUT", "ABOVE", "ADORE", "AGILE", "ALBUM", "ALLOY", "ANGLE", "ARBOR", "ARRAY", "AUDIO"],
-        "6": ["ABLAZE", "ABOUND", "ABSENT", "ACROSS", "ADJOIN", "ADMIRE", "ALMOST", "ANCHOR", "ARCADE", "ARTIST", "AUBURN", "AZUREN"],
-        "7": ["ABILITY", "ABOLISH", "ABSENCE", "ADOPTER", "ALIGNED", "ANCIENT", "ARRANGE", "ARTICLE", "ASCENTS", "BALANCE", "BETWEEN", "CABLING"],
-        "8": ["ABUNDANT", "ACCURACY", "ADAPTERS", "AIRFIELD", "ALMANACS", "AMPLIFIER", "ARCHIVES", "ARTIFACT", "BASELINE", "BUILDERS", "CABINETS", "CALIBERS"],
-        "9": ["ABRIDGERS", "ABSOLUTES", "ACOUSTICS", "ADVENTURE", "ALIGNMENT", "ANALOGIES", "APERTURES", "BLUEPRINT", "BRIGHTENS", "CHARCOALS", "CLOUDLINE", "COMPANION"],
-        "10": ["ABNORMALITY", "ADAPTATION", "AERODROMES", "AFTERGLOWS", "ALTERNATES", "ANNOTATION", "BACKGROUND", "BRIDGEWORK", "CONSTRAINT", "CONVERGENT", "DASHBOARDS", "EVERYWHERE"],
-        "11": ["ABBREVIATED", "ACCLIMATING", "ADVENTURERS", "ARCHITECTED", "BACKTRACKER", "BROADCASTER", "CONSTRUCTED", "DETERMINISM", "ELEVATIONS", "FOUNDATIONS", "GENERATIONS", "HARVESTABLE"],
-        "12": ["ABBREVIATION", "ACCESSIBILITY", "ACCOMMODATED", "ADMINISTRATOR", "ALPHABETICAL", "AUTHENTICATED", "CONFIGURABLE", "DETERMINISTIC", "ORTHOGONALITY", "RESPONSIVENESS", "TRANSPARENCY", "VISUALIZATION"]
-      };
+      const WORD_BANK = {"4":["ABBR","ABBY","ABCS","ABED","ABEL","ABET","ABLE","ABLY","ABMS","ABUT","ACCT","ACED","ACES","ACHE","ACHY","ACID","ACLU","ACME","ACNE","ACRE","ACTH","ACTS","ADAM","ADAN"],"5":["AARON","ABACI","ABACK","ABAFT","ABASE","ABASH","ABATE","ABBAS","ABBEY","ABBOT","ABDUL","ABEAM","ABETS","ABHOR","ABIDE","ABLER","ABNER","ABODE","ABORT","ABOUT","ABOVE","ABRAM","ABUJA","ABUSE"],"6":["AACHEN","ABACUS","ABASED","ABASES","ABATED","ABATES","ABBESS","ABBEYS","ABBOTS","ABBOTT","ABBREV","ABDUCT","ABHORS","ABIDED","ABIDES","ABJECT","ABJURE","ABLAZE","ABLEST","ABLOOM","ABOARD","ABODES","ABORTS","ABOUND"],"7":["AALIYAH","ABALONE","ABANDON","ABASHED","ABASHES","ABASING","ABATING","ABBASID","ABBREVS","ABDOMEN","ABDUCTS","ABELARD","ABELSON","ABETTED","ABETTER","ABETTOR","ABIDING","ABIDJAN","ABIGAIL","ABILENE","ABILITY","ABJURED","ABJURES","ABOLISH"],"8":["AARDVARK","ABACUSES","ABALONES","ABANDONS","ABASHING","ABATTOIR","ABBESSES","ABDICATE","ABDOMENS","ABDUCTED","ABDUCTEE","ABDUCTOR","ABERDEEN","ABERRANT","ABETTERS","ABETTING","ABETTORS","ABEYANCE","ABHORRED","ABJECTLY","ABJURING","ABLATIVE","ABLUTION","ABNEGATE"],"9":["AARDVARKS","ABANDONED","ABASEMENT","ABATEMENT","ABATTOIRS","ABDICATED","ABDICATES","ABDOMINAL","ABDUCTEES","ABDUCTING","ABDUCTION","ABDUCTORS","ABERNATHY","ABHORRENT","ABHORRING","ABILITIES","ABLATIVES","ABLUTIONS","ABNEGATED","ABNEGATES","ABOLISHED","ABOLISHES","ABOLITION","ABOMINATE"],"10":["ABANDONING","ABBREVIATE","ABDICATING","ABDICATION","ABDUCTIONS","ABERRATION","ABHORRENCE","ABJURATION","ABNEGATING","ABNEGATION","ABNORMALLY","ABOLISHING","ABOMINABLE","ABOMINABLY","ABOMINATED","ABOMINATES","ABORIGINAL","ABORIGINES","ABOVEBOARD","ABRASIVELY","ABRIDGMENT","ABROGATING","ABROGATION","ABRUPTNESS"],"11":["ABANDONMENT","ABBREVIATED","ABBREVIATES","ABDICATIONS","ABERRATIONS","ABJURATIONS","ABNORMALITY","ABOMINATING","ABOMINATION","ABORIGINALS","ABORTIONIST","ABRACADABRA","ABRIDGEMENT","ABRIDGMENTS","ABROGATIONS","ABSENTEEISM","ABSTENTIONS","ABSTRACTING","ABSTRACTION","ABSURDITIES","ABUSIVENESS","ACADEMICIAN","ACCELERATED","ACCELERATES"],"12":["ABBREVIATING","ABBREVIATION","ABOLITIONIST","ABOMINATIONS","ABORTIONISTS","ABRASIVENESS","ABRIDGEMENTS","ABSTRACTEDLY","ABSTRACTIONS","ABSTRACTNESS","ABSTRUSENESS","ACADEMICALLY","ACADEMICIANS","ACCELERATING","ACCELERATION","ACCELERATORS","ACCENTUATING","ACCENTUATION","ACCESSIONING","ACCIDENTALLY","ACCLIMATIZED","ACCLIMATIZES","ACCOMMODATED","ACCOMMODATES"],"13":["ABBREVIATIONS","ABNORMALITIES","ABOLITIONISTS","ACCELERATIONS","ACCEPTABILITY","ACCESSIBILITY","ACCLIMATIZING","ACCOMMODATING","ACCOMMODATION","ACCOMPANIMENT","ACCOMPLISHING","ACCOUTERMENTS","ACCOUTREMENTS","ACCREDITATION","ACCULTURATION","ACCUMULATIONS","ACETAMINOPHEN","ACKNOWLEDGING","ACQUAINTANCES","ACTUALIZATION","ACUPUNCTURIST","ADMINISTERING","ADMINISTRATED","ADMINISTRATES"],"14":["ABSTRACTNESSES","ACCOMMODATIONS","ACCOMPANIMENTS","ACCOMPLISHMENT","ACCOUNTABILITY","ACKNOWLEDGMENT","ACUPUNCTURISTS","ADMINISTRATING","ADMINISTRATION","ADMINISTRATIVE","ADMINISTRATORS","ADVANTAGEOUSLY","ADVERTISEMENTS","AFFECTIONATELY","AFOREMENTIONED","AGGLOMERATIONS","AGGLUTINATIONS","AGGRANDIZEMENT","AGGRESSIVENESS","AGRIBUSINESSES","ALPHABETICALLY","ALTRUISTICALLY","AMBASSADORSHIP","AMBIDEXTROUSLY"],"15":["ACCLIMATIZATION","ACCOMPLISHMENTS","ACKNOWLEDGEMENT","ACKNOWLEDGMENTS","ACQUISITIVENESS","ADMINISTRATIONS","AERODYNAMICALLY","AGRICULTURALIST","AMBASSADORSHIPS","AMERICANIZATION","ANTHROPOCENTRIC","ANTHROPOLOGICAL","ANTHROPOLOGISTS","ANTHROPOMORPHIC","ANTIDEPRESSANTS","ANTIPERSPIRANTS","APPRENTICESHIPS","APPROPRIATENESS","ARCHITECTURALLY","ASTROPHYSICISTS","ATHEROSCLEROSIS","ATMOSPHERICALLY","AUTHENTICATIONS","AUTHORITATIVELY"],"16":["ACKNOWLEDGEMENTS","ADMINISTRATIVELY","AGRICULTURALISTS","AMERICANIZATIONS","ANESTHESIOLOGIST","ANTAGONISTICALLY","ANTHROPOMORPHISM","APPREHENSIVENESS","ARISTOCRATICALLY","ARTERIOSCLEROSIS","AUSTRALOPITHECUS","AUTHORITARIANISM","AUTOBIOGRAPHICAL","BLOODTHIRSTINESS","BUREAUCRATICALLY","CANTANKEROUSNESS","CATASTROPHICALLY","CHANCELLORSVILLE","CHARACTERIZATION","CINEMATOGRAPHERS","CIRCUMNAVIGATING","CIRCUMNAVIGATION","CIRCUMSCRIPTIONS","CIRCUMSTANTIALLY"],"17":["ANESTHESIOLOGISTS","AUTHORITATIVENESS","CHARACTERIZATIONS","CIRCUMNAVIGATIONS","COMMERCIALIZATION","COMPARTMENTALIZED","COMPARTMENTALIZES","COMPREHENSIBILITY","COMPREHENSIVENESS","CONCEPTUALIZATION","CONGREGATIONALIST","CONSCIENTIOUSNESS","CONSTITUTIONALITY","CONTEMPORANEOUSLY","CONTRADISTINCTION","CONVERSATIONALIST","COUNTERPRODUCTIVE","COUNTERREVOLUTION","DECRIMINALIZATION","DEPARTMENTALIZING","DISADVANTAGEOUSLY","DISQUALIFICATIONS","ELECTROCARDIOGRAM","ENVIRONMENTALISTS"],"18":["CHARACTERISTICALLY","CHLOROFLUOROCARBON","COMPARTMENTALIZING","CONCEPTUALIZATIONS","CONGREGATIONALISTS","CONTRADISTINCTIONS","CONVERSATIONALISTS","COUNTERREVOLUTIONS","DISENFRANCHISEMENT","DISPROPORTIONATELY","ELECTROCARDIOGRAMS","ELECTROCARDIOGRAPH","HYPERSENSITIVITIES","INSTITUTIONALIZING","INTERNATIONALIZING","INTERRELATIONSHIPS","MISINTERPRETATIONS","MISREPRESENTATIONS","OVERSIMPLIFICATION","TELECOMMUNICATIONS","TRANSCENDENTALISTS","TRANSUBSTANTIATION","ULTRACONSERVATIVES"],"19":["CHLOROFLUOROCARBONS","COUNTERINTELLIGENCE","ELECTROCARDIOGRAPHS","INTERDENOMINATIONAL","NONREPRESENTATIONAL","OVERSIMPLIFICATIONS"],"20":["ANDRIANAMPOINIMERINA","COUNTERREVOLUTIONARY","ELECTROENCEPHALOGRAM","UNCHARACTERISTICALLY"]};
 
-      document.title = `WordFinder ${APP_VERSION}`;
+      document.title = `WordFinder Prototype ${APP_VERSION}`;
       document.getElementById("version-chip").textContent = APP_VERSION;
 
       const state = {
         mode: "daily",
         selectedGridSize: "5x5",
-        practiceIndex: 0,
         puzzle: null,
+        activePath: [],
         foundWords: [],
         hints: {},
-        activePath: [],
         invalidTiles: [],
-        message: "Drag or tap through orthogonally adjacent letters, then submit the exact hidden path.",
+        message: "Drag through neighboring letters or tap tiles to build a path, then submit it.",
         startTime: Date.now(),
         timerHandle: null,
+        gestureExtended: false,
         draggingPointerId: null,
-        gestureExtended: false
       };
 
       const els = {
@@ -584,13 +555,13 @@
         messageText: document.getElementById("message-text"),
         successBanner: document.getElementById("success-banner"),
         successText: document.getElementById("success-text"),
-        gridSize: document.getElementById("grid-size"),
         dailyBtn: document.getElementById("daily-btn"),
         practiceBtn: document.getElementById("practice-btn"),
         submitBtn: document.getElementById("submit-btn"),
         undoBtn: document.getElementById("undo-btn"),
         hintBtn: document.getElementById("hint-btn"),
-        resetBtn: document.getElementById("reset-btn")
+        resetBtn: document.getElementById("reset-btn"),
+        gridSize: document.getElementById("grid-size"),
       };
 
       function toCoord(index, cols) {
@@ -599,23 +570,6 @@
 
       function clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
-      }
-
-      function hashText(text) {
-        let hash = 2166136261;
-        for (const char of text) {
-          hash ^= char.charCodeAt(0);
-          hash = Math.imul(hash, 16777619);
-        }
-        return hash >>> 0;
-      }
-
-      function makeRng(seed) {
-        let value = seed >>> 0;
-        return () => {
-          value = (value * 1664525 + 1013904223) >>> 0;
-          return value / 4294967296;
-        };
       }
 
       function randInt(rng, min, max) {
@@ -655,20 +609,18 @@
         return seen.size;
       }
 
-      function chooseTargetLength(rows, cols) {
-        const density = clamp(0.82 - cols * 0.012, 0.5, 0.78);
-        let target = Math.max(10, Math.floor(rows * cols * density));
-        while (target > 8 && target % 2 === 1) target -= 1;
-        return target;
-      }
-
       function buildPlayableLayout(rows, cols, seedLabel) {
         const rng = makeRng(hashText(`${seedLabel}:layout`));
-        const targetLength = chooseTargetLength(rows, cols);
+        const density = clamp(0.82 - cols * 0.012, 0.5, 0.78);
+        let targetLength = Math.max(10, Math.floor(rows * cols * density));
+        while (targetLength > 8 && targetLength % 2 === 1) {
+          targetLength -= 1;
+        }
+
         const startCandidates = Array.from({ length: rows * cols }, (_, index) => index)
           .sort(() => rng() - 0.5);
 
-        for (let attempt = 0; attempt < 36; attempt += 1) {
+        for (let attempt = 0; attempt < 30; attempt += 1) {
           const visited = new Set();
           const path = [];
           const start = startCandidates[attempt % startCandidates.length];
@@ -677,28 +629,30 @@
             path.push(current);
             visited.add(current);
 
-            if (path.length === targetLength) return true;
+            if (path.length === targetLength) {
+              return true;
+            }
 
             const previous = path[path.length - 2];
-            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols);
+            const previousDirection = previous === undefined
+              ? null
+              : directionBetween(previous, current, cols);
 
             const candidates = neighborIndexes(current, rows, cols)
               .filter((next) => !visited.has(next))
               .map((next) => {
                 const nextDirection = directionBetween(current, next, cols);
-                const turns = previousDirection &&
+                const turnBonus = previousDirection &&
                   (previousDirection[0] !== nextDirection[0] || previousDirection[1] !== nextDirection[1])
-                  ? 2.4
-                  : 0;
+                    ? 2.5
+                    : 0;
                 const onward = neighborIndexes(next, rows, cols)
                   .filter((candidate) => !visited.has(candidate) && candidate !== current)
                   .length;
-                const [row, col] = toCoord(next, cols);
-                const centerBias = Math.abs(row - rows / 2) + Math.abs(col - cols / 2);
 
                 return {
                   next,
-                  score: onward - turns + centerBias * 0.05 + rng() * 0.6
+                  score: onward - turnBonus + rng() * 0.75,
                 };
               })
               .sort((a, b) => a.score - b.score);
@@ -707,9 +661,13 @@
               visited.add(candidate.next);
               const reachable = reachableCount(candidate.next, visited, rows, cols);
               visited.delete(candidate.next);
+
               const remaining = targetLength - path.length;
               if (reachable < remaining) continue;
-              if (dfs(candidate.next)) return true;
+
+              if (dfs(candidate.next)) {
+                return true;
+              }
             }
 
             visited.delete(current);
@@ -722,16 +680,34 @@
             const cells = Array.from({ length: rows * cols }, (_, index) =>
               openCells.has(index) ? { type: "tile" } : { type: "block" }
             );
+
             return { path: [...path], cells };
           }
         }
 
         const fallbackPath = Array.from({ length: targetLength }, (_, index) => index);
-        const fallbackSet = new Set(fallbackPath);
+        const openCells = new Set(fallbackPath);
         const cells = Array.from({ length: rows * cols }, (_, index) =>
-          fallbackSet.has(index) ? { type: "tile" } : { type: "block" }
+          openCells.has(index) ? { type: "tile" } : { type: "block" }
         );
         return { path: fallbackPath, cells };
+      }
+
+      function makeRng(seed) {
+        let value = seed >>> 0;
+        return () => {
+          value = (value * 1664525 + 1013904223) >>> 0;
+          return value / 4294967296;
+        };
+      }
+
+      function hashText(text) {
+        let hash = 2166136261;
+        for (const char of text) {
+          hash ^= char.charCodeAt(0);
+          hash = Math.imul(hash, 16777619);
+        }
+        return hash >>> 0;
       }
 
       function generateFallbackWord(length, rng) {
@@ -745,16 +721,28 @@
         return word;
       }
 
-      function pickWord(length, slotIndex, seedLabel) {
-        const bank = (WORD_BANK[String(length)] || []).filter((word) => word.length === length);
-        const seed = hashText(`${seedLabel}:word:${length}:${slotIndex}`);
+      function pickWord(length, rowIndex, seedLabel) {
+        const bank = WORD_BANK[String(length)] || [];
+        const seed = hashText(`${seedLabel}:${length}:${rowIndex}`);
         const rng = makeRng(seed);
-
         if (bank.length === 0) {
           return generateFallbackWord(length, rng);
         }
-
-        return bank[(seed + slotIndex * 11) % bank.length];
+        if (bank.length >= length) {
+          return bank[(seed + rowIndex * 7) % bank.length];
+        }
+        const base = bank[(seed + rowIndex * 5) % bank.length];
+        if (rowIndex < bank.length) {
+          return base;
+        }
+        return base
+          .split("")
+          .map((char, index) => {
+            if ((index + rowIndex) % 5 !== 0) return char;
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            return alphabet[(alphabet.indexOf(char) + rowIndex) % alphabet.length];
+          })
+          .join("");
       }
 
       function canPartition(remaining, minLen, maxLen) {
@@ -819,40 +807,41 @@
         return lengths;
       }
 
-      function materializePuzzle(rows, cols, mode, variant) {
-        const seedLabel = `${mode}:${rows}x${cols}:${variant}`;
-        const layout = buildPlayableLayout(rows, cols, seedLabel);
-        const lengths = chooseWordLengths(layout.path.length, cols, seedLabel);
-        let offset = 0;
-
-        const words = lengths.map((length, index) => {
-          const path = layout.path.slice(offset, offset + length);
-          const text = pickWord(length, index, seedLabel);
-          offset += length;
-          return { text, path };
+      function materializePuzzle(rows, cols, seedLabel, variantIndex) {
+        const variantSeed = `${seedLabel}:${variantIndex}`;
+        const layout = buildPlayableLayout(rows, cols, variantSeed);
+        const lengths = chooseWordLengths(layout.path.length, cols, variantSeed);
+        let pathOffset = 0;
+        const words = lengths.map((length, wordIndex) => {
+          const text = pickWord(length, wordIndex, variantSeed);
+          const path = layout.path.slice(pathOffset, pathOffset + length);
+          pathOffset += length;
+          return {
+            text,
+            path,
+          };
         });
 
         const cells = layout.cells.map((cell) => ({ ...cell }));
         words.forEach((word, wordIndex) => {
-          word.path.forEach((cellIndex, stepIndex) => {
+          word.path.forEach((cellIndex, letterIndex) => {
             cells[cellIndex] = {
               ...cells[cellIndex],
-              type: "tile",
-              letter: word.text[stepIndex],
+              letter: word.text[letterIndex],
               wordIndex,
-              step: stepIndex + 1
+              step: letterIndex + 1,
             };
           });
         });
 
         return {
-          id: `${rows}x${cols}-${mode}-${variant}`,
-          name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
+          id: `${rows}x${cols}-${seedLabel}-${variantIndex}`,
+          name: `${rows}x${cols} ${seedLabel === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
           rows,
           cols,
-          cells,
           words,
-          playableCount: layout.path.length
+          cells,
+          playableCount: layout.path.length,
         };
       }
 
@@ -861,20 +850,15 @@
         return { rows, cols };
       }
 
-      function getDailyVariant() {
-        return Math.floor(Date.now() / 86400000);
-      }
-
       function storageKeyFor(puzzle) {
         return `wordfinder:${puzzle.id}`;
       }
 
       function saveState() {
-        if (!state.puzzle) return;
         const payload = {
           foundWords: state.foundWords,
           hints: state.hints,
-          startTime: state.startTime
+          startTime: state.startTime,
         };
         localStorage.setItem(storageKeyFor(state.puzzle), JSON.stringify(payload));
       }
@@ -890,8 +874,44 @@
       }
 
       function getDailyPuzzle() {
+        const day = Math.floor(Date.now() / 86400000);
         const { rows, cols } = currentGridSize();
-        return materializePuzzle(rows, cols, "daily", getDailyVariant());
+        return materializePuzzle(rows, cols, "daily", day);
+      }
+
+      function startPuzzle(puzzle, mode) {
+        state.mode = mode;
+        state.puzzle = puzzle;
+        state.activePath = [];
+        state.invalidTiles = [];
+        state.gestureExtended = false;
+        state.draggingPointerId = null;
+        state.message = "Trace a word path. Every playable tile must end up in exactly one answer.";
+        const saved = loadStateForPuzzle(puzzle);
+        state.foundWords = saved?.foundWords || [];
+        state.hints = saved?.hints || {};
+        state.startTime = saved?.startTime || Date.now();
+        ensureTimer();
+        render();
+      }
+
+      function ensureTimer() {
+        if (state.timerHandle) {
+          clearInterval(state.timerHandle);
+        }
+        updateTimer();
+        state.timerHandle = setInterval(updateTimer, 1000);
+      }
+
+      function updateTimer() {
+        const elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+        const minutes = String(Math.floor(elapsedSeconds / 60)).padStart(2, "0");
+        const seconds = String(elapsedSeconds % 60).padStart(2, "0");
+        els.timer.textContent = `${minutes}:${seconds}`;
+      }
+
+      function activeWordPath() {
+        return state.activePath.map((index) => state.puzzle.cells[index].letter).join("");
       }
 
       function isSolvedWord(wordIndex) {
@@ -909,12 +929,6 @@
         return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
       }
 
-      function activeWordPath() {
-        return state.activePath
-          .map((index) => state.puzzle.cells[index].letter)
-          .join("");
-      }
-
       function setMessage(text) {
         state.message = text;
         renderMessage();
@@ -925,33 +939,41 @@
         els.messageText.textContent = state.message;
       }
 
-      function ensureTimer() {
-        if (state.timerHandle) clearInterval(state.timerHandle);
-        updateTimer();
-        state.timerHandle = setInterval(updateTimer, 1000);
-      }
+      function revealHint() {
+        const nextWordIndex = state.puzzle.words.findIndex((_, index) => !isSolvedWord(index));
+        if (nextWordIndex === -1) return;
 
-      function updateTimer() {
-        const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
-        const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
-        const seconds = String(elapsed % 60).padStart(2, "0");
-        els.timer.textContent = `${minutes}:${seconds}`;
-      }
-
-      function startPuzzle(puzzle, mode) {
-        state.mode = mode;
-        state.puzzle = puzzle;
-        state.activePath = [];
-        state.invalidTiles = [];
-        state.draggingPointerId = null;
-        state.gestureExtended = false;
-        const saved = loadStateForPuzzle(puzzle);
-        state.foundWords = saved?.foundWords || [];
-        state.hints = saved?.hints || {};
-        state.startTime = saved?.startTime || Date.now();
-        state.message = "Trace the exact hidden path for each word. Every playable tile must be claimed.";
-        ensureTimer();
+        const revealed = state.hints[nextWordIndex] || 0;
+        state.hints[nextWordIndex] = Math.min(
+          state.puzzle.words[nextWordIndex].text.length,
+          revealed + 1
+        );
+        saveState();
+        setMessage(
+          `Hint revealed for ${
+            state.puzzle.words[nextWordIndex].text.length
+          }-letter word. Follow the glowing tile.`
+        );
         render();
+      }
+
+      function resetProgress() {
+        state.activePath = [];
+        state.foundWords = [];
+        state.hints = {};
+        state.invalidTiles = [];
+        state.startTime = Date.now();
+        saveState();
+        setMessage("Board reset. Start from any open tile.");
+        render();
+      }
+
+      function undoPath() {
+        if (state.activePath.length > 0) {
+          state.activePath.pop();
+          setMessage("Last step removed.");
+          render();
+        }
       }
 
       function clearInvalidTiles() {
@@ -975,7 +997,7 @@
         if (matchedWordIndex === -1) {
           state.invalidTiles = [...state.activePath];
           state.activePath = [];
-          setMessage("That path is not one of the hidden answers.");
+          setMessage("Not one of the hidden answer paths. Try a different partition.");
           render();
           window.setTimeout(clearInvalidTiles, 420);
           return;
@@ -989,7 +1011,7 @@
           setMessage("Solved. Every playable tile is accounted for.");
         } else {
           const remaining = state.puzzle.words.length - state.foundWords.length;
-          setMessage(`Correct. ${remaining} word${remaining === 1 ? "" : "s"} remaining.`);
+          setMessage(`Correct. ${remaining} word${remaining === 1 ? "" : "s"} left.`);
         }
 
         render();
@@ -1013,10 +1035,13 @@
         }
 
         if (state.activePath.includes(index)) return;
+
         if (last !== undefined && !isAdjacent(last, index)) return;
 
         state.activePath.push(index);
-        if (last !== undefined) state.gestureExtended = true;
+        if (last !== undefined) {
+          state.gestureExtended = true;
+        }
         renderMessage();
         renderBoard();
       }
@@ -1030,7 +1055,7 @@
         }
         state.draggingPointerId = pointerId;
         state.gestureExtended = false;
-        setMessage("Build a path through orthogonally adjacent letters, then submit.");
+        setMessage("Build a path through neighboring tiles, then release or submit.");
         render();
       }
 
@@ -1047,7 +1072,9 @@
 
       function handlePointerUp(event) {
         if (state.draggingPointerId !== event.pointerId) return;
-        if (state.gestureExtended && state.activePath.length > 0) submitPath();
+        if (state.gestureExtended && state.activePath.length > 0) {
+          submitPath();
+        }
         state.draggingPointerId = null;
         state.gestureExtended = false;
       }
@@ -1058,70 +1085,34 @@
 
         if (state.activePath.length === 0) {
           state.activePath = [index];
-          setMessage("Tap adjacent letters to build a path, then submit.");
+          setMessage("Tap adjacent tiles to build a path, then submit.");
         } else {
           extendPath(index);
         }
         render();
       }
 
-      function revealHint() {
-        const nextWordIndex = state.puzzle.words.findIndex((_, index) => !isSolvedWord(index));
-        if (nextWordIndex === -1) return;
-        const revealed = state.hints[nextWordIndex] || 0;
-        state.hints[nextWordIndex] = Math.min(
-          state.puzzle.words[nextWordIndex].text.length,
-          revealed + 1
-        );
-        saveState();
-        setMessage(`Hint revealed for the next ${state.puzzle.words[nextWordIndex].text.length}-letter word.`);
-        render();
-      }
-
-      function undoPath() {
-        if (state.activePath.length === 0) return;
-        state.activePath.pop();
-        setMessage("Last step removed.");
-        render();
-      }
-
-      function resetProgress() {
-        state.activePath = [];
-        state.foundWords = [];
-        state.hints = {};
-        state.invalidTiles = [];
-        state.startTime = Date.now();
-        saveState();
-        setMessage("Board reset. Start from any open tile.");
-        render();
-      }
-
-      function computeTileMetrics() {
-        const cols = state.puzzle.cols;
+      function renderBoard() {
+        els.board.style.gridTemplateColumns = `repeat(${state.puzzle.cols}, minmax(0, 1fr))`;
         const gap =
-          cols >= 18 ? 2 :
-          cols >= 14 ? 4 :
-          cols >= 10 ? 6 : 8;
+          state.puzzle.cols >= 18 ? "2px" :
+          state.puzzle.cols >= 14 ? "4px" :
+          state.puzzle.cols >= 10 ? "6px" : "10px";
+        els.board.style.gap = gap;
+
+        const gapSize = Number.parseInt(gap, 10);
         const boardWidth =
           els.board.getBoundingClientRect().width ||
           els.board.parentElement.getBoundingClientRect().width - 28;
-        const tileSize = (boardWidth - gap * (cols - 1)) / cols;
-        return {
-          gap,
-          fontSize: clamp(tileSize * 0.46, 8, 24),
-          hintSize: clamp(tileSize * 0.22, 6, 11),
-          radius: clamp(tileSize * 0.2, 4, 18)
-        };
-      }
+        const tileSize =
+          (boardWidth - gapSize * (state.puzzle.cols - 1)) / state.puzzle.cols;
+        const tileFontSize = Math.max(8, Math.min(24, tileSize * 0.46));
+        const tileIndexSize = Math.max(6, Math.min(11, tileSize * 0.22));
+        const tileRadius = Math.max(4, Math.min(18, tileSize * 0.2));
 
-      function renderBoard() {
-        if (!state.puzzle) return;
-        const metrics = computeTileMetrics();
-        els.board.style.gridTemplateColumns = `repeat(${state.puzzle.cols}, minmax(0, 1fr))`;
-        els.board.style.gap = `${metrics.gap}px`;
-        els.board.style.setProperty("--tile-font-size", `${metrics.fontSize}px`);
-        els.board.style.setProperty("--tile-index-size", `${metrics.hintSize}px`);
-        els.board.style.setProperty("--tile-radius", `${metrics.radius}px`);
+        els.board.style.setProperty("--tile-font-size", `${tileFontSize}px`);
+        els.board.style.setProperty("--tile-index-size", `${tileIndexSize}px`);
+        els.board.style.setProperty("--tile-radius", `${tileRadius}px`);
         els.board.innerHTML = "";
 
         state.puzzle.cells.forEach((cell, index) => {
@@ -1145,21 +1136,20 @@
           if (state.activePath.includes(index)) button.classList.add("active");
           if (isSolvedWord(cell.wordIndex)) button.classList.add("found", "locked");
           if (state.invalidTiles.includes(index)) button.classList.add("invalid");
-          if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
-            button.classList.add("hinted");
-          }
+          if ((state.hints[cell.wordIndex] || 0) >= cell.step) button.classList.add("hinted");
 
-          const badge = document.createElement("span");
-          badge.className = "tile-index";
+          const hintBadge = document.createElement("span");
+          hintBadge.className = "tile-index";
           if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
-            badge.textContent = cell.step;
+            hintBadge.textContent = cell.step;
           }
-          button.appendChild(badge);
+          button.appendChild(hintBadge);
 
           button.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
           button.addEventListener("pointerenter", (event) => handlePointerEnter(index, event));
           button.addEventListener("pointerup", handlePointerUp);
           button.addEventListener("click", () => handleTileClick(index));
+
           els.board.appendChild(button);
         });
       }
@@ -1174,6 +1164,7 @@
 
       function renderSlots() {
         els.slots.innerHTML = "";
+
         state.puzzle.words.forEach((word, index) => {
           const solved = isSolvedWord(index);
           const slot = document.createElement("div");
@@ -1182,19 +1173,20 @@
           const header = document.createElement("div");
           header.className = "slot-header";
 
-          const left = document.createElement("span");
-          left.className = "slot-title";
-          left.textContent = `${word.text.length} letters`;
+          const label = document.createElement("span");
+          label.className = "slot-title";
+          label.textContent = `${word.text.length} letters`;
 
-          const right = document.createElement("span");
-          right.className = "slot-title";
-          right.textContent = solved ? "Solved" : "Hidden";
+          const stateText = document.createElement("span");
+          stateText.className = "slot-title";
+          stateText.textContent = solved ? "Solved" : "Hidden";
+
+          header.append(label, stateText);
 
           const value = document.createElement("div");
           value.className = "slot-value";
           value.textContent = solved ? word.text.split("").join(" ") : hintedDisplay(word, index);
 
-          header.append(left, right);
           slot.append(header, value);
           els.slots.appendChild(slot);
         });
@@ -1202,7 +1194,7 @@
 
       function renderSummary() {
         els.modePill.textContent = state.mode === "daily" ? "Daily puzzle" : "Practice puzzle";
-        els.puzzlePill.textContent = `${state.puzzle.name} • ${state.puzzle.playableCount} playable`;
+        els.puzzlePill.textContent = `${state.puzzle.name} • ${state.puzzle.rows}x${state.puzzle.cols}`;
         els.foundCount.textContent = `${state.foundWords.length} / ${state.puzzle.words.length}`;
         els.hintCount.textContent = String(
           Object.values(state.hints).reduce((sum, value) => sum + value, 0)
@@ -1225,8 +1217,9 @@
 
       function nextPracticePuzzle() {
         const { rows, cols } = currentGridSize();
-        state.practiceIndex += 1;
-        startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
+        const nextVariant = (state.practiceIndex || 0) + 1;
+        state.practiceIndex = nextVariant;
+        startPuzzle(materializePuzzle(rows, cols, "practice", nextVariant), "practice");
       }
 
       function applyGridSize(value) {
@@ -1235,9 +1228,9 @@
         if (state.mode === "practice") {
           const { rows, cols } = currentGridSize();
           startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
-        } else {
-          startPuzzle(getDailyPuzzle(), "daily");
+          return;
         }
+        startPuzzle(getDailyPuzzle(), "daily");
       }
 
       function populateGridSizeOptions() {
