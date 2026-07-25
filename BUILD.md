@@ -1,6 +1,6 @@
 # WordFinder Build Log
 
-Current prototype version: `v00.00.11`
+Current prototype version: `v00.00.30`
 
 ## Summary
 
@@ -152,17 +152,105 @@ and follow-up iterations.
   blocked cells as mere leftover negative space from one walk.
 - This produces more intentional dark regions and reduces fallback to the older path-only layout logic.
 
+### `a688fb2` `feat: add path arrows` (`v00.00.12`)
+
+- Added directional path arrows to solved words.
+- Added arrow previews for the active in-progress path.
+- Scaled arrow overlays for dense boards.
+
+### `5ef2b26` `feat: add sphere wrap toggle` (`v00.00.13`)
+
+- Added a wrapped-board mode that connected opposite edges in generation and validation.
+- Separated saved-state identity between flat and wrapped boards.
+
+### `0d3a733` through `faaf703` experimental sphere rendering (`v00.00.14` - `v00.00.16`)
+
+- Added and iterated on multiple sphere-rendering experiments.
+- These globe-style rendering attempts were later abandoned.
+
+### `5c1fad5` revert to `v00.00.12`
+
+- Restored the exact pre-sphere flat-board implementation after the sphere experiments were rejected.
+
+### `0e0c2b7` and `c099e4e` geometry experiments (`v00.00.17` - `v00.00.18`)
+
+- Added pentagon/hexagon path geometry experiments and matching tile-shape rendering.
+- These experiments were also later reverted.
+
+### `90a416e` revert to `v00.00.12`
+
+- Restored the exact `v00.00.12` baseline again after the geometry experiments were rejected.
+
+### `7a829d8` `feat: add start/end path markers` (`v00.00.19`)
+
+- Added open-circle-plus-arrow markers at the start of a path.
+- Added filled-circle markers at the end of a path.
+- Applied the markers to both solved words and the active traced path.
+
+### `8c9e346` `feat: connect solved word tiles` (`v00.00.20`)
+
+- Added connector bars so solved words read as continuous paths across adjacent tiles.
+- Extended the same connector treatment to the active in-progress path.
+
+### `41373de` through `9f4d549` solved-color experiments (`v00.00.21` - `v00.00.23`)
+
+- Added per-word solved coloring.
+- Iterated from hue-based differentiation to saturation-based differentiation and then to alternating
+  dark/light shades in the shared blue family.
+
+### `3485a32` `feat: add solve control` (`v00.00.24`)
+
+- Added a `Solve` button that reveals every word and marks the board complete.
+- Cleared in-progress path state when solving the board.
+
+### `d318dc3` `feat: add solved-color dropdown` (`v00.00.25`)
+
+- Added solved-color mode selection for hues, saturation, values, and palette-based styles.
+- Fixed `New practice board` so it always starts with clean board state.
+
+### `b57bd2e` `feat: add named solved color palettes` (`v00.00.26`)
+
+- Replaced generic numbered palettes with named, more distinct palette families.
+- Added sixteen named palette options such as `Citrus Grove`, `Seaside Glass`, and `Midnight Neon`.
+
+### `dc02033` `feat: add visible custom seed controls` (`v00.00.27`)
+
+- Added a visible seed field to the sidebar.
+- Added custom seed entry plus `Apply seed`.
+- Normalized seeds to include grid size prefixes such as `5x5:...`.
+
+### `2f597f5` `feat: add selectable word generation modes` (`v00.00.28`)
+
+- Added a `Word selection` dropdown.
+- Added constrained generation modes for `Z`, `X`, `Q`, `ING`, `MM`, user-chosen starting letter,
+  and fixed `N`-letter word generation.
+- Added seed encoding for the selected word-generation mode.
+
+### `f81c0f2` `fix: use real words for constrained modes` (`v00.00.29`)
+
+- Replaced fabricated fallback strings in constrained modes with dictionary-backed word pools.
+- Added a client-side `word-pools.js` data file derived from system dictionary content.
+- Updated the word-length planner to avoid impossible constrained-length combinations.
+
+### `d591437` `fix: hide conditional word controls` (`v00.00.30`)
+
+- Fixed the conditional `Starting letter` and `Word length N` fields so they only render when their
+  matching word-selection mode is active.
+- Added an explicit `[hidden]` CSS rule to make HTML `hidden` state effective against layout styling.
+
 ## Current State
 
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
-- Current version: `v00.00.11`
-- Latest recorded commit at the time of this log: pending next push for the `v00.00.11` generator update
-- Latest published tag: `v00.00.10`
+- Current version: `v00.00.30`
+- Latest recorded commit at the time of this log: `d591437`
+- Latest published tag: `v00.00.30`
 
 ## Notes
 
 - The current large-grid implementation is still generation-based and optimized for prototype speed,
   but now preserves a real path-partition puzzle structure across generated boards.
+- The current build includes custom seeds, named palette modes, connector/marker rendering, a solve
+  action, and constrained real-word generation modes backed by embedded dictionary-derived pools.
 - The GitHub Pages deployment is the public-facing version.
 - The OpenAI Sites deployment remains useful for internal workspace-hosted iteration.

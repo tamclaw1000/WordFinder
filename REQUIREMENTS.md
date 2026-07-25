@@ -24,7 +24,10 @@ that is actually shipping, not just the original concept.
 - Generated boards with blocked cells.
 - Drag and tap path entry.
 - Hidden word-length slots.
-- Hint, undo, reset, timer, and solved-state feedback.
+- Hint, undo, reset, solve, timer, and solved-state feedback.
+- Visible seed display plus user-entered custom seeds.
+- Solved-word color mode selection.
+- Word-selection constraints for themed/generated board vocab.
 - Local browser persistence for in-progress boards.
 - Static-site deployment to GitHub Pages.
 
@@ -61,6 +64,14 @@ that is actually shipping, not just the original concept.
 - Users can request unlimited additional practice boards.
 - Practice progress is isolated from daily progress.
 
+### Seeded Puzzle Variants
+
+- Every board exposes its normalized seed in the UI.
+- Users may enter a custom seed and regenerate that exact board on demand.
+- Seeds must always be normalized to include the selected grid size prefix, e.g. `5x5:hello`.
+- The seed must also encode the active word-selection mode so reproducing a board preserves both
+  the layout seed and the word-generation constraint.
+
 ## 6. User Stories
 
 - As a player, I want to open the page and start immediately.
@@ -69,7 +80,10 @@ that is actually shipping, not just the original concept.
 - As a player, I want to see the pattern of target word lengths so I can reason about the partition.
 - As a player, I want blocked cells to shape the puzzle and increase constraint.
 - As a player, I want hints, undo, and reset so I can recover from dead ends.
+- As a player, I want a solve button so I can reveal the full answer when I am stuck.
 - As a player, I want the same board to remain in progress if I refresh the page on the same device.
+- As a player, I want to share or replay a board by using its visible seed.
+- As a player, I want optional themed word constraints such as `Z`, `Q`, or fixed word length.
 - As a player, I want large boards to remain legible on mobile and desktop.
 
 ## 7. Functional Requirements
@@ -99,12 +113,33 @@ that is actually shipping, not just the original concept.
 - Track found word count, hint count, elapsed time, and solved state.
 - Persist daily/practice board progress in local storage keyed by puzzle id.
 - Restore persisted progress when the same board is reopened.
+- Starting a new practice board must clear carried-over solved values, hints, and active-path state.
 
 ### Assistance
 
 - `Undo` removes the last step in the active unsolved path.
 - `Reset` clears found words, hints, invalid states, and timer progress for the current board.
 - `Hint` reveals the next step count for the next unsolved word.
+- `Solve` reveals all remaining words, marks the board complete, and clears in-progress path state.
+
+### Configuration
+
+- Provide a solved-color dropdown with multiple rendering modes:
+  - different hues
+  - different saturation
+  - different values
+  - named palettes
+- Provide a word-selection dropdown with the following modes:
+  - any words
+  - only words containing `Z`
+  - only words containing `X`
+  - only words containing `Q`
+  - only words containing `ING`
+  - only words containing `MM`
+  - only words beginning with a user-chosen letter
+  - only words of user-chosen length `N`
+- Show the `Starting letter` field only for the `begins with` mode.
+- Show the `Word length N` field only for the fixed-length mode.
 
 ### Completion
 
@@ -146,8 +181,11 @@ puzzle files. Any requirements for the prototype must therefore reflect the curr
 ### Letter Assignment
 
 - Each word path is assigned a deterministic word string derived from the same seed family.
-- Prefer a built-in word bank when a matching word length exists.
-- Use a deterministic fallback generator when a suitable real word is unavailable.
+- Use deterministic dictionary-backed word pools for normal and constrained word modes.
+- For constrained modes (`Z`, `X`, `Q`, `ING`, `MM`), only emit real dictionary-backed words that
+  satisfy the selected constraint.
+- The length planner must avoid selecting word lengths that have no valid real-word candidates for
+  the active constraint.
 - Letters are written onto the board strictly according to the hidden path order.
 
 ### Determinism
@@ -162,6 +200,7 @@ Each materialized puzzle must expose:
 
 - puzzle id
 - puzzle name
+- normalized seed key
 - row count
 - column count
 - ordered word list
@@ -175,6 +214,9 @@ Each materialized puzzle must expose:
 - The board must stay legible from `4x4` through `20x20`.
 - Tile letter size, hint badge size, spacing, and corner radius must scale with board density.
 - Tile letters must appear visually centered within each tile.
+- Solved words must render with connector bars between adjacent tiles so each word reads as one
+  continuous claimed path.
+- Start-of-word and end-of-word markers must be visually distinct.
 - The page should remain usable without horizontal scrolling on common phone widths.
 - Invalid actions should be noticeable but brief.
 - The presentation should remain calm and uncluttered.
@@ -186,6 +228,8 @@ Each materialized puzzle must expose:
 - Color must not be the only state signal; solved/active/hinted states should differ by more than hue alone.
 - Focus indication must remain visible for interactive controls.
 - Tap input must provide a non-drag interaction path.
+- Conditionally hidden configuration fields must actually be removed from layout and not merely
+  visually obscured.
 
 ## 12. Technical Requirements
 
@@ -214,8 +258,10 @@ Each materialized puzzle must expose:
 
 ## 15. Known Prototype Constraints
 
-- The current word bank is embedded in the client and limited by available lengths.
-- Some generated words may be artificial fallback strings when the word bank lacks a suitable entry.
+- The current shipped build uses embedded dictionary-derived word pools in the client, so vocabulary
+  breadth is still finite even though it now covers constrained modes with real words.
+- Constrained modes can reduce the available length set, which may produce less varied word-length
+  mixes than unrestricted mode.
 - Difficulty is heuristic rather than formally rated.
 - The current generator is optimized for deterministic prototype speed and puzzle feel, not for formal
   uniqueness proofs or editorial quality guarantees.
