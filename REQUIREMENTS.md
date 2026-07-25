@@ -2,157 +2,226 @@
 
 ## 1. Purpose
 
-Build a web app that lets users play a daily word-path puzzle inspired by LinkedIn's Wend.
-Players must discover a fixed set of hidden words by tracing adjacent letters on a grid until
-every playable tile is used exactly once.
+Build a browser-based word-path puzzle inspired by LinkedIn's Wend.
+Players solve a board by finding every hidden word path so that every playable letter tile is
+used exactly once.
 
-## 2. Product Goals
+This document is reverse-engineered from the current prototype so the requirements match the app
+that is actually shipping, not just the original concept.
 
-- Deliver a fast, polished daily puzzle experience in desktop and mobile browsers.
-- Make the core mechanic easy to learn and satisfying to solve.
-- Support both a curated daily puzzle and replayable practice puzzles.
-- Keep the first release small enough to build quickly.
+## 2. Product Position
 
-## 3. Non-Goals for MVP
+- Deliver a fast, self-contained daily puzzle that works as a static website.
+- Support unlimited practice boards generated from the same deterministic algorithm as the daily board.
+- Keep the MVP small: single page, local state only, no account system, no backend requirement.
 
-- Multiplayer or live head-to-head play.
-- Social network integration.
-- Monetization, ads, or purchases.
-- User-generated puzzle authoring UI.
+## 3. MVP Scope
+
+### In Scope
+
+- Daily and practice modes.
+- Square grid sizes from `4x4` through `20x20`.
+- Generated boards with blocked cells.
+- Drag and tap path entry.
+- Hidden word-length slots.
+- Hint, undo, reset, timer, and solved-state feedback.
+- Local browser persistence for in-progress boards.
+- Static-site deployment to GitHub Pages.
+
+### Out Of Scope
+
+- Multiplayer, leaderboards, or streak services.
+- Server-side puzzle storage or accounts.
+- User-authored puzzles.
+- Dictionary validation of arbitrary user-entered words.
 - Native mobile apps.
+- Keyboard-first board navigation beyond basic button accessibility.
 
 ## 4. Core Gameplay Rules
 
-- The puzzle is displayed as a rectangular letter grid with blocked cells or wall cells.
-- A player forms a word by dragging or tapping through orthogonally adjacent letters.
+- The board is a square grid containing playable letter tiles and blocked cells.
+- A valid move may only continue orthogonally: up, down, left, or right.
 - Diagonal movement is not allowed.
-- Each playable letter tile must belong to exactly one final answer word.
-- Answer words cannot overlap.
-- The puzzle is solved only when all required words are found and all playable tiles are used.
-- The UI shows the target word lengths for the puzzle.
+- A tile may appear in at most one answer word.
+- The player must trace the exact hidden path for a word; same letters in a different route do not count.
+- The board is solved only when every solution word has been found and every playable tile is claimed.
+- The UI exposes the length of each hidden word but not the word itself.
 
-## 5. Target Modes
+## 5. Implemented Modes
 
 ### Daily Puzzle
 
-- One official puzzle is available per day.
-- The daily puzzle resets at a configurable release time.
-- All users receive the same daily puzzle for a given date.
+- One deterministic board is generated per grid size per day.
+- Daily board identity is based on the current day number and selected grid size.
+- The same browser on the same date and size receives the same board layout and word set.
 
-### Practice Mode
+### Practice Puzzle
 
-- Users can play unlimited generated or prebuilt puzzles.
-- Practice puzzles do not affect daily streaks or leaderboards.
+- Practice boards are deterministic by incrementing a local variant counter per selected grid size.
+- Users can request unlimited additional practice boards.
+- Practice progress is isolated from daily progress.
 
 ## 6. User Stories
 
-- As a player, I want to start a puzzle instantly without a tutorial gate.
-- As a player, I want to drag across letters to submit a word naturally.
-- As a player, I want visible word-length slots so I know the structure I am solving.
-- As a player, I want `Undo`, `Reset`, and `Hint` so I can recover from mistakes.
-- As a player, I want clear success feedback when I solve the board.
-- As a player, I want the app to work well on mobile touchscreens.
-- As a returning player, I want the daily puzzle to remember my in-progress state on the same device.
+- As a player, I want to open the page and start immediately.
+- As a player, I want to drag through letters naturally on touch and desktop.
+- As a player, I want to tap letters as an alternative to dragging.
+- As a player, I want to see the pattern of target word lengths so I can reason about the partition.
+- As a player, I want blocked cells to shape the puzzle and increase constraint.
+- As a player, I want hints, undo, and reset so I can recover from dead ends.
+- As a player, I want the same board to remain in progress if I refresh the page on the same device.
+- As a player, I want large boards to remain legible on mobile and desktop.
 
 ## 7. Functional Requirements
 
-### Puzzle Rendering
+### Board Rendering
 
-- Render the puzzle grid, blocked cells, and target answer slots.
-- Distinguish selected, confirmed, incorrect, and unused tiles visually.
-- Show the currently traced letter path in real time.
+- Render a square board with both playable and blocked cells.
+- Render blocked cells as dark wall tiles clearly distinct from playable cells.
+- Render current path, solved tiles, hinted tiles, and invalid attempts with distinct visual states.
+- Render word slots that show only word length until solved or hinted.
 
-### Input and Validation
+### Input
 
-- Support pointer drag input for desktop and touch drag input for mobile.
-- Support tap-to-build or keyboard interaction as an accessibility fallback.
-- Validate candidate paths against the current puzzle solution set.
-- Keep incorrect attempted paths visible long enough to explain failure, then clear them or mark them as mistakes.
+- Support pointer drag for mouse, touch, and stylus input.
+- Support tap-to-build as a fallback interaction.
+- Allow backtracking by moving to the immediately previous tile in the active path.
+- Ignore non-adjacent moves and attempts to reuse tiles already in the active path.
 
-### Progress and State
+### Validation
 
-- Track found words, remaining words, elapsed time, hints used, and completion state.
-- Persist local progress for active puzzles in browser storage.
-- Prevent duplicate claiming of the same answer word.
+- Validate a submission by exact path match against an unsolved hidden word.
+- Reject incorrect paths with temporary visual feedback.
+- Prevent already solved words from being claimed twice.
+
+### Progress
+
+- Track found word count, hint count, elapsed time, and solved state.
+- Persist daily/practice board progress in local storage keyed by puzzle id.
+- Restore persisted progress when the same board is reopened.
 
 ### Assistance
 
-- `Undo` removes the current in-progress path or last unconfirmed step.
-- `Reset` clears all non-final progress for the current board.
-- `Hint` either removes incorrect marks or reveals the next correct tile, based on product settings.
+- `Undo` removes the last step in the active unsolved path.
+- `Reset` clears found words, hints, invalid states, and timer progress for the current board.
+- `Hint` reveals the next step count for the next unsolved word.
 
 ### Completion
 
-- Show a completion state with time, hints used, and optional share text.
-- Allow replay of the solved board in read-only form.
-- Allow the user to move to another practice puzzle after completion.
+- Show solved-state messaging with elapsed time and hints used.
+- Keep solved words visible on the board and in the slot list.
+- Allow the user to switch modes or load another practice puzzle after solving.
 
-## 8. Puzzle Data Requirements
+## 8. Prototype Generation Algorithm Requirements
 
-- Each puzzle must define:
-- Grid dimensions.
-- Letter placed in each playable cell.
-- Blocked or wall cell positions.
-- Ordered solution word list.
-- Valid tile path for each solution word.
-- Release date for daily puzzles when applicable.
+The current MVP depends on deterministic procedural puzzle generation instead of hand-authored
+puzzle files. Any requirements for the prototype must therefore reflect the current generator.
 
-- Daily puzzle data should be loadable by date.
-- Practice puzzles should be loadable by identifier or generated by a deterministic algorithm.
+### Board Shape Generation
 
-## 9. Admin and Content Requirements
+- The generator must create a single contiguous playable path through the board.
+- Non-playable cells must be emitted as blocked cells.
+- The playable shape must be irregular enough that it does not read as a simple row-trimmed stripe.
+- The current prototype achieves this with a seeded self-avoiding path search:
+  - seed a pseudo-random generator from mode, variant/date, and grid size
+  - choose a target playable density that decreases as the grid gets larger
+  - attempt to grow one orthogonally contiguous path
+  - prefer turns over straight continuations to reduce visual obviousness
+  - reject branches that leave too little reachable space to finish the target path length
+- If the irregular search fails repeatedly, the generator may fall back to a simpler deterministic layout,
+  but fallback behavior should be rare and treated as a resilience path, not the normal outcome.
 
-- Admins need a simple way to add or update daily puzzles.
-- Puzzle content should be storable in a human-editable format such as JSON or YAML.
-- The system should validate that every puzzle:
-- Uses every playable tile exactly once across all answers.
-- Contains only orthogonally adjacent paths.
-- Has no overlapping answer paths.
-- Matches the declared word lengths.
+### Word-Length Planning
+
+- Generated boards must partition the playable path into multiple words.
+- Word lengths must currently stay within a bounded prototype-friendly range:
+  - minimum `4`
+  - maximum based on board size, capped at `12`
+- The length planner must avoid collapsing the whole board into nearly uniform word sizes.
+- The current prototype biases toward alternating short, medium, and long bands and penalizes repeating
+  the same length too often.
+
+### Letter Assignment
+
+- Each word path is assigned a deterministic word string derived from the same seed family.
+- Prefer a built-in word bank when a matching word length exists.
+- Use a deterministic fallback generator when a suitable real word is unavailable.
+- Letters are written onto the board strictly according to the hidden path order.
+
+### Determinism
+
+- For a given `{rows, cols, mode, variant/date}` input, generated layout, word lengths, and letters
+  must be reproducible.
+- Daily boards should therefore be stable without server coordination.
+
+## 9. Data Model Requirements
+
+Each materialized puzzle must expose:
+
+- puzzle id
+- puzzle name
+- row count
+- column count
+- ordered word list
+- exact cell path for each word
+- cell array describing `tile` or `block`
+- letter, word index, and step index for each playable tile
+- playable tile count
 
 ## 10. UX Requirements
 
-- Load the first interactive screen quickly on normal mobile data and desktop broadband.
-- The app should feel calm and focused, not cluttered.
-- The board must remain legible on small screens without accidental input.
-- Color should not be the only signal for game state.
-- Animations should be brief and meaningful.
-- Errors and invalid moves should be understandable without feeling punitive.
+- The board must stay legible from `4x4` through `20x20`.
+- Tile letter size, hint badge size, spacing, and corner radius must scale with board density.
+- Tile letters must appear visually centered within each tile.
+- The page should remain usable without horizontal scrolling on common phone widths.
+- Invalid actions should be noticeable but brief.
+- The presentation should remain calm and uncluttered.
 
 ## 11. Accessibility Requirements
 
-- Meet basic WCAG AA expectations for contrast, focus indication, and semantics.
-- Provide screen-reader labels for controls and puzzle status.
-- Offer a non-drag input fallback.
-- Avoid requiring color perception to distinguish states.
-- Respect reduced-motion preferences.
+- Controls must have semantic button/select markup.
+- Playable tiles must expose letter labels for assistive technology.
+- Color must not be the only state signal; solved/active/hinted states should differ by more than hue alone.
+- Focus indication must remain visible for interactive controls.
+- Tap input must provide a non-drag interaction path.
 
 ## 12. Technical Requirements
 
-- The web app should be responsive and work in current Chrome, Safari, Firefox, and Edge.
-- The frontend should be buildable as a static site or lightweight web app.
-- Puzzle state and validation logic should be separated cleanly from UI rendering.
-- Puzzle definitions should be versioned in the repository.
-- The system should support future server-backed accounts and leaderboards, but MVP should not require authentication.
+- The prototype must remain a single-page static web app.
+- The current implementation may keep generation and rendering in one file, but puzzle logic must remain
+  logically separable from display concerns.
+- The app must run in current evergreen desktop and mobile browsers.
+- Deployment must work via static hosting, currently GitHub Pages.
+- Browser storage is the only persistence layer required for MVP.
 
-## 13. Suggested MVP Architecture
+## 13. Content And Admin Requirements
 
-- Frontend: single-page web app.
-- Storage: local browser storage for progress.
-- Content source: repository-managed puzzle files.
-- Optional backend for later: daily puzzle API, accounts, analytics, leaderboard.
+- No external admin UI is required for the procedural prototype.
+- Future handcrafted daily puzzles remain a valid later extension, but are not required for the current build.
+- If handcrafted puzzles are introduced later, they must still conform to the same path, adjacency,
+  non-overlap, and full-coverage rules.
 
 ## 14. Success Criteria
 
-- A user can open the site and begin the daily puzzle in under 10 seconds.
-- A full puzzle can be completed on both desktop and mobile without input frustration.
-- Puzzle validation rejects malformed puzzle content before deployment.
-- The MVP supports daily puzzle play, practice play, hinting, undo/reset, and completion flow.
+- A player can load the site and start playing immediately.
+- The same daily board is reproduced for the same day and grid size.
+- Practice mode can generate multiple distinct deterministic boards.
+- Generated boards contain blocked cells, non-trivial path shapes, and varied word lengths.
+- Large boards remain visually readable and interactable.
+- A board can be fully solved on desktop and touch devices with the provided controls.
 
-## 15. Open Questions
+## 15. Known Prototype Constraints
 
-- Should hints be limited per puzzle?
-- Should incorrect guesses remain visible or disappear immediately?
-- Should practice mode use handcrafted puzzles, procedural generation, or both?
-- Should daily puzzle history be accessible after the day ends?
-- Should share results include emoji grid summaries or plain text only?
+- The current word bank is embedded in the client and limited by available lengths.
+- Some generated words may be artificial fallback strings when the word bank lacks a suitable entry.
+- Difficulty is heuristic rather than formally rated.
+- The current generator is optimized for deterministic prototype speed and puzzle feel, not for formal
+  uniqueness proofs or editorial quality guarantees.
+
+## 16. Open Follow-Ups
+
+- Should production boards move from procedural-only to curated or hybrid generation?
+- Should the generator add stronger anti-obviousness checks, such as path-visibility scoring?
+- Should hints be limited per board?
+- Should solved results include share text or emoji summaries?
+- Should future versions prove uniqueness of the intended partition rather than relying on heuristic difficulty?
