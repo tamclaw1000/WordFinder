@@ -477,10 +477,7 @@
           <div class="options-row">
             <div class="field">
               <label for="grid-size">Grid size</label>
-              <select id="grid-size">
-                <option value="4x4">4 x 4</option>
-                <option value="5x5" selected>5 x 5</option>
-              </select>
+              <select id="grid-size"></select>
             </div>
           </div>
 
@@ -511,64 +508,16 @@
 
     <script>
       const APP_VERSION = "v00.00.01";
+      const GRID_MIN = 4;
+      const GRID_MAX = 20;
+
+      const WORD_BANK = {"4":["ABBR","ABBY","ABCS","ABED","ABEL","ABET","ABLE","ABLY","ABMS","ABUT","ACCT","ACED","ACES","ACHE","ACHY","ACID","ACLU","ACME","ACNE","ACRE","ACTH","ACTS","ADAM","ADAN"],"5":["AARON","ABACI","ABACK","ABAFT","ABASE","ABASH","ABATE","ABBAS","ABBEY","ABBOT","ABDUL","ABEAM","ABETS","ABHOR","ABIDE","ABLER","ABNER","ABODE","ABORT","ABOUT","ABOVE","ABRAM","ABUJA","ABUSE"],"6":["AACHEN","ABACUS","ABASED","ABASES","ABATED","ABATES","ABBESS","ABBEYS","ABBOTS","ABBOTT","ABBREV","ABDUCT","ABHORS","ABIDED","ABIDES","ABJECT","ABJURE","ABLAZE","ABLEST","ABLOOM","ABOARD","ABODES","ABORTS","ABOUND"],"7":["AALIYAH","ABALONE","ABANDON","ABASHED","ABASHES","ABASING","ABATING","ABBASID","ABBREVS","ABDOMEN","ABDUCTS","ABELARD","ABELSON","ABETTED","ABETTER","ABETTOR","ABIDING","ABIDJAN","ABIGAIL","ABILENE","ABILITY","ABJURED","ABJURES","ABOLISH"],"8":["AARDVARK","ABACUSES","ABALONES","ABANDONS","ABASHING","ABATTOIR","ABBESSES","ABDICATE","ABDOMENS","ABDUCTED","ABDUCTEE","ABDUCTOR","ABERDEEN","ABERRANT","ABETTERS","ABETTING","ABETTORS","ABEYANCE","ABHORRED","ABJECTLY","ABJURING","ABLATIVE","ABLUTION","ABNEGATE"],"9":["AARDVARKS","ABANDONED","ABASEMENT","ABATEMENT","ABATTOIRS","ABDICATED","ABDICATES","ABDOMINAL","ABDUCTEES","ABDUCTING","ABDUCTION","ABDUCTORS","ABERNATHY","ABHORRENT","ABHORRING","ABILITIES","ABLATIVES","ABLUTIONS","ABNEGATED","ABNEGATES","ABOLISHED","ABOLISHES","ABOLITION","ABOMINATE"],"10":["ABANDONING","ABBREVIATE","ABDICATING","ABDICATION","ABDUCTIONS","ABERRATION","ABHORRENCE","ABJURATION","ABNEGATING","ABNEGATION","ABNORMALLY","ABOLISHING","ABOMINABLE","ABOMINABLY","ABOMINATED","ABOMINATES","ABORIGINAL","ABORIGINES","ABOVEBOARD","ABRASIVELY","ABRIDGMENT","ABROGATING","ABROGATION","ABRUPTNESS"],"11":["ABANDONMENT","ABBREVIATED","ABBREVIATES","ABDICATIONS","ABERRATIONS","ABJURATIONS","ABNORMALITY","ABOMINATING","ABOMINATION","ABORIGINALS","ABORTIONIST","ABRACADABRA","ABRIDGEMENT","ABRIDGMENTS","ABROGATIONS","ABSENTEEISM","ABSTENTIONS","ABSTRACTING","ABSTRACTION","ABSURDITIES","ABUSIVENESS","ACADEMICIAN","ACCELERATED","ACCELERATES"],"12":["ABBREVIATING","ABBREVIATION","ABOLITIONIST","ABOMINATIONS","ABORTIONISTS","ABRASIVENESS","ABRIDGEMENTS","ABSTRACTEDLY","ABSTRACTIONS","ABSTRACTNESS","ABSTRUSENESS","ACADEMICALLY","ACADEMICIANS","ACCELERATING","ACCELERATION","ACCELERATORS","ACCENTUATING","ACCENTUATION","ACCESSIONING","ACCIDENTALLY","ACCLIMATIZED","ACCLIMATIZES","ACCOMMODATED","ACCOMMODATES"],"13":["ABBREVIATIONS","ABNORMALITIES","ABOLITIONISTS","ACCELERATIONS","ACCEPTABILITY","ACCESSIBILITY","ACCLIMATIZING","ACCOMMODATING","ACCOMMODATION","ACCOMPANIMENT","ACCOMPLISHING","ACCOUTERMENTS","ACCOUTREMENTS","ACCREDITATION","ACCULTURATION","ACCUMULATIONS","ACETAMINOPHEN","ACKNOWLEDGING","ACQUAINTANCES","ACTUALIZATION","ACUPUNCTURIST","ADMINISTERING","ADMINISTRATED","ADMINISTRATES"],"14":["ABSTRACTNESSES","ACCOMMODATIONS","ACCOMPANIMENTS","ACCOMPLISHMENT","ACCOUNTABILITY","ACKNOWLEDGMENT","ACUPUNCTURISTS","ADMINISTRATING","ADMINISTRATION","ADMINISTRATIVE","ADMINISTRATORS","ADVANTAGEOUSLY","ADVERTISEMENTS","AFFECTIONATELY","AFOREMENTIONED","AGGLOMERATIONS","AGGLUTINATIONS","AGGRANDIZEMENT","AGGRESSIVENESS","AGRIBUSINESSES","ALPHABETICALLY","ALTRUISTICALLY","AMBASSADORSHIP","AMBIDEXTROUSLY"],"15":["ACCLIMATIZATION","ACCOMPLISHMENTS","ACKNOWLEDGEMENT","ACKNOWLEDGMENTS","ACQUISITIVENESS","ADMINISTRATIONS","AERODYNAMICALLY","AGRICULTURALIST","AMBASSADORSHIPS","AMERICANIZATION","ANTHROPOCENTRIC","ANTHROPOLOGICAL","ANTHROPOLOGISTS","ANTHROPOMORPHIC","ANTIDEPRESSANTS","ANTIPERSPIRANTS","APPRENTICESHIPS","APPROPRIATENESS","ARCHITECTURALLY","ASTROPHYSICISTS","ATHEROSCLEROSIS","ATMOSPHERICALLY","AUTHENTICATIONS","AUTHORITATIVELY"],"16":["ACKNOWLEDGEMENTS","ADMINISTRATIVELY","AGRICULTURALISTS","AMERICANIZATIONS","ANESTHESIOLOGIST","ANTAGONISTICALLY","ANTHROPOMORPHISM","APPREHENSIVENESS","ARISTOCRATICALLY","ARTERIOSCLEROSIS","AUSTRALOPITHECUS","AUTHORITARIANISM","AUTOBIOGRAPHICAL","BLOODTHIRSTINESS","BUREAUCRATICALLY","CANTANKEROUSNESS","CATASTROPHICALLY","CHANCELLORSVILLE","CHARACTERIZATION","CINEMATOGRAPHERS","CIRCUMNAVIGATING","CIRCUMNAVIGATION","CIRCUMSCRIPTIONS","CIRCUMSTANTIALLY"],"17":["ANESTHESIOLOGISTS","AUTHORITATIVENESS","CHARACTERIZATIONS","CIRCUMNAVIGATIONS","COMMERCIALIZATION","COMPARTMENTALIZED","COMPARTMENTALIZES","COMPREHENSIBILITY","COMPREHENSIVENESS","CONCEPTUALIZATION","CONGREGATIONALIST","CONSCIENTIOUSNESS","CONSTITUTIONALITY","CONTEMPORANEOUSLY","CONTRADISTINCTION","CONVERSATIONALIST","COUNTERPRODUCTIVE","COUNTERREVOLUTION","DECRIMINALIZATION","DEPARTMENTALIZING","DISADVANTAGEOUSLY","DISQUALIFICATIONS","ELECTROCARDIOGRAM","ENVIRONMENTALISTS"],"18":["CHARACTERISTICALLY","CHLOROFLUOROCARBON","COMPARTMENTALIZING","CONCEPTUALIZATIONS","CONGREGATIONALISTS","CONTRADISTINCTIONS","CONVERSATIONALISTS","COUNTERREVOLUTIONS","DISENFRANCHISEMENT","DISPROPORTIONATELY","ELECTROCARDIOGRAMS","ELECTROCARDIOGRAPH","HYPERSENSITIVITIES","INSTITUTIONALIZING","INTERNATIONALIZING","INTERRELATIONSHIPS","MISINTERPRETATIONS","MISREPRESENTATIONS","OVERSIMPLIFICATION","TELECOMMUNICATIONS","TRANSCENDENTALISTS","TRANSUBSTANTIATION","ULTRACONSERVATIVES"],"19":["CHLOROFLUOROCARBONS","COUNTERINTELLIGENCE","ELECTROCARDIOGRAPHS","INTERDENOMINATIONAL","NONREPRESENTATIONAL","OVERSIMPLIFICATIONS"],"20":["ANDRIANAMPOINIMERINA","COUNTERREVOLUTIONARY","ELECTROENCEPHALOGRAM","UNCHARACTERISTICALLY"]};
 
       document.title = `WordFinder Prototype ${APP_VERSION}`;
       document.getElementById("version-chip").textContent = APP_VERSION;
 
-      const puzzleSeeds = [
-        {
-          id: "pocket-1",
-          name: "Pocket Grid",
-          rows: 4,
-          cols: 4,
-          words: [
-            { text: "MOON", path: [0, 1, 2, 3] },
-            { text: "TIDE", path: [4, 5, 6, 7] },
-            { text: "STAR", path: [8, 9, 10, 11] },
-            { text: "WAVE", path: [12, 13, 14, 15] },
-          ],
-        },
-        {
-          id: "pocket-2",
-          name: "Mini Circuit",
-          rows: 4,
-          cols: 4,
-          words: [
-            { text: "LAMP", path: [0, 1, 2, 3] },
-            { text: "FERN", path: [4, 5, 6, 7] },
-            { text: "COVE", path: [8, 9, 10, 11] },
-            { text: "BARK", path: [12, 13, 14, 15] },
-          ],
-        },
-        {
-          id: "garden-1",
-          name: "Winding Start",
-          rows: 5,
-          cols: 5,
-          words: [
-            { text: "CAT", path: [0, 1, 2] },
-            { text: "WIND", path: [4, 9, 14, 19] },
-            { text: "RIVER", path: [24, 23, 22, 21, 20] },
-            { text: "PLANET", path: [5, 6, 7, 8, 13, 18] },
-          ],
-        },
-        {
-          id: "garden-2",
-          name: "Practice Loop",
-          rows: 5,
-          cols: 5,
-          words: [
-            { text: "SUN", path: [0, 1, 2] },
-            { text: "MIST", path: [4, 9, 14, 19] },
-            { text: "BRICK", path: [24, 23, 22, 21, 20] },
-            { text: "GARDEN", path: [5, 6, 7, 8, 13, 18] },
-          ],
-        },
-      ];
-
       const state = {
         mode: "daily",
-        practiceIndex: 1,
         selectedGridSize: "5x5",
         puzzle: null,
         activePath: [],
@@ -603,63 +552,110 @@
         gridSize: document.getElementById("grid-size"),
       };
 
-      function hydratePuzzles() {
-        return puzzleSeeds.map((seed) => {
-          const occupied = new Map();
-
-          seed.words.forEach((word, wordIndex) => {
-            if (word.path.length !== word.text.length) {
-              throw new Error(`Path length mismatch in ${seed.id}:${word.text}`);
-            }
-
-            word.path.forEach((cellIndex, letterIndex) => {
-              const next = word.path[letterIndex + 1];
-              if (next !== undefined) {
-                const [r1, c1] = toCoord(cellIndex, seed.cols);
-                const [r2, c2] = toCoord(next, seed.cols);
-                const delta = Math.abs(r1 - r2) + Math.abs(c1 - c2);
-                if (delta !== 1) {
-                  throw new Error(`Non-adjacent step in ${seed.id}:${word.text}`);
-                }
-              }
-
-              if (occupied.has(cellIndex)) {
-                throw new Error(`Overlapping tile in ${seed.id} at ${cellIndex}`);
-              }
-
-              occupied.set(cellIndex, {
-                letter: word.text[letterIndex],
-                wordIndex,
-                step: letterIndex + 1,
-              });
-            });
-          });
-
-          const totalCells = seed.rows * seed.cols;
-          const cells = Array.from({ length: totalCells }, (_, index) =>
-            occupied.has(index)
-              ? { type: "tile", ...occupied.get(index) }
-              : { type: "block" }
-          );
-
-          return {
-            ...seed,
-            cells,
-            playableCount: occupied.size,
-          };
-        });
-      }
-
       function toCoord(index, cols) {
         return [Math.floor(index / cols), index % cols];
       }
 
-      const puzzles = hydratePuzzles();
+      function pathForRow(row, cols) {
+        const start = row * cols;
+        if (row % 2 === 0) {
+          return Array.from({ length: cols }, (_, index) => start + index);
+        }
+        return Array.from({ length: cols }, (_, index) => start + (cols - 1 - index));
+      }
 
-      function puzzlesForSelectedSize() {
-        return puzzles.filter(
-          (puzzle) => `${puzzle.rows}x${puzzle.cols}` === state.selectedGridSize
-        );
+      function makeRng(seed) {
+        let value = seed >>> 0;
+        return () => {
+          value = (value * 1664525 + 1013904223) >>> 0;
+          return value / 4294967296;
+        };
+      }
+
+      function hashText(text) {
+        let hash = 2166136261;
+        for (const char of text) {
+          hash ^= char.charCodeAt(0);
+          hash = Math.imul(hash, 16777619);
+        }
+        return hash >>> 0;
+      }
+
+      function generateFallbackWord(length, rng) {
+        const consonants = "BCDFGHJKLMNPRSTVWZ";
+        const vowels = "AEIOUY";
+        let word = "";
+        for (let index = 0; index < length; index += 1) {
+          const source = index % 2 === 0 ? consonants : vowels;
+          word += source[Math.floor(rng() * source.length)];
+        }
+        return word;
+      }
+
+      function pickWord(length, rowIndex, seedLabel) {
+        const bank = WORD_BANK[String(length)] || [];
+        const seed = hashText(`${seedLabel}:${length}:${rowIndex}`);
+        const rng = makeRng(seed);
+        if (bank.length === 0) {
+          return generateFallbackWord(length, rng);
+        }
+        if (bank.length >= length) {
+          return bank[(seed + rowIndex * 7) % bank.length];
+        }
+        const base = bank[(seed + rowIndex * 5) % bank.length];
+        if (rowIndex < bank.length) {
+          return base;
+        }
+        return base
+          .split("")
+          .map((char, index) => {
+            if ((index + rowIndex) % 5 !== 0) return char;
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            return alphabet[(alphabet.indexOf(char) + rowIndex) % alphabet.length];
+          })
+          .join("");
+      }
+
+      function materializePuzzle(rows, cols, seedLabel, variantIndex) {
+        const variantSeed = `${seedLabel}:${variantIndex}`;
+        const words = Array.from({ length: rows }, (_, rowIndex) => {
+          const text = pickWord(cols, rowIndex, variantSeed);
+          return {
+            text,
+            path: pathForRow(rowIndex, cols),
+          };
+        });
+
+        const occupied = new Map();
+        words.forEach((word, wordIndex) => {
+          word.path.forEach((cellIndex, letterIndex) => {
+            occupied.set(cellIndex, {
+              letter: word.text[letterIndex],
+              wordIndex,
+              step: letterIndex + 1,
+            });
+          });
+        });
+
+        const cells = Array.from({ length: rows * cols }, (_, index) => ({
+          type: "tile",
+          ...occupied.get(index),
+        }));
+
+        return {
+          id: `${rows}x${cols}-${seedLabel}-${variantIndex}`,
+          name: `${rows}x${cols} ${seedLabel === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
+          rows,
+          cols,
+          words,
+          cells,
+          playableCount: rows * cols,
+        };
+      }
+
+      function currentGridSize() {
+        const [rows, cols] = state.selectedGridSize.split("x").map(Number);
+        return { rows, cols };
       }
 
       function storageKeyFor(puzzle) {
@@ -687,8 +683,8 @@
 
       function getDailyPuzzle() {
         const day = Math.floor(Date.now() / 86400000);
-        const filtered = puzzlesForSelectedSize();
-        return filtered[day % filtered.length];
+        const { rows, cols } = currentGridSize();
+        return materializePuzzle(rows, cols, "daily", day);
       }
 
       function startPuzzle(puzzle, mode) {
@@ -906,6 +902,10 @@
 
       function renderBoard() {
         els.board.style.gridTemplateColumns = `repeat(${state.puzzle.cols}, minmax(0, 1fr))`;
+        els.board.style.gap =
+          state.puzzle.cols >= 18 ? "2px" :
+          state.puzzle.cols >= 14 ? "4px" :
+          state.puzzle.cols >= 10 ? "6px" : "10px";
         els.board.innerHTML = "";
 
         state.puzzle.cells.forEach((cell, index) => {
@@ -1005,15 +1005,32 @@
       }
 
       function nextPracticePuzzle() {
-        const filtered = puzzlesForSelectedSize();
-        state.practiceIndex = (state.practiceIndex + 1) % filtered.length;
-        startPuzzle(filtered[state.practiceIndex], "practice");
+        const { rows, cols } = currentGridSize();
+        const nextVariant = (state.practiceIndex || 0) + 1;
+        state.practiceIndex = nextVariant;
+        startPuzzle(materializePuzzle(rows, cols, "practice", nextVariant), "practice");
       }
 
       function applyGridSize(value) {
         state.selectedGridSize = value;
         state.practiceIndex = 0;
-        startPuzzle(getDailyPuzzle(), state.mode);
+        if (state.mode === "practice") {
+          const { rows, cols } = currentGridSize();
+          startPuzzle(materializePuzzle(rows, cols, "practice", state.practiceIndex), "practice");
+          return;
+        }
+        startPuzzle(getDailyPuzzle(), "daily");
+      }
+
+      function populateGridSizeOptions() {
+        els.gridSize.innerHTML = "";
+        for (let size = GRID_MIN; size <= GRID_MAX; size += 1) {
+          const option = document.createElement("option");
+          option.value = `${size}x${size}`;
+          option.textContent = `${size} x ${size}`;
+          if (size === 5) option.selected = true;
+          els.gridSize.appendChild(option);
+        }
       }
 
       els.dailyBtn.addEventListener("click", () => startPuzzle(getDailyPuzzle(), "daily"));
@@ -1025,6 +1042,7 @@
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
       window.addEventListener("pointerup", handlePointerUp);
 
+      populateGridSizeOptions();
       startPuzzle(getDailyPuzzle(), "daily");
     </script>
   </body>
