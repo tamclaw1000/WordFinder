@@ -590,7 +590,7 @@
     </main>
 
     <script>
-      const APP_VERSION = "v00.00.20";
+      const APP_VERSION = "v00.00.21";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1325,7 +1325,7 @@
         state.puzzle.words.forEach((word, wordIndex) => {
           if (!isSolvedWord(wordIndex)) return;
           for (let index = 0; index < word.path.length - 1; index += 1) {
-            solved.push([word.path[index], word.path[index + 1]]);
+            solved.push([word.path[index], word.path[index + 1], wordIndex]);
           }
         });
 
@@ -1334,6 +1334,18 @@
         }
 
         return { solved, active };
+      }
+
+      function solvedWordHue(wordIndex) {
+        return (wordIndex * 67 + 204) % 360;
+      }
+
+      function solvedWordColor(wordIndex) {
+        return `hsl(${solvedWordHue(wordIndex)} 58% 40%)`;
+      }
+
+      function solvedWordAccent(wordIndex) {
+        return `hsl(${solvedWordHue(wordIndex)} 72% 66%)`;
       }
 
       function activeWordPath() {
@@ -1556,7 +1568,7 @@
         const arrowMap = buildArrowMap();
         const connectors = buildConnectorSegments();
 
-        function appendConnector(from, to, className) {
+        function appendConnector(from, to, className, wordIndex = null) {
           const [fromRow, fromCol] = toCoord(from, state.puzzle.cols);
           const [toRow, toCol] = toCoord(to, state.puzzle.cols);
           const step = metrics.tileSize + metrics.gap;
@@ -1572,6 +1584,9 @@
 
           const connector = document.createElement("div");
           connector.className = `path-connector ${className}`;
+          if (className === "solved" && wordIndex !== null) {
+            connector.style.background = solvedWordAccent(wordIndex);
+          }
           connector.style.width = `${length}px`;
           connector.style.height = `${thickness}px`;
           connector.style.left = `${x1}px`;
@@ -1581,7 +1596,7 @@
           els.board.appendChild(connector);
         }
 
-        connectors.solved.forEach(([from, to]) => appendConnector(from, to, "solved"));
+        connectors.solved.forEach(([from, to, wordIndex]) => appendConnector(from, to, "solved", wordIndex));
         connectors.active.forEach(([from, to]) => appendConnector(from, to, "active"));
 
         state.puzzle.cells.forEach((cell, index) => {
@@ -1603,7 +1618,11 @@
           button.appendChild(letter);
 
           if (state.activePath.includes(index)) button.classList.add("active");
-          if (isSolvedWord(cell.wordIndex)) button.classList.add("found", "locked");
+          if (isSolvedWord(cell.wordIndex)) {
+            button.classList.add("found", "locked");
+            button.style.background = solvedWordColor(cell.wordIndex);
+            button.style.borderColor = solvedWordAccent(cell.wordIndex);
+          }
           if (state.invalidTiles.includes(index)) button.classList.add("invalid");
           if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
             button.classList.add("hinted");
@@ -1623,6 +1642,9 @@
             const arrowEl = document.createElement("span");
             arrowEl.className = `path-arrow ${activeArrow ? "active" : "solved"}`;
             arrowEl.textContent = arrow;
+            if (!activeArrow && isSolvedWord(cell.wordIndex)) {
+              arrowEl.style.color = solvedWordAccent(cell.wordIndex);
+            }
             button.appendChild(arrowEl);
           }
 
@@ -1632,6 +1654,9 @@
             const endEl = document.createElement("span");
             endEl.className = `path-end ${isActiveEnd ? "active" : "solved"}`;
             endEl.textContent = "●";
+            if (!isActiveEnd && isSolvedWord(cell.wordIndex)) {
+              endEl.style.color = solvedWordAccent(cell.wordIndex);
+            }
             button.appendChild(endEl);
           }
 
