@@ -654,7 +654,7 @@
       <section class="hero">
         <div class="hero-bar">
           <div class="eyebrow">Clean rebuild</div>
-          <div class="version-chip" id="version-chip">v00.00.36</div>
+          <div class="version-chip" id="version-chip">v00.00.37</div>
           <a class="link-chip" href="./v2.html">Open v2</a>
           <a class="link-chip" href="./v1.html">Open v1</a>
         </div>
@@ -885,7 +885,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.36";
+      const APP_VERSION = "v00.00.37";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1737,6 +1737,90 @@
         return blocked;
       }
 
+      function runsPartitionableForOrientation(rows, cols, blockedSet, orientation, lengths) {
+        const runs = collectPlayableRuns(rows, cols, blockedSet, orientation);
+        if (runs.length === 0) return false;
+        return runs.every((run) => run.length >= 4 && canPartitionLengths(run.length, lengths));
+      }
+
+      function constrainedPatternedBlockedMask(
+        rows,
+        cols,
+        seedLabel,
+        layoutSettings,
+        target,
+        slotOrientation,
+        lengths
+      ) {
+        const directionMap = {
+          verticals: [[1, 0]],
+          horizontals: [[0, 1]],
+          straights: [[1, 0], [0, 1]],
+          "diag-slash": [[1, -1]],
+          "diag-backslash": [[1, 1]],
+          "diag-both": [[1, -1], [1, 1]]
+        };
+        const directions = directionMap[layoutSettings.mode] || [];
+        const rng = makeRng(hashText(`${seedLabel}:blank-pattern:${layoutSettings.mode}:${slotOrientation}`));
+        const blocked = new Set();
+        if (directions.length === 0) return blocked;
+
+        const tryAddCells = (candidateCells) => {
+          const uniqueCells = candidateCells.filter((cell, index) =>
+            !blocked.has(cell) && candidateCells.indexOf(cell) === index
+          );
+          if (uniqueCells.length === 0) return false;
+          const remainingBudget = target - blocked.size;
+          if (remainingBudget <= 0) return false;
+          const cellsToAdd = uniqueCells.slice(0, remainingBudget);
+          cellsToAdd.forEach((cell) => blocked.add(cell));
+          const valid = runsPartitionableForOrientation(rows, cols, blocked, slotOrientation, lengths);
+          if (!valid) cellsToAdd.forEach((cell) => blocked.delete(cell));
+          return valid;
+        };
+
+        for (let attempt = 0; attempt < rows * cols * 80 && blocked.size < target; attempt += 1) {
+          const [dr, dc] = directions[randInt(rng, 0, directions.length - 1)];
+          const startRow = randInt(rng, 0, rows - 1);
+          const startCol = randInt(rng, 0, cols - 1);
+          const maxForward = (() => {
+            let max = 0;
+            let row = startRow;
+            let col = startCol;
+            while (row >= 0 && row < rows && col >= 0 && col < cols) {
+              max += 1;
+              row += dr;
+              col += dc;
+            }
+            return max;
+          })();
+          if (maxForward <= 0) continue;
+          const segmentLength = randInt(
+            rng,
+            1,
+            Math.max(1, Math.min(maxForward, Math.max(2, Math.ceil(Math.max(rows, cols) / 2))))
+          );
+          const cells = lineSegmentCells(startRow, startCol, dr, dc, segmentLength, rows, cols);
+          if (cells.length === 0) continue;
+          tryAddCells(cells);
+        }
+
+        if (blocked.size < target) {
+          const remaining = Array.from({ length: rows * cols }, (_, index) => index)
+            .filter((index) => !blocked.has(index));
+          for (let i = remaining.length - 1; i > 0; i -= 1) {
+            const j = randInt(rng, 0, i);
+            [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+          }
+          for (const index of remaining) {
+            if (blocked.size >= target) break;
+            tryAddCells([index]);
+          }
+        }
+
+        return blocked;
+      }
+
       function collectPlayableRuns(rows, cols, blockedSet, orientation) {
         const runs = [];
 
@@ -1776,7 +1860,9 @@
       function slotOrientationsForLayout(mode) {
         switch (mode) {
           case "verticals":
+            return ["rows", "cols"];
           case "horizontals":
+            return ["cols", "rows"];
           case "straights":
           case "diag-slash":
           case "diag-backslash":
@@ -1819,13 +1905,22 @@
         const attemptsPerTarget = exactRequested ? 480 : 220;
 
         for (const target of fallbackTargets) {
-          for (let attempt = 0; attempt < attemptsPerTarget; attempt += 1) {
-            const blocked = patternedBlockedMask(rows, cols, `${seedLabel}:pattern:${target}:${attempt}`, layoutSettings, target);
-            const availableSet = collectPlayableSet(rows, cols, blocked);
-            if (availableSet.size < 4) continue;
-            if (!canPartitionLengths(availableSet.size, lengths)) continue;
+          for (const orientation of slotOrientationsForLayout(layoutSettings.mode)) {
+            for (let attempt = 0; attempt < attemptsPerTarget; attempt += 1) {
+              const blocked = constrainedPatternedBlockedMask(
+                rows,
+                cols,
+                `${seedLabel}:pattern:${target}:${attempt}`,
+                layoutSettings,
+                target,
+                orientation,
+                lengths
+              );
+              if (blocked.size !== target) continue;
+              const availableSet = collectPlayableSet(rows, cols, blocked);
+              if (availableSet.size < 4) continue;
+              if (!canPartitionLengths(availableSet.size, lengths)) continue;
 
-            for (const orientation of slotOrientationsForLayout(layoutSettings.mode)) {
               const runs = collectPlayableRuns(rows, cols, blocked, orientation);
               if (runs.length === 0) continue;
               if (runs.some((run) => run.length < 4 || !canPartitionLengths(run.length, lengths))) continue;
