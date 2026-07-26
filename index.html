@@ -1055,6 +1055,12 @@
         return row * cols + col;
       }
 
+      function directionBetween(fromIndex, toIndexValue, cols) {
+        const [fromRow, fromCol] = toCoord(fromIndex, cols);
+        const [toRow, toCol] = toCoord(toIndexValue, cols);
+        return [toRow - fromRow, toCol - fromCol];
+      }
+
       function hashText(text) {
         let hash = 2166136261;
         for (const char of text) {
@@ -1414,7 +1420,46 @@
         return orthNeighbors(index, rows, cols).filter((neighbor) => !occupiedSet.has(neighbor) && !localSet.has(neighbor)).length;
       }
 
-      function placeRandomPath(length, occupiedSet, rows, cols, rng) {
+      function pathTurnCount(path, cols) {
+        let turns = 0;
+        for (let index = 1; index < path.length - 1; index += 1) {
+          const [dr1, dc1] = directionBetween(path[index - 1], path[index], cols);
+          const [dr2, dc2] = directionBetween(path[index], path[index + 1], cols);
+          if (dr1 !== dr2 || dc1 !== dc2) turns += 1;
+        }
+        return turns;
+      }
+
+      function pathHasTurn(path, cols) {
+        return pathTurnCount(path, cols) > 0;
+      }
+
+      function countTurningPaths(slotPaths, cols) {
+        return slotPaths.reduce((count, path) => count + (pathHasTurn(path, cols) ? 1 : 0), 0);
+      }
+
+      function requiredTurningWordCount(lengthsOrPaths, cols = null) {
+        const lengths = typeof lengthsOrPaths[0] === "number"
+          ? lengthsOrPaths
+          : lengthsOrPaths.map((path) => path.length);
+        const eligible = lengths.filter((length) => length >= 3).length;
+        if (eligible === 0) return 0;
+        const total = lengths.length;
+        return Math.min(eligible, Math.max(1, Math.ceil(total * 0.25)));
+      }
+
+      function traversalTurnIndexes(traversal, cols) {
+        const indexes = [];
+        for (let index = 1; index < traversal.length - 1; index += 1) {
+          const [dr1, dc1] = directionBetween(traversal[index - 1], traversal[index], cols);
+          const [dr2, dc2] = directionBetween(traversal[index], traversal[index + 1], cols);
+          if (dr1 !== dr2 || dc1 !== dc2) indexes.push(index);
+        }
+        return indexes;
+      }
+
+      function placeRandomPath(length, occupiedSet, rows, cols, rng, options = {}) {
+        const requireTurn = Boolean(options.requireTurn && length >= 3);
         const freeCells = [];
         for (let index = 0; index < rows * cols; index += 1) {
           if (!occupiedSet.has(index)) freeCells.push(index);
@@ -1426,19 +1471,26 @@
           const path = [start];
           const localSet = new Set([start]);
 
-          function dfs(current) {
-            if (path.length === length) return true;
+          function dfs(current, previousDirection = null, hasTurn = false) {
+            if (path.length === length) return !requireTurn || hasTurn;
             let neighbors = orthNeighbors(current, rows, cols)
               .filter((neighbor) => !occupiedSet.has(neighbor) && !localSet.has(neighbor))
               .map((neighbor) => ({
                 neighbor,
-                degree: countAvailableNeighbors(neighbor, rows, cols, occupiedSet, localSet)
+                degree: countAvailableNeighbors(neighbor, rows, cols, occupiedSet, localSet),
+                direction: directionBetween(current, neighbor, cols)
               }));
-            neighbors.sort((a, b) => a.degree - b.degree || rng() - 0.5);
-            for (const { neighbor } of neighbors) {
+            neighbors.sort((a, b) => {
+              const aTurn = previousDirection && (a.direction[0] !== previousDirection[0] || a.direction[1] !== previousDirection[1]) ? 1 : 0;
+              const bTurn = previousDirection && (b.direction[0] !== previousDirection[0] || b.direction[1] !== previousDirection[1]) ? 1 : 0;
+              if (requireTurn && aTurn !== bTurn) return bTurn - aTurn;
+              return a.degree - b.degree || rng() - 0.5;
+            });
+            for (const { neighbor, direction } of neighbors) {
+              const nextTurn = hasTurn || (previousDirection && (direction[0] !== previousDirection[0] || direction[1] !== previousDirection[1]));
               localSet.add(neighbor);
               path.push(neighbor);
-              if (dfs(neighbor)) return true;
+              if (dfs(neighbor, direction, nextTurn)) return true;
               path.pop();
               localSet.delete(neighbor);
             }
@@ -1464,15 +1516,38 @@
         return traversal;
       }
 
-      function splitTraversalIntoSlots(traversal, totalCells, wordSettings, rng) {
+      function splitTraversalIntoSlots(traversal, totalCells, wordSettings, cols, rng) {
         const lengths = chooseWordLengthsForTotal(totalCells, wordSettings, rng);
+        const targetTurningWords = requiredTurningWordCount(lengths);
+        const turnIndexes = traversalTurnIndexes(traversal, cols);
         const slotPaths = [];
+        const remainingLengths = [...lengths];
         let offset = 0;
-        lengths.forEach((length) => {
+        let turningWords = 0;
+
+        while (remainingLengths.length > 0) {
+          let chosenIndex = 0;
+          const turnsNeeded = targetTurningWords - turningWords;
+          const nextTurn = turnIndexes.find((turnIndex) => turnIndex > offset);
+
+          if (turnsNeeded > 0 && nextTurn !== undefined) {
+            const minLengthToCrossTurn = nextTurn - offset + 2;
+            const candidates = remainingLengths
+              .map((length, index) => ({ length, index }))
+              .filter(({ length }) => length >= 3 && length >= minLengthToCrossTurn);
+            if (candidates.length) {
+              candidates.sort((a, b) => a.length - b.length || rng() - 0.5);
+              chosenIndex = candidates[0].index;
+            }
+          }
+
+          const [length] = remainingLengths.splice(chosenIndex, 1);
           if (offset + length > traversal.length) return;
-          slotPaths.push(traversal.slice(offset, offset + length));
+          const slot = traversal.slice(offset, offset + length);
+          slotPaths.push(slot);
+          if (pathHasTurn(slot, cols)) turningWords += 1;
           offset += length;
-        });
+        }
         return slotPaths;
       }
 
@@ -1598,7 +1673,7 @@
         if (layoutSettings.mode === "no-blanks") {
           const rng = makeRng(hashText(`${seedLabel}:noblanks`));
           const traversal = snakeTraversal(rows, cols, rng);
-          const slotPaths = splitTraversalIntoSlots(traversal, rows * cols, wordSettings, rng);
+          const slotPaths = splitTraversalIntoSlots(traversal, rows * cols, wordSettings, cols, rng);
           const playableSet = new Set(slotPaths.flat());
           return {
             cells: Array.from({ length: rows * cols }, (_, index) => playableSet.has(index) ? { type: "tile" } : { type: "block" }),
@@ -1614,12 +1689,20 @@
 
         for (let attempt = 0; attempt < 24; attempt += 1) {
           const lengths = chooseWordLengthsForTotal(targetPlayable, wordSettings, makeRng(hashText(`${seedLabel}:lengths:${attempt}`)));
+          const requiredTurningWords = requiredTurningWordCount(lengths);
+          const turningCandidates = shuffle(
+            lengths.map((length, index) => ({ length, index })).filter(({ length }) => length >= 3),
+            makeRng(hashText(`${seedLabel}:turns:${attempt}`))
+          ).slice(0, requiredTurningWords);
+          const turningSet = new Set(turningCandidates.map(({ index }) => index));
           const occupied = new Set();
           const slotPaths = [];
           let failed = false;
 
           for (let index = 0; index < lengths.length; index += 1) {
-            const path = placeRandomPath(lengths[index], occupied, rows, cols, rng);
+            const path = placeRandomPath(lengths[index], occupied, rows, cols, rng, {
+              requireTurn: turningSet.has(index)
+            });
             if (!path) {
               failed = true;
               break;
@@ -1629,6 +1712,7 @@
           }
 
           if (!failed) {
+            if (countTurningPaths(slotPaths, cols) < requiredTurningWords) continue;
             const cells = Array.from({ length: rows * cols }, (_, index) => occupied.has(index) ? { type: "tile" } : { type: "block" });
             const result = { cells, slotPaths, playableCount: occupied.size };
             if (!best || result.playableCount > best.playableCount) best = result;
@@ -1640,7 +1724,7 @@
 
         const fallbackRng = makeRng(hashText(`${seedLabel}:fallback`));
         const traversal = snakeTraversal(rows, cols, fallbackRng);
-        const slotPaths = splitTraversalIntoSlots(traversal, targetPlayable, wordSettings, fallbackRng);
+        const slotPaths = splitTraversalIntoSlots(traversal, targetPlayable, wordSettings, cols, fallbackRng);
         const playableSet = new Set(slotPaths.flat());
         return {
           cells: Array.from({ length: rows * cols }, (_, index) => playableSet.has(index) ? { type: "tile" } : { type: "block" }),
