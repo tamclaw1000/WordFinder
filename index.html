@@ -654,7 +654,7 @@
       <section class="hero">
         <div class="hero-bar">
           <div class="eyebrow">Clean rebuild</div>
-          <div class="version-chip" id="version-chip">v00.00.38</div>
+          <div class="version-chip" id="version-chip">v00.00.39</div>
           <a class="link-chip" href="./v2.html">Open v2</a>
           <a class="link-chip" href="./v1.html">Open v1</a>
         </div>
@@ -885,7 +885,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.38";
+      const APP_VERSION = "v00.00.39";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1764,10 +1764,18 @@
         return blocked;
       }
 
+      function maxFittableRunLength(runLength, lengths) {
+        for (let usable = runLength; usable >= 4; usable -= 1) {
+          if (canPartitionLengths(usable, lengths)) return usable;
+        }
+        return 0;
+      }
+
       function runsPartitionableForOrientation(rows, cols, blockedSet, orientation, lengths) {
         const runs = collectPlayableRuns(rows, cols, blockedSet, orientation);
         if (runs.length === 0) return false;
-        return runs.every((run) => run.length >= 4 && canPartitionLengths(run.length, lengths));
+        const usableCells = runs.reduce((sum, run) => sum + maxFittableRunLength(run.length, lengths), 0);
+        return usableCells >= 4;
       }
 
       function constrainedPatternedBlockedMask(
@@ -1902,18 +1910,32 @@
 
       function buildSlotPathsFromRuns(runs, cols, seedLabel, wordSettings) {
         const slotPaths = [];
+        const droppedCells = [];
         runs.forEach((run, runIndex) => {
-          if (run.length < 4) {
-            throw new Error("run-too-short");
+          const lengths = allowedWordLengths(wordSettings);
+          const usableLength = maxFittableRunLength(run.length, lengths);
+          if (usableLength === 0) {
+            droppedCells.push(...run);
+            return;
           }
-          const lengths = chooseWordLengths(run.length, cols, `${seedLabel}:run:${runIndex}`, wordSettings);
+
+          const trim = run.length - usableLength;
+          const trimSeed = hashText(`${seedLabel}:trim:${runIndex}`);
+          const dropFront = trim === 0 ? 0 : trimSeed % (trim + 1);
+          const dropBack = trim - dropFront;
+          const keptRun = run.slice(dropFront, run.length - dropBack);
+
+          if (dropFront > 0) droppedCells.push(...run.slice(0, dropFront));
+          if (dropBack > 0) droppedCells.push(...run.slice(run.length - dropBack));
+
+          const lengthsForRun = chooseWordLengths(keptRun.length, cols, `${seedLabel}:run:${runIndex}`, wordSettings);
           let offset = 0;
-          lengths.forEach((length) => {
-            slotPaths.push(run.slice(offset, offset + length));
+          lengthsForRun.forEach((length) => {
+            slotPaths.push(keptRun.slice(offset, offset + length));
             offset += length;
           });
         });
-        return slotPaths;
+        return { slotPaths, droppedCells };
       }
 
       function buildPatternPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings) {
@@ -1949,20 +1971,24 @@
                 lengths
               );
               if (blocked.size !== target) continue;
-              const availableSet = collectPlayableSet(rows, cols, blocked);
-              if (availableSet.size < 4) continue;
-              if (!canPartitionLengths(availableSet.size, lengths)) continue;
-
               const runs = collectPlayableRuns(rows, cols, blocked, orientation);
               if (runs.length === 0) continue;
-              if (runs.some((run) => run.length < 4 || !canPartitionLengths(run.length, lengths))) continue;
 
               try {
-                const slotPaths = buildSlotPathsFromRuns(runs, cols, `${seedLabel}:slots:${target}:${attempt}:${orientation}`, wordSettings);
+                const { slotPaths, droppedCells } = buildSlotPathsFromRuns(
+                  runs,
+                  cols,
+                  `${seedLabel}:slots:${target}:${attempt}:${orientation}`,
+                  wordSettings
+                );
+                if (slotPaths.length === 0) continue;
+                const playableSet = new Set(slotPaths.flat());
+                const finalBlocked = new Set([...blocked, ...droppedCells]);
                 return {
                   slotPaths,
-                  cells: buildCellsFromPlayable(rows, cols, availableSet),
-                  playableCount: availableSet.size
+                  cells: buildCellsFromPlayable(rows, cols, playableSet),
+                  playableCount: playableSet.size,
+                  blockedCount: finalBlocked.size
                 };
               } catch {
                 continue;
