@@ -603,6 +603,110 @@
         text-decoration: none;
       }
 
+      .play-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .settings-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(16, 24, 22, 0.5);
+        backdrop-filter: blur(10px);
+      }
+
+      .settings-dialog {
+        width: min(980px, 100%);
+        max-height: min(88vh, 920px);
+        overflow: auto;
+        padding: 22px;
+        border-radius: 28px;
+        background: var(--paper-strong);
+        border: 1px solid rgba(255, 255, 255, 0.64);
+        box-shadow: 0 36px 120px rgba(18, 26, 24, 0.3);
+      }
+
+      .settings-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 18px;
+      }
+
+      .settings-header h2 {
+        margin: 0 0 6px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        line-height: 0.96;
+      }
+
+      .settings-subtitle {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .settings-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .tab-btn {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--ink);
+        border-radius: 999px;
+        min-height: 40px;
+        padding: 9px 16px;
+        font-size: 0.9rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .tab-btn.is-active {
+        background: var(--accent);
+        color: white;
+        border-color: transparent;
+      }
+
+      .settings-panel {
+        display: grid;
+        gap: 16px;
+      }
+
+      .settings-panel[hidden] {
+        display: none !important;
+      }
+
+      .settings-card {
+        padding: 16px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid var(--line);
+        display: grid;
+        gap: 14px;
+      }
+
+      .settings-card strong {
+        font-size: 0.98rem;
+      }
+
+      .seed-note {
+        font-size: 0.88rem;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
       @keyframes shake {
         0%, 100% { transform: translateX(0); }
         20% { transform: translateX(-3px); }
@@ -698,7 +802,7 @@
                 <strong>Current build</strong>
                 <ul>
                   <li>Deterministic daily and practice generation</li>
-                  <li>Custom seeds with grid-size prefixes</li>
+                  <li>Simple shareable seeds mirrored into the URL</li>
                   <li>Dictionary-backed constrained word modes</li>
                   <li>Solved-word connectors, markers, and color modes</li>
                 </ul>
@@ -724,122 +828,11 @@
           </div>
 
           <div class="control-card">
-            <strong class="control-card-title">Board mode</strong>
-            <div class="controls">
+            <strong class="control-card-title">Play</strong>
+            <div class="play-toolbar">
               <button class="primary" id="daily-btn">Daily board</button>
               <button class="secondary" id="practice-btn">New practice board</button>
-            </div>
-          </div>
-
-          <div class="control-card">
-            <strong class="control-card-title">Configuration</strong>
-            <div class="field-grid">
-              <div class="field">
-                <label for="grid-size">Grid size</label>
-                <select id="grid-size"></select>
-              </div>
-
-              <div class="field">
-                <label for="seed-input">Seed</label>
-                <div class="seed-row">
-                  <input id="seed-input" type="text" spellcheck="false" autocomplete="off" />
-                  <button class="secondary" id="seed-apply-btn" type="button">Apply seed</button>
-                </div>
-              </div>
-
-              <div class="field">
-                <label for="word-mode">Word selection</label>
-                <select id="word-mode">
-                  <option value="any">Any words</option>
-                  <option value="contains-z">Only words with Z</option>
-                  <option value="contains-x">Only words with X</option>
-                  <option value="contains-q">Only words with Q</option>
-                  <option value="contains-ing">Only words with ING</option>
-                  <option value="contains-mm">Only words with MM</option>
-                  <option value="starts-with">Words beginning with...</option>
-                  <option value="fixed-length">Only N-letter words</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label for="blank-layout">Blank layout</label>
-                <select id="blank-layout">
-                  <option value="default">Default</option>
-                  <option value="no-blanks">No blanks</option>
-                  <option value="verticals">Verticals</option>
-                  <option value="horizontals">Horizontals</option>
-                  <option value="straights">Straights</option>
-                  <option value="diag-slash">Diagonals /</option>
-                  <option value="diag-backslash">Diagonals \</option>
-                  <option value="diag-both">Diagonals both</option>
-                </select>
-              </div>
-
-              <div class="field" id="blank-percent-field" hidden>
-                <label for="blank-percent-input">Blank percent</label>
-                <input id="blank-percent-input" type="number" min="0" max="85" step="1" value="22" />
-              </div>
-
-              <div class="field" id="blank-count-field" hidden>
-                <label for="blank-count-input">Blank count</label>
-                <input id="blank-count-input" type="number" min="0" max="400" step="1" value="0" />
-              </div>
-
-              <div class="field" id="blank-char-field" hidden>
-                <label for="blank-char-input">Blank fill character</label>
-                <input
-                  id="blank-char-input"
-                  type="text"
-                  inputmode="text"
-                  maxlength="1"
-                  spellcheck="false"
-                  autocomplete="off"
-                  value=""
-                />
-              </div>
-
-              <div class="field" id="start-letter-field" hidden>
-                <label for="start-letter-input">Starting letter</label>
-                <input
-                  id="start-letter-input"
-                  type="text"
-                  inputmode="text"
-                  maxlength="1"
-                  spellcheck="false"
-                  autocomplete="off"
-                  value="A"
-                />
-              </div>
-
-              <div class="field" id="fixed-length-field" hidden>
-                <label for="fixed-length-input">Word length N</label>
-                <input id="fixed-length-input" type="number" min="4" max="12" step="1" value="5" />
-              </div>
-
-              <div class="field">
-                <label for="color-mode">Solved colors</label>
-                <select id="color-mode">
-                  <option value="hue">Different hues</option>
-                  <option value="saturation">Different saturation</option>
-                  <option value="value">Different values</option>
-                  <option value="palette-citrus-grove">Citrus Grove</option>
-                  <option value="palette-seaside-glass">Seaside Glass</option>
-                  <option value="palette-desert-bloom">Desert Bloom</option>
-                  <option value="palette-berry-market">Berry Market</option>
-                  <option value="palette-forest-canopy">Forest Canopy</option>
-                  <option value="palette-sunset-drive">Sunset Drive</option>
-                  <option value="palette-vintage-poster">Vintage Poster</option>
-                  <option value="palette-candy-shop">Candy Shop</option>
-                  <option value="palette-library-ink">Library Ink</option>
-                  <option value="palette-tropical-punch">Tropical Punch</option>
-                  <option value="palette-harvest-table">Harvest Table</option>
-                  <option value="palette-aurora-pop">Aurora Pop</option>
-                  <option value="palette-espresso-mint">Espresso Mint</option>
-                  <option value="palette-boardwalk">Boardwalk</option>
-                  <option value="palette-studio-paint">Studio Paint</option>
-                  <option value="palette-midnight-neon">Midnight Neon</option>
-                </select>
-              </div>
+              <button class="ghost" id="settings-open-btn">Settings</button>
             </div>
           </div>
 
@@ -883,9 +876,174 @@
       </section>
     </main>
 
+    <div class="settings-overlay" id="settings-overlay" hidden>
+      <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="settings-header">
+          <div>
+            <h2 id="settings-title">Game Settings</h2>
+            <p class="settings-subtitle">
+              Keep the play view focused on tracing words. Use these tabs for setup, seed control, and generation rules.
+            </p>
+          </div>
+          <button class="ghost" id="settings-close-btn" type="button">Close</button>
+        </div>
+
+        <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+          <button class="tab-btn is-active" id="tab-ui-btn" data-tab="ui" type="button">UI</button>
+          <button class="tab-btn" id="tab-game-btn" data-tab="game" type="button">Game Configuration</button>
+          <button class="tab-btn" id="tab-generation-btn" data-tab="generation" type="button">Board & Word Mechanics</button>
+        </div>
+
+        <section class="settings-panel" id="settings-panel-ui">
+          <div class="settings-card">
+            <strong>Display</strong>
+            <div class="field-grid">
+              <div class="field">
+                <label for="color-mode">Solved colors</label>
+                <select id="color-mode">
+                  <option value="hue">Different hues</option>
+                  <option value="saturation">Different saturation</option>
+                  <option value="value">Different values</option>
+                  <option value="palette-citrus-grove">Citrus Grove</option>
+                  <option value="palette-seaside-glass">Seaside Glass</option>
+                  <option value="palette-desert-bloom">Desert Bloom</option>
+                  <option value="palette-berry-market">Berry Market</option>
+                  <option value="palette-forest-canopy">Forest Canopy</option>
+                  <option value="palette-sunset-drive">Sunset Drive</option>
+                  <option value="palette-vintage-poster">Vintage Poster</option>
+                  <option value="palette-candy-shop">Candy Shop</option>
+                  <option value="palette-library-ink">Library Ink</option>
+                  <option value="palette-tropical-punch">Tropical Punch</option>
+                  <option value="palette-harvest-table">Harvest Table</option>
+                  <option value="palette-aurora-pop">Aurora Pop</option>
+                  <option value="palette-espresso-mint">Espresso Mint</option>
+                  <option value="palette-boardwalk">Boardwalk</option>
+                  <option value="palette-studio-paint">Studio Paint</option>
+                  <option value="palette-midnight-neon">Midnight Neon</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <strong>Archive</strong>
+            <p class="seed-note">
+              v2 preserves the pre-rebuild shipped page. v1 preserves the earlier archived prototype line.
+            </p>
+            <div class="archive-links">
+              <a href="./v2.html">Open v2</a>
+              <a href="./v1.html">Open v1</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-panel" id="settings-panel-game" hidden>
+          <div class="settings-card">
+            <strong>Board and Seed</strong>
+            <div class="field-grid">
+              <div class="field">
+                <label for="grid-size">Grid size</label>
+                <select id="grid-size"></select>
+              </div>
+
+              <div class="field">
+                <label for="seed-input">Seed</label>
+                <div class="seed-row">
+                  <input id="seed-input" type="text" spellcheck="false" autocomplete="off" />
+                  <button class="secondary" id="seed-apply-btn" type="button">Apply seed</button>
+                </div>
+                <div class="seed-note">The active seed is mirrored into the URL as <code>?seed=...</code>.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-panel" id="settings-panel-generation" hidden>
+          <div class="settings-card">
+            <strong>Word Rules</strong>
+            <div class="field-grid">
+              <div class="field">
+                <label for="word-mode">Word selection</label>
+                <select id="word-mode">
+                  <option value="any">Any words</option>
+                  <option value="contains-z">Only words with Z</option>
+                  <option value="contains-x">Only words with X</option>
+                  <option value="contains-q">Only words with Q</option>
+                  <option value="contains-ing">Only words with ING</option>
+                  <option value="contains-mm">Only words with MM</option>
+                  <option value="starts-with">Words beginning with...</option>
+                  <option value="fixed-length">Only N-letter words</option>
+                </select>
+              </div>
+
+              <div class="field" id="start-letter-field" hidden>
+                <label for="start-letter-input">Starting letter</label>
+                <input
+                  id="start-letter-input"
+                  type="text"
+                  inputmode="text"
+                  maxlength="1"
+                  spellcheck="false"
+                  autocomplete="off"
+                  value="A"
+                />
+              </div>
+
+              <div class="field" id="fixed-length-field" hidden>
+                <label for="fixed-length-input">Word length N</label>
+                <input id="fixed-length-input" type="number" min="4" max="12" step="1" value="5" />
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <strong>Blank Layout</strong>
+            <div class="field-grid">
+              <div class="field">
+                <label for="blank-layout">Blank layout</label>
+                <select id="blank-layout">
+                  <option value="default">Default</option>
+                  <option value="no-blanks">No blanks</option>
+                  <option value="verticals">Verticals</option>
+                  <option value="horizontals">Horizontals</option>
+                  <option value="straights">Straights</option>
+                  <option value="diag-slash">Diagonals /</option>
+                  <option value="diag-backslash">Diagonals \</option>
+                  <option value="diag-both">Diagonals both</option>
+                </select>
+              </div>
+
+              <div class="field" id="blank-percent-field" hidden>
+                <label for="blank-percent-input">Blank percent</label>
+                <input id="blank-percent-input" type="number" min="0" max="85" step="1" value="22" />
+              </div>
+
+              <div class="field" id="blank-count-field" hidden>
+                <label for="blank-count-input">Blank count</label>
+                <input id="blank-count-input" type="number" min="0" max="400" step="1" value="0" />
+              </div>
+
+              <div class="field" id="blank-char-field" hidden>
+                <label for="blank-char-input">Blank fill character</label>
+                <input
+                  id="blank-char-input"
+                  type="text"
+                  inputmode="text"
+                  maxlength="1"
+                  spellcheck="false"
+                  autocomplete="off"
+                  value=""
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.39";
+      const APP_VERSION = "v00.00.40";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1122,6 +1280,15 @@
         colorMode: document.getElementById("color-mode"),
         dailyBtn: document.getElementById("daily-btn"),
         practiceBtn: document.getElementById("practice-btn"),
+        settingsOpenBtn: document.getElementById("settings-open-btn"),
+        settingsOverlay: document.getElementById("settings-overlay"),
+        settingsCloseBtn: document.getElementById("settings-close-btn"),
+        settingsTabButtons: Array.from(document.querySelectorAll(".tab-btn")),
+        settingsPanels: {
+          ui: document.getElementById("settings-panel-ui"),
+          game: document.getElementById("settings-panel-game"),
+          generation: document.getElementById("settings-panel-generation")
+        },
         submitBtn: document.getElementById("submit-btn"),
         undoBtn: document.getElementById("undo-btn"),
         hintBtn: document.getElementById("hint-btn"),
@@ -1156,6 +1323,21 @@
 
       function randInt(rng, min, max) {
         return min + Math.floor(rng() * (max - min + 1));
+      }
+
+      function getUrlSeed() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("seed") || "";
+      }
+
+      function setUrlSeed(seed) {
+        const url = new URL(window.location.href);
+        if (seed) {
+          url.searchParams.set("seed", seed);
+        } else {
+          url.searchParams.delete("seed");
+        }
+        window.history.replaceState({}, "", url);
       }
 
       function neighborIndexes(index, rows, cols) {
@@ -2244,54 +2426,25 @@
         return `${layoutSettings.mode}-${sanitizeBlankPercent(layoutSettings.blankPercent)}-${layoutSettings.blankCount}-${charCode}`;
       }
 
-      function gridSeedPrefix(rows, cols) {
-        return `${rows}x${cols}:`;
+      function simplifySeed(seedValue, fallback = "practice-0") {
+        const trimmed = String(seedValue || "").trim();
+        return trimmed || fallback;
       }
 
-      function extractSeedBody(seedValue, rows, cols) {
-        const trimmed = String(seedValue || "").trim().split("|")[0];
-        const prefix = gridSeedPrefix(rows, cols);
-        if (trimmed.startsWith(prefix)) {
-          return trimmed.slice(prefix.length).trim() || "practice-0";
-        }
-        if (/^\d+x\d+:/.test(trimmed)) {
-          return trimmed.replace(/^\d+x\d+:/, "").trim() || "practice-0";
-        }
-        return trimmed || "practice-0";
+      function extractSeedBody(seedValue) {
+        return simplifySeed(seedValue, "practice-0");
       }
 
-      function normalizeSeed(
-        seedValue,
-        rows,
-        cols,
-        fallbackBody = "practice-0",
-        wordSettings = currentWordSettings(),
-        layoutSettings = currentLayoutSettings(rows, cols)
-      ) {
-        const body = extractSeedBody(seedValue, rows, cols) || fallbackBody;
-        return `${gridSeedPrefix(rows, cols)}${body}|words=${wordSelectionSeedKey(wordSettings)}|layout=${layoutSelectionSeedKey(layoutSettings)}`;
+      function normalizeSeed(seedValue, fallbackBody = "practice-0") {
+        return simplifySeed(seedValue, fallbackBody);
       }
 
-      function buildDailySeed(rows, cols) {
-        return normalizeSeed(
-          `daily-${getDailyVariant()}`,
-          rows,
-          cols,
-          "daily-0",
-          currentWordSettings(),
-          currentLayoutSettings(rows, cols)
-        );
+      function buildDailySeed() {
+        return normalizeSeed(`daily-${getDailyVariant()}`, "daily-0");
       }
 
-      function buildPracticeSeed(rows, cols, variant) {
-        return normalizeSeed(
-          `practice-${variant}`,
-          rows,
-          cols,
-          "practice-0",
-          currentWordSettings(),
-          currentLayoutSettings(rows, cols)
-        );
+      function buildPracticeSeed(_rows, _cols, variant) {
+        return normalizeSeed(`practice-${variant}`, "practice-0");
       }
 
       function materializePuzzle(rows, cols, mode, seedKey) {
@@ -2299,13 +2452,9 @@
         const layoutSettings = currentLayoutSettings(rows, cols);
         const normalizedSeed = normalizeSeed(
           seedKey,
-          rows,
-          cols,
-          mode === "daily" ? `daily-${getDailyVariant()}` : "practice-0",
-          wordSettings,
-          layoutSettings
+          mode === "daily" ? `daily-${getDailyVariant()}` : "practice-0"
         );
-        const seedLabel = `${mode}:${normalizedSeed}`;
+        const seedLabel = `${mode}:${rows}x${cols}:${normalizedSeed}|words=${wordSelectionSeedKey(wordSettings)}|layout=${layoutSelectionSeedKey(layoutSettings)}`;
         const layout = buildPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings);
         const words = layout.slotPaths
           ? layout.slotPaths.map((path, index) => ({
@@ -2337,7 +2486,7 @@
         });
 
         return {
-          id: `${mode}-${normalizedSeed}`,
+          id: `${mode}-${rows}x${cols}-${normalizedSeed}-${wordSelectionSeedKey(wordSettings)}-${layoutSelectionSeedKey(layoutSettings)}`,
           name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
           seedKey: normalizedSeed,
           rows,
@@ -2385,7 +2534,7 @@
 
       function getDailyPuzzle() {
         const { rows, cols } = currentGridSize();
-        return materializePuzzle(rows, cols, "daily", buildDailySeed(rows, cols));
+        return materializePuzzle(rows, cols, "daily", buildDailySeed());
       }
 
       function isSolvedWord(wordIndex) {
@@ -2550,6 +2699,7 @@
         state.mode = mode;
         state.puzzle = puzzle;
         state.currentSeed = puzzle.seedKey;
+        setUrlSeed(puzzle.seedKey);
         state.activePath = [];
         state.invalidTiles = [];
         state.draggingPointerId = null;
@@ -2926,6 +3076,24 @@
         renderMessage();
       }
 
+      function selectSettingsTab(tab) {
+        Object.entries(els.settingsPanels).forEach(([key, panel]) => {
+          panel.hidden = key !== tab;
+        });
+        els.settingsTabButtons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.tab === tab);
+        });
+      }
+
+      function openSettings(tab = "game") {
+        selectSettingsTab(tab);
+        els.settingsOverlay.hidden = false;
+      }
+
+      function closeSettings() {
+        els.settingsOverlay.hidden = true;
+      }
+
       function syncConfigFromControls() {
         state.selectedWordMode = els.wordMode.value;
         state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
@@ -2948,10 +3116,10 @@
       function applyGridSize(value) {
         state.selectedGridSize = value;
         const { rows, cols } = currentGridSize();
-        const currentSeedBody = extractSeedBody(els.seedInput.value, rows, cols);
+        const currentSeedBody = extractSeedBody(els.seedInput.value);
         state.practiceIndex = 0;
         if (state.mode === "practice") {
-          const seed = normalizeSeed(currentSeedBody, rows, cols, "practice-0");
+          const seed = normalizeSeed(currentSeedBody, "practice-0");
           startPuzzle(materializePuzzle(rows, cols, "practice", seed), "practice");
         } else {
           startPuzzle(getDailyPuzzle(), "daily");
@@ -2963,7 +3131,7 @@
         state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
         state.selectedFixedLength = sanitizeFixedLength(els.fixedLengthInput.value);
         const { rows, cols } = currentGridSize();
-        const currentSeedBody = extractSeedBody(els.seedInput.value, rows, cols);
+        const currentSeedBody = extractSeedBody(els.seedInput.value);
 
         if (state.mode === "practice") {
           startPuzzle(materializePuzzle(rows, cols, "practice", currentSeedBody), "practice");
@@ -2993,7 +3161,7 @@
         state.selectedBlankPercent = sanitizeBlankPercent(els.blankPercentInput.value);
         state.selectedBlankCount = sanitizeBlankCount(els.blankCountInput.value, rows, cols);
         state.selectedBlankChar = sanitizeBlankChar(els.blankCharInput.value);
-        const currentSeedBody = extractSeedBody(els.seedInput.value, rows, cols);
+        const currentSeedBody = extractSeedBody(els.seedInput.value);
 
         if (state.mode === "practice") {
           startPuzzle(materializePuzzle(rows, cols, "practice", currentSeedBody), "practice");
@@ -3006,7 +3174,7 @@
       function applySeedInput() {
         syncConfigFromControls();
         const { rows, cols } = currentGridSize();
-        const normalizedSeed = normalizeSeed(els.seedInput.value, rows, cols, "practice-0");
+        const normalizedSeed = normalizeSeed(els.seedInput.value, "practice-0");
         state.practiceIndex = 0;
         startPuzzle(materializePuzzle(rows, cols, "practice", normalizedSeed), "practice");
       }
@@ -3029,6 +3197,14 @@
 
       els.dailyBtn.addEventListener("click", () => startPuzzle(getDailyPuzzle(), "daily"));
       els.practiceBtn.addEventListener("click", nextPracticePuzzle);
+      els.settingsOpenBtn.addEventListener("click", () => openSettings("game"));
+      els.settingsCloseBtn.addEventListener("click", closeSettings);
+      els.settingsOverlay.addEventListener("click", (event) => {
+        if (event.target === els.settingsOverlay) closeSettings();
+      });
+      els.settingsTabButtons.forEach((button) => {
+        button.addEventListener("click", () => selectSettingsTab(button.dataset.tab));
+      });
       els.seedApplyBtn.addEventListener("click", applySeedInput);
       els.wordMode.addEventListener("change", handleWordModeChange);
       els.blankLayout.addEventListener("change", applyLayoutSettings);
@@ -3070,11 +3246,20 @@
         applySeedInput();
       });
       els.colorMode.addEventListener("change", (event) => applyColorMode(event.target.value));
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !els.settingsOverlay.hidden) closeSettings();
+      });
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("resize", renderBoard);
 
       populateGridSizeOptions();
-      startPuzzle(getDailyPuzzle(), "daily");
+      const urlSeed = getUrlSeed();
+      if (urlSeed) {
+        const { rows, cols } = currentGridSize();
+        startPuzzle(materializePuzzle(rows, cols, "practice", urlSeed), "practice", { ignoreSavedState: true });
+      } else {
+        startPuzzle(getDailyPuzzle(), "daily");
+      }
     </script>
   </body>
 </html>
