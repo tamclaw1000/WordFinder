@@ -647,7 +647,7 @@
       <section class="hero">
         <div class="hero-bar">
           <div class="eyebrow">Clean rebuild</div>
-          <div class="version-chip" id="version-chip">v00.00.33</div>
+          <div class="version-chip" id="version-chip">v00.00.34</div>
           <a class="link-chip" href="./v2.html">Open v2</a>
           <a class="link-chip" href="./v1.html">Open v1</a>
         </div>
@@ -878,7 +878,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.33";
+      const APP_VERSION = "v00.00.34";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1406,8 +1406,10 @@
         return blocked;
       }
 
-      function growPathOnAvailable(availableSet, rows, cols, targetLength, seedLabel) {
+      function growPathOnAvailable(availableSet, rows, cols, targetLength, seedLabel, searchBudget = null) {
         const rng = makeRng(hashText(`${seedLabel}:available-path`));
+        let explored = 0;
+        const budget = searchBudget ?? Math.max(18000, targetLength * 320);
         const startCandidates = [...availableSet]
           .map((index) => ({
             index,
@@ -1423,6 +1425,8 @@
           const start = startCandidates[attempt];
 
           function dfs(current) {
+            explored += 1;
+            if (explored > budget) return false;
             path.push(current);
             visited.add(current);
 
@@ -1478,13 +1482,17 @@
         const targetLength = chooseTargetLength(rows, cols, wordSettings);
         const startCandidates = Array.from({ length: rows * cols }, (_, index) => index)
           .sort(() => rng() - 0.5);
+        const fallbackBudget = Math.max(16000, targetLength * 260);
 
         for (let attempt = 0; attempt < 24; attempt += 1) {
           const visited = new Set();
           const path = [];
           const start = startCandidates[attempt % startCandidates.length];
+          let explored = 0;
 
           function dfs(current) {
+            explored += 1;
+            if (explored > fallbackBudget) return false;
             path.push(current);
             visited.add(current);
 
@@ -1710,7 +1718,7 @@
         ])].filter((value) => value >= 0);
 
         for (const target of fallbackTargets) {
-          for (let attempt = 0; attempt < 160; attempt += 1) {
+          for (let attempt = 0; attempt < 72; attempt += 1) {
             const blocked = patternedBlockedMask(rows, cols, `${seedLabel}:pattern:${target}:${attempt}`, layoutSettings, target);
             const availableSet = collectPlayableSet(rows, cols, blocked);
             if (availableSet.size < 4) continue;
@@ -1728,7 +1736,8 @@
               rows,
               cols,
               availableSet.size,
-              `${seedLabel}:pattern-path:${target}:${attempt}`
+              `${seedLabel}:pattern-path:${target}:${attempt}`,
+              Math.max(12000, availableSet.size * 180)
             );
             if (!path || path.length !== availableSet.size) continue;
 
