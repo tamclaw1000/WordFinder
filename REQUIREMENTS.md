@@ -26,8 +26,10 @@ that is actually shipping, not just the original concept.
 - Hidden word-length slots.
 - Hint, undo, reset, solve, timer, and solved-state feedback.
 - Visible seed display plus user-entered custom seeds.
+- URL-synced reproducible seeds that include active configuration.
 - Solved-word color mode selection.
 - Word-selection constraints for themed/generated board vocab.
+- Multiple blank-layout generation modes and controls.
 - Local browser persistence for in-progress boards.
 - Static-site deployment to GitHub Pages.
 
@@ -68,9 +70,13 @@ that is actually shipping, not just the original concept.
 
 - Every board exposes its normalized seed in the UI.
 - Users may enter a custom seed and regenerate that exact board on demand.
-- Seeds must always be normalized to include the selected grid size prefix, e.g. `5x5:hello`.
-- The seed must also encode the active word-selection mode so reproducing a board preserves both
-  the layout seed and the word-generation constraint.
+- The active board seed must also be mirrored into the URL as `?seed=...`.
+- The shared seed must encode the active reproducible configuration, including:
+  - base daily/practice token
+  - grid size
+  - word-selection mode
+  - blank-layout mode and related parameters
+- Loading a URL with `?seed=...` must restore that encoded configuration before generating the board.
 
 ## 6. User Stories
 
@@ -85,6 +91,8 @@ that is actually shipping, not just the original concept.
 - As a player, I want to share or replay a board by using its visible seed.
 - As a player, I want optional themed word constraints such as `Z`, `Q`, or fixed word length.
 - As a player, I want large boards to remain legible on mobile and desktop.
+- As a player, I want the main screen to stay focused on gameplay while advanced controls live in a popup.
+- As a player, I want a compact top-right menu for non-board actions and archive links.
 
 ## 7. Functional Requirements
 
@@ -99,6 +107,7 @@ that is actually shipping, not just the original concept.
 
 - Support pointer drag for mouse, touch, and stylus input.
 - Support tap-to-build as a fallback interaction.
+- Support tap-to-submit by tapping the active path end tile again.
 - Allow backtracking by moving to the immediately previous tile in the active path.
 - Ignore non-adjacent moves and attempts to reuse tiles already in the active path.
 
@@ -124,6 +133,11 @@ that is actually shipping, not just the original concept.
 
 ### Configuration
 
+- Move configuration out of the main gameplay surface and into a popup settings dialog.
+- Split the settings dialog into these tabs:
+  - `UI`
+  - `Game Configuration`
+  - `Board & Word Mechanics`
 - Provide a solved-color dropdown with multiple rendering modes:
   - different hues
   - different saturation
@@ -140,6 +154,11 @@ that is actually shipping, not just the original concept.
   - only words of user-chosen length `N`
 - Show the `Starting letter` field only for the `begins with` mode.
 - Show the `Word length N` field only for the fixed-length mode.
+- Provide a top-right menu for non-board actions.
+- The top-right menu must contain:
+  - `New practice board`
+  - `Settings`
+  - archived version links inside a submenu
 
 ### Completion
 
@@ -220,6 +239,8 @@ Each materialized puzzle must expose:
 - The page should remain usable without horizontal scrolling on common phone widths.
 - Invalid actions should be noticeable but brief.
 - The presentation should remain calm and uncluttered.
+- The primary screen should emphasize gameplay over configuration.
+- Archived version links (`v2`, `v1`) should live under the main menu rather than repeated standalone cards.
 
 ## 11. Accessibility Requirements
 

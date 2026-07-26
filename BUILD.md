@@ -1,6 +1,6 @@
 # WordFinder Build Log
 
-Current prototype version: `v00.00.30`
+Current prototype version: `v00.00.42`
 
 ## Summary
 
@@ -238,19 +238,76 @@ and follow-up iterations.
   matching word-selection mode is active.
 - Added an explicit `[hidden]` CSS rule to make HTML `hidden` state effective against layout styling.
 
+### `3cb38cc` `docs: refresh requirements and build log`
+
+- Updated `REQUIREMENTS.md` and `BUILD.md` to match the shipped behavior through `v00.00.30`.
+
+### `5fabf2f` `docs: add technical specification`
+
+- Added `TECHNICAL_SPECIFICATION.md`.
+- Documented the build from scratch, including UI, generation, persistence, and deployment.
+
+### `a3f76ca` `feat: archive current page as v2 and rebuild index` (`v00.00.31`)
+
+- Archived the previous shipped page as `v2.html`.
+- Rebuilt `index.html` as a new clean implementation from scratch while preserving the same game rules.
+
+### `b80e012` `feat: add blank layout controls` (`v00.00.32`)
+
+- Added selectable blank-layout modes such as `default`, `no-blanks`, `verticals`, `horizontals`,
+  `straights`, and diagonal variants.
+- Added blank percent, blank count, and blank fill character controls.
+
+### `68ae9dc` through `1229697` blank-layout stabilization (`v00.00.33` - `v00.00.37`)
+
+- Fixed blank/tile alignment issues.
+- Hid irrelevant blank controls when the chosen layout does not need them.
+- Reworked patterned layouts to avoid freezing on larger boards.
+- Changed patterned generators to target requested blank density/count more directly.
+
+### `0f908e4` `fix: smooth fixed-length mode` (`v00.00.38`)
+
+- Prevented immediate regeneration when first switching into fixed-length mode.
+- Added pruning for obviously impossible fixed-length searches.
+
+### `6f5372b` `feat: blank unusable leftover fragments` (`v00.00.39`)
+
+- Changed the patterned slot-fitting algorithm so leftover regions that cannot satisfy the active
+  word constraint are converted into blanks.
+
+### `5c6afc9` `feat: move configuration into settings modal` (`v00.00.40`)
+
+- Moved configuration out of the main screen and into a popup settings dialog.
+- Split settings into `UI`, `Game Configuration`, and `Board & Word Mechanics` tabs.
+- Simplified the visible seed and mirrored it into the URL as `?seed=...`.
+
+### `f6da321` `feat: encode configuration into shared seeds` (`v00.00.41`)
+
+- Changed URL/shared seeds to encode full reproducible configuration rather than only a base token.
+- Added URL-load parsing so opening a seeded URL restores the encoded grid, word mode, and layout settings.
+
+### `f2bc514` `feat: move play controls into header menu` (`v00.00.42`)
+
+- Removed the `Daily board` button.
+- Replaced the old play/archive sections with a top-right `Menu`.
+- Removed the `Submit path` button.
+- Moved `v2` and `v1` into an `Archived versions` submenu.
+- Added tap-to-submit by tapping the current path end tile again.
+
 ## Current State
 
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
-- Current version: `v00.00.30`
-- Latest recorded commit at the time of this log: `d591437`
-- Latest published tag: `v00.00.30`
+- Current version: `v00.00.42`
+- Latest recorded commit at the time of this log: `f2bc514`
+- Latest published tag: `v00.00.42`
 
 ## Notes
 
 - The current large-grid implementation is still generation-based and optimized for prototype speed,
   but now preserves a real path-partition puzzle structure across generated boards.
-- The current build includes custom seeds, named palette modes, connector/marker rendering, a solve
-  action, and constrained real-word generation modes backed by embedded dictionary-derived pools.
+- The current build includes popup settings, top-right menu navigation, full URL-synced seeds,
+  named palette modes, connector/marker rendering, a solve action, and constrained real-word
+  generation modes backed by embedded dictionary-derived pools.
 - The GitHub Pages deployment is the public-facing version.
 - The OpenAI Sites deployment remains useful for internal workspace-hosted iteration.

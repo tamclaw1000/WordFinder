@@ -24,6 +24,7 @@ This document describes the current build as shipped, including:
 - Deliver a fast, static, self-contained puzzle experience.
 - Support deterministic daily puzzles and unlimited deterministic practice puzzles.
 - Allow advanced replayability through visible/custom seeds.
+- Keep the main screen centered on gameplay while moving setup into a popup dialog.
 - Provide enough controls for debugging, exploration, and constrained puzzle variants without
   requiring a server or editorial backend.
 
@@ -35,6 +36,7 @@ This document describes the current build as shipped, including:
 - Internal packaging artifact: `dist/index.js`
 - Current main application document: `index.html`
 - Archived earlier prototype page: `v1.html`
+- Archived pre-rebuild shipped page: `v2.html`
 
 No server process, API, or database is required.
 
@@ -79,11 +81,20 @@ Key supporting files:
 
 ## 6. High-Level UI Layout
 
-The page is split into two main regions:
+The page is split into three major UI areas:
+
+### Hero/Header
+
+- Title and subtitle
+- Top-right `Menu`
+  - `New practice board`
+  - `Settings`
+  - `Archived versions`
+    - `Open v2`
+    - `Open v1`
 
 ### Left Panel
 
-- Title and subtitle
 - Mode pills
 - Main puzzle board
 - Board legend
@@ -94,18 +105,7 @@ The page is split into two main regions:
   - found count
   - hint count
   - elapsed time
-- Mode controls
-  - `Daily board`
-  - `New practice board`
-- Configuration controls
-  - grid size
-  - seed
-  - word selection
-  - conditional start-letter field
-  - conditional fixed-length field
-  - solved-color mode
 - Board action controls
-  - `Submit path`
   - `Undo`
   - `Hint`
   - `Solve`
@@ -115,6 +115,19 @@ The page is split into two main regions:
 - solved banner
 - hidden-word slot list
 - implementation notes panel
+
+### Popup Settings Dialog
+
+- `UI` tab
+  - solved-color mode
+- `Game Configuration` tab
+  - grid size
+  - seed
+- `Board & Word Mechanics` tab
+  - word selection
+  - conditional start-letter field
+  - conditional fixed-length field
+  - blank-layout controls
 
 ## 7. UI Behavior Specification
 
@@ -126,12 +139,7 @@ The sidebar metrics display:
 - `Hints`: total hints consumed
 - `Time`: elapsed timer for the active board
 
-### 7.2 Mode Controls
-
-#### Daily Board
-
-- Loads the deterministic daily puzzle for the currently selected grid size.
-- Daily puzzles are derived from the current day plus the active grid size and current word mode.
+### 7.2 Header Menu
 
 #### New Practice Board
 
@@ -139,12 +147,21 @@ The sidebar metrics display:
 - Practice boards increment a local practice variant counter.
 - Pressing this control must clear any carried-over solved state, hints, invalid state, and active path.
 
+#### Settings
+
+- Opens the popup settings dialog.
+- The dialog contains the full configuration surface.
+
+#### Archived Versions
+
+- Provides submenu links to `v2.html` and `v1.html`.
+
 ### 7.3 Grid Size
 
 - Supported sizes: `4x4` through `20x20`
 - The app uses square boards only.
 - Changing the grid size reloads the current mode using the new size.
-- The visible seed is rewritten to use the new `NxN:` prefix while preserving the seed body.
+- The active shared seed is rewritten to encode the new grid size in the URL-visible seed.
 
 ### 7.4 Seed Controls
 
@@ -159,15 +176,20 @@ The seed field is both informational and interactive.
 
 #### Normalization Rules
 
-- Every seed must start with the selected grid size prefix:
-  - example: `5x5:daily-20659|words=any`
-  - example: `12x12:hello-world|words=z`
-- The seed also encodes the current word-selection mode.
+- Seeds are stored as compact reproducible strings that encode:
+  - base daily/practice token
+  - grid size
+  - word-selection mode
+  - blank-layout mode and parameters
+- Example style:
+  - `daily-20660~5x5~any~verticals,30,0,none`
 
 #### Behavior
 
 - Applying a custom seed loads a deterministic practice board from that exact seed.
-- The resulting puzzle must be reproducible if the same grid size, seed body, and word mode are used again.
+- The resulting puzzle must be reproducible if the same full seed is used again.
+- Changing configuration rewrites the URL to the current full reproducible seed.
+- Loading a URL with `?seed=...` restores the encoded configuration before puzzle generation.
 
 ### 7.5 Word Selection Dropdown
 
@@ -228,11 +250,6 @@ Each solved word applies its color style to:
 
 ### 7.7 Board Action Controls
 
-#### Submit Path
-
-- Validates the active path against unsolved hidden words.
-- Only exact path matches are accepted.
-
 #### Undo
 
 - Removes the last step from the active path.
@@ -256,7 +273,13 @@ Each solved word applies its color style to:
   - active path
   - timer start time
 
-### 7.8 Current Path And Status Area
+### 7.8 Path Submission
+
+- Pointer-drag submission still happens on release after a multi-step drag path.
+- Tap-only submission no longer uses a dedicated button.
+- In tap mode, the player submits by tapping the current end tile again once the path is built.
+
+### 7.9 Current Path And Status Area
 
 The sidebar displays:
 
@@ -270,7 +293,7 @@ Messages should communicate:
 - invalid submission feedback
 - solved-state feedback
 
-### 7.9 Word Slot List
+### 7.10 Word Slot List
 
 Each hidden word appears as a slot in the sidebar.
 
@@ -348,7 +371,7 @@ Alternative interaction path:
 - tap first tile to start
 - tap adjacent tiles to extend
 - tap previous tile to backtrack one step
-- submit with `Submit path`
+- submit by tapping the current end tile again
 
 ### 9.3 Move Rules
 
@@ -502,16 +525,16 @@ Every active puzzle has a normalized seed key.
 
 Seed components:
 
-- grid size prefix
-- seed body
-- encoded word mode suffix
+- base daily/practice token
+- encoded grid size
+- encoded word mode
+- encoded blank-layout mode and parameters
 
 Examples:
 
-- `5x5:daily-20659|words=any`
-- `5x5:hello|words=z`
-- `8x8:practice-3|words=starts-a`
-- `10x10:test-run|words=n-6`
+- `daily-20660~5x5~any~default,22,0,none`
+- `practice-3~8x8~starts-a~verticals,30,0,none`
+- `test-run~10x10~n-6~diag-both,18,0,none`
 
 The seed is part of:
 
@@ -604,9 +627,9 @@ Each word entry must include:
 
 At the time of this specification update:
 
-- latest repo commit: `3cb38cc`
-- latest app release line: `v00.00.30`
-- latest docs refresh: `3cb38cc`
+- latest repo commit: `f2bc514`
+- latest app release line: `v00.00.42`
+- latest docs refresh: current in-place documentation update after `v00.00.42`
 
 ## 22. Future Extension Areas
 

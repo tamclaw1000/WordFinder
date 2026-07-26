@@ -112,16 +112,19 @@ Good candidates:
 
 - conditional fields hide/show correctly
 - seed text updates when settings change
+- URL `?seed=` updates when configuration changes
+- loading a `?seed=` URL restores the encoded configuration
 - `New practice board` clears transient state
 - `Apply seed` regenerates the correct puzzle mode
 - blank fill characters only appear on blocked cells
 - blank option controls only appear when relevant
+- top-right menu opens/closes correctly
 
 ### Strengths
 
 - faster than full browser testing
 - useful for control and state transitions
-- good fit for sidebar configuration logic
+- good fit for popup settings and configuration state logic
 
 ### Weaknesses
 
@@ -144,6 +147,7 @@ Playwright can test:
 Recommended E2E coverage:
 
 - open app and switch board modes
+- open the top-right menu and verify menu actions
 - change grid size
 - change seed and reapply
 - switch word-selection modes
@@ -151,6 +155,8 @@ Recommended E2E coverage:
 - verify conditional fields appear only when needed
 - submit a valid or invalid path
 - use hint, undo, solve, and reset
+- verify tap-to-submit by tapping the current path end tile again
+- verify archived version links live only in the menu submenu
 
 ### Strengths
 
@@ -176,6 +182,7 @@ This is especially useful for:
 - large-grid spacing drift
 - block fill character placement
 - responsive layout regressions
+- top-right menu placement and overflow behavior
 
 ### Strengths
 
@@ -257,6 +264,14 @@ Start with these word-mode variants:
 - one constrained mode such as `contains-z`
 - `starts-with`
 - `fixed-length`
+
+Also include these UI/state cases:
+
+- popup settings tabs switch correctly
+- URL seed changes when settings change
+- reload from a generated `?seed=` URL restores grid/word/layout state
+- no `Daily board` button is present
+- no `Submit path` button is present
 
 ## Immediate Priority Bug Coverage
 
