@@ -3,171 +3,144 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WordFinder</title>
+    <title>WordFinder v00.00.10</title>
     <style>
       :root {
-        --bg: #f3efe6;
-        --paper: rgba(255, 252, 247, 0.9);
-        --paper-strong: rgba(255, 252, 247, 0.98);
-        --line: rgba(24, 42, 36, 0.12);
-        --ink: #1b2b27;
-        --muted: #64756f;
-        --accent: #145f56;
-        --accent-strong: #0f4b44;
-        --accent-soft: rgba(20, 95, 86, 0.12);
-        --tile: #fffdfa;
-        --tile-edge: rgba(24, 42, 36, 0.12);
-        --tile-active: #145f56;
-        --tile-found: #365fa4;
-        --tile-hint: #efc45b;
-        --wall: #253a35;
+        --bg: #f4eedf;
+        --bg-deep: #e3d5b8;
+        --panel: rgba(255, 251, 243, 0.92);
+        --ink: #17231f;
+        --muted: #65746e;
+        --accent: #1d7a62;
+        --accent-strong: #115342;
+        --accent-soft: rgba(29, 122, 98, 0.12);
+        --wall: #314840;
         --wall-edge: rgba(255, 255, 255, 0.08);
-        --danger: #be4f42;
-        --shadow: 0 30px 90px rgba(51, 56, 44, 0.16);
+        --tile: #fffdfa;
+        --tile-edge: rgba(23, 35, 31, 0.1);
+        --tile-active: #1d7a62;
+        --tile-found: #284f7a;
+        --tile-hint: #f2c861;
+        --danger: #b34a39;
+        --shadow: 0 28px 70px rgba(43, 48, 37, 0.16);
       }
 
       * {
         box-sizing: border-box;
       }
 
-      html {
-        color-scheme: light;
-      }
-
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        font-family: "Avenir Next", "Trebuchet MS", sans-serif;
         color: var(--ink);
         background:
-          radial-gradient(circle at 12% 12%, rgba(239, 196, 91, 0.32), transparent 22%),
-          radial-gradient(circle at 88% 14%, rgba(20, 95, 86, 0.18), transparent 24%),
-          radial-gradient(circle at 75% 88%, rgba(54, 95, 164, 0.12), transparent 20%),
-          linear-gradient(180deg, #f6f1e8 0%, #ebe3d4 100%);
-      }
-
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background-image:
-          linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
-        background-size: 34px 34px;
-        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.32), transparent 78%);
+          radial-gradient(circle at top left, rgba(242, 200, 97, 0.42), transparent 26%),
+          radial-gradient(circle at right 12%, rgba(29, 122, 98, 0.18), transparent 24%),
+          linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
       }
 
       main {
-        width: min(1320px, calc(100% - 28px));
+        width: min(1180px, calc(100% - 28px));
         margin: 0 auto;
-        padding: 28px 0 44px;
-      }
-
-      [hidden] {
-        display: none !important;
+        padding: 24px 0 40px;
       }
 
       .hero {
         display: grid;
-        gap: 16px;
-        margin-bottom: 22px;
+        gap: 10px;
+        margin-bottom: 18px;
       }
 
-      .hero-bar {
+      .hero-meta {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
         align-items: center;
       }
 
-      .eyebrow,
+      .eyebrow {
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
       .version-chip,
       .link-chip,
       .mode-pill {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        min-height: 34px;
-        padding: 7px 13px;
         border-radius: 999px;
-        font-size: 0.8rem;
+        padding: 7px 12px;
+        font-size: 0.82rem;
         font-weight: 800;
       }
 
-      .eyebrow {
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        background: rgba(20, 95, 86, 0.1);
-        color: var(--accent);
-      }
-
       .version-chip {
-        background: rgba(27, 43, 39, 0.08);
-        color: var(--ink);
+        background: rgba(23, 35, 31, 0.08);
       }
 
       .link-chip {
         color: var(--accent-strong);
         text-decoration: none;
-        background: rgba(255, 255, 255, 0.68);
-        border: 1px solid rgba(20, 95, 86, 0.1);
-      }
-
-      .hero-copy {
-        display: grid;
-        gap: 10px;
-        max-width: 72ch;
+        background: rgba(255, 255, 255, 0.66);
       }
 
       h1 {
         margin: 0;
         font-family: Georgia, "Times New Roman", serif;
-        font-size: clamp(2.7rem, 7vw, 5.3rem);
-        line-height: 0.9;
-        letter-spacing: -0.04em;
-        max-width: 8ch;
+        font-size: clamp(2.3rem, 6vw, 4.2rem);
+        line-height: 0.93;
+        max-width: 10ch;
       }
 
       .subtitle {
         margin: 0;
-        font-size: 1.04rem;
-        line-height: 1.65;
+        max-width: 68ch;
         color: var(--muted);
+        line-height: 1.55;
       }
 
       .layout {
         display: grid;
-        gap: 20px;
-        grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+        gap: 18px;
+        grid-template-columns: minmax(340px, 1.05fr) minmax(280px, 0.8fr);
         align-items: start;
       }
 
       .panel {
-        background: var(--paper);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        border-radius: 32px;
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.58);
+        border-radius: 30px;
         box-shadow: var(--shadow);
-        backdrop-filter: blur(16px);
+        backdrop-filter: blur(14px);
       }
 
       .board-panel {
-        padding: 22px;
+        padding: 18px;
       }
 
       .sidebar {
         padding: 18px;
         display: grid;
-        gap: 14px;
+        gap: 16px;
       }
 
-      .board-header {
+      .topline,
+      .stats,
+      .controls,
+      .actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
+      }
+
+      .topline {
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
       }
 
       .mode-pill {
@@ -175,18 +148,118 @@
         color: var(--accent);
       }
 
-      .board-shell {
-        position: relative;
-        padding: clamp(12px, 2vw, 20px);
-        border-radius: 28px;
-        border: 1px solid var(--line);
+      .metric {
+        min-width: 112px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(23, 35, 31, 0.08);
+      }
+
+      .metric-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.73rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .metric-value {
+        font-size: 1.18rem;
+        font-weight: 800;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+        min-width: 164px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .field label {
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      select,
+      input,
+      button {
+        font: inherit;
+      }
+
+      select,
+      input {
+        appearance: none;
+        border: 1px solid rgba(23, 35, 31, 0.12);
+        border-radius: 16px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.76);
+        color: var(--ink);
+        font-weight: 800;
+      }
+
+      select {
+        padding-right: 38px;
         background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 238, 227, 0.97)),
-          repeating-linear-gradient(
-            0deg,
-            rgba(20, 95, 86, 0.02) 0 24px,
-            rgba(20, 95, 86, 0.04) 24px 25px
-          );
+          linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 20px) calc(50% - 2px) / 8px 8px no-repeat,
+          linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 14px) calc(50% - 2px) / 8px 8px no-repeat,
+          rgba(255, 255, 255, 0.76);
+      }
+
+      button {
+        border: 0;
+        border-radius: 16px;
+        padding: 12px 16px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      .tile:focus-visible {
+        outline: 3px solid rgba(29, 122, 98, 0.28);
+        outline-offset: 2px;
+      }
+
+      .primary {
+        background: var(--accent);
+        color: white;
+        box-shadow: 0 16px 24px rgba(29, 122, 98, 0.22);
+      }
+
+      .secondary {
+        background: rgba(40, 79, 122, 0.12);
+        color: #284f7a;
+      }
+
+      .ghost {
+        background: rgba(23, 35, 31, 0.08);
+        color: var(--ink);
+      }
+
+      .warning {
+        background: rgba(242, 200, 97, 0.22);
+        color: #8d5e0a;
+      }
+
+      .board-shell {
+        padding: 14px;
+        border-radius: 26px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(245, 239, 226, 0.94));
+        border: 1px solid rgba(23, 35, 31, 0.08);
       }
 
       .board {
@@ -206,33 +279,30 @@
       .tile {
         appearance: none;
         -webkit-appearance: none;
+        border: 1px solid var(--tile-edge);
+        background: var(--tile);
+        color: var(--ink);
         display: grid;
         place-items: center;
         padding: 0;
         position: relative;
-        z-index: 1;
-        border: 1px solid var(--tile-edge);
-        background: linear-gradient(180deg, #fffefb, #f7f0e4);
-        color: var(--ink);
         font-size: var(--tile-font-size, 18px);
         font-weight: 800;
         line-height: 1;
-        box-shadow:
-          inset 0 -4px 0 rgba(24, 42, 36, 0.04),
-          0 8px 14px rgba(24, 42, 36, 0.06);
+        box-shadow: inset 0 -4px 0 rgba(23, 35, 31, 0.03);
+        z-index: 1;
       }
 
       .tile-letter {
         display: block;
-        transform: translateY(-1px);
         line-height: 1;
+        transform: translateY(-1px);
         pointer-events: none;
       }
 
       .tile.active {
         background: var(--tile-active);
         color: white;
-        border-color: rgba(255, 255, 255, 0.24);
       }
 
       .tile.found {
@@ -241,7 +311,7 @@
       }
 
       .tile.hinted:not(.found):not(.active) {
-        background: color-mix(in srgb, var(--tile) 66%, var(--tile-hint));
+        background: color-mix(in srgb, var(--tile) 68%, var(--tile-hint));
       }
 
       .tile.invalid {
@@ -262,9 +332,28 @@
         opacity: 0.78;
       }
 
-      .path-arrow,
+      .path-arrow {
+        position: absolute;
+        left: 6px;
+        bottom: 5px;
+        font-size: var(--tile-arrow-size, 10px);
+        font-weight: 900;
+        line-height: 1;
+        opacity: 0.92;
+        pointer-events: none;
+      }
+
+      .path-arrow.solved {
+        color: rgba(255, 255, 255, 0.94);
+      }
+
+      .path-arrow.active {
+        color: rgba(255, 255, 255, 0.96);
+      }
+
       .path-end {
         position: absolute;
+        right: 7px;
         bottom: 5px;
         font-size: var(--tile-arrow-size, 10px);
         font-weight: 900;
@@ -273,22 +362,12 @@
         pointer-events: none;
       }
 
-      .path-arrow {
-        left: 6px;
-      }
-
-      .path-end {
-        right: 7px;
-      }
-
-      .path-arrow.solved,
       .path-end.solved {
-        color: rgba(255, 255, 255, 0.95);
+        color: rgba(255, 255, 255, 0.94);
       }
 
-      .path-arrow.active,
       .path-end.active {
-        color: rgba(255, 255, 255, 0.98);
+        color: rgba(255, 255, 255, 0.96);
       }
 
       .path-connector {
@@ -310,22 +389,16 @@
 
       .block {
         background:
-          linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent),
           var(--wall);
         border: 1px solid var(--wall-edge);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
-      }
-
-      .board-footer {
-        display: grid;
-        gap: 14px;
-        margin-top: 16px;
       }
 
       .legend {
         display: flex;
-        flex-wrap: wrap;
         gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 14px;
         color: var(--muted);
       }
 
@@ -333,7 +406,6 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        font-size: 0.92rem;
       }
 
       .dot {
@@ -343,200 +415,28 @@
         display: inline-block;
       }
 
-      .notes-strip {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .notes-card,
-      .control-card,
       .message-box,
-      .success-banner {
+      .algorithm-box {
         padding: 14px 16px;
         border-radius: 22px;
-        border: 1px solid var(--line);
+        background: rgba(23, 35, 31, 0.05);
       }
 
-      .notes-card {
-        background: rgba(255, 255, 255, 0.54);
-      }
-
-      .notes-card strong,
-      .control-card strong,
       .message-box strong,
-      .success-banner strong {
+      .algorithm-box strong {
         display: block;
         margin-bottom: 8px;
-      }
-
-      .notes-card p,
-      .notes-card ul {
-        margin: 0;
-        color: var(--muted);
-        line-height: 1.5;
-      }
-
-      .notes-card ul {
-        padding-left: 18px;
-      }
-
-      .controls,
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-
-      .stats {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .metric {
-        padding: 14px;
-        border-radius: 18px;
-        background: var(--paper-strong);
-        border: 1px solid var(--line);
-      }
-
-      .metric-label {
-        display: block;
-        margin-bottom: 8px;
-        font-size: 0.72rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--muted);
-      }
-
-      .metric-value {
-        display: block;
-        font-size: 1.15rem;
-        font-weight: 800;
-      }
-
-      .control-card {
-        background: rgba(255, 255, 255, 0.66);
-      }
-
-      .control-card-title {
-        margin-bottom: 10px;
-      }
-
-      .field-grid {
-        display: grid;
-        gap: 12px;
-      }
-
-      .field {
-        display: grid;
-        gap: 6px;
-      }
-
-      .field label {
-        font-size: 0.74rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--muted);
-      }
-
-      select,
-      input,
-      button {
-        font: inherit;
-      }
-
-      select,
-      input {
-        appearance: none;
-        width: 100%;
-        min-height: 48px;
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 12px 14px;
-        background: rgba(255, 255, 255, 0.84);
-        color: var(--ink);
-        font-weight: 800;
-      }
-
-      select {
-        padding-right: 40px;
-        background:
-          linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 20px) calc(50% - 2px) / 8px 8px no-repeat,
-          linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 14px) calc(50% - 2px) / 8px 8px no-repeat,
-          rgba(255, 255, 255, 0.84);
-      }
-
-      button {
-        min-height: 48px;
-        border: 0;
-        border-radius: 16px;
-        padding: 12px 16px;
-        font-weight: 800;
-        cursor: pointer;
-        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
-      }
-
-      button:hover {
-        transform: translateY(-1px);
-      }
-
-      button:focus-visible,
-      input:focus-visible,
-      select:focus-visible,
-      .tile:focus-visible {
-        outline: 3px solid rgba(20, 95, 86, 0.25);
-        outline-offset: 2px;
-      }
-
-      .primary {
-        background: linear-gradient(180deg, #1a7b6f, #145f56);
-        color: white;
-        box-shadow: 0 14px 22px rgba(20, 95, 86, 0.24);
-      }
-
-      .secondary {
-        background: rgba(54, 95, 164, 0.12);
-        color: #365fa4;
-      }
-
-      .ghost {
-        background: rgba(27, 43, 39, 0.08);
-        color: var(--ink);
-      }
-
-      .warning {
-        background: rgba(239, 196, 91, 0.22);
-        color: #8c6208;
-      }
-
-      .seed-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 10px;
-      }
-
-      .message-box {
-        background: rgba(20, 95, 86, 0.05);
-      }
-
-      .current-path {
-        margin-bottom: 8px;
-        font-size: 1.08rem;
-        font-weight: 800;
-        letter-spacing: 0.12em;
       }
 
       .helper {
         color: var(--muted);
-        line-height: 1.55;
+        line-height: 1.5;
       }
 
-      .success-banner {
-        background: linear-gradient(135deg, rgba(20, 95, 86, 0.18), rgba(239, 196, 91, 0.24));
+      .current-path {
+        font-size: 1.14rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
       }
 
       .slots {
@@ -547,13 +447,13 @@
       .slot {
         padding: 12px 14px;
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.74);
-        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(23, 35, 31, 0.08);
       }
 
       .slot.solved {
-        border-color: rgba(54, 95, 164, 0.24);
-        background: rgba(54, 95, 164, 0.1);
+        border-color: rgba(40, 79, 122, 0.2);
+        background: rgba(40, 79, 122, 0.1);
       }
 
       .slot-header {
@@ -565,28 +465,29 @@
 
       .slot-title {
         font-size: 0.76rem;
-        text-transform: uppercase;
         letter-spacing: 0.08em;
+        text-transform: uppercase;
         color: var(--muted);
       }
 
       .slot-value {
         font-family: Georgia, "Times New Roman", serif;
-        font-size: 1.14rem;
-        letter-spacing: 0.14em;
+        font-size: 1.16rem;
+        letter-spacing: 0.16em;
       }
 
-      .archive-links {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 8px;
+      .success-banner {
+        padding: 14px 16px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(29, 122, 98, 0.16), rgba(242, 200, 97, 0.24));
+        border: 1px solid rgba(29, 122, 98, 0.14);
       }
 
-      .archive-links a {
-        color: var(--accent-strong);
-        font-weight: 800;
-        text-decoration: none;
+      .algorithm-box ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.45;
       }
 
       @keyframes shake {
@@ -597,7 +498,7 @@
         80% { transform: translateX(2px); }
       }
 
-      @media (max-width: 1120px) {
+      @media (max-width: 960px) {
         .layout {
           grid-template-columns: 1fr;
         }
@@ -606,56 +507,23 @@
           max-width: none;
         }
       }
-
-      @media (max-width: 760px) {
-        main {
-          width: min(100%, calc(100% - 18px));
-          padding-top: 18px;
-        }
-
-        .board-panel,
-        .sidebar {
-          padding: 16px;
-        }
-
-        .stats,
-        .notes-strip {
-          grid-template-columns: 1fr;
-        }
-
-        .seed-row {
-          grid-template-columns: 1fr;
-        }
-
-        .controls,
-        .actions {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-        }
-      }
     </style>
   </head>
   <body>
     <main>
       <section class="hero">
-        <div class="hero-bar">
-          <div class="eyebrow">Clean rebuild</div>
-          <div class="version-chip" id="version-chip">v00.00.31</div>
-          <a class="link-chip" href="./v2.html">Open v2</a>
-          <a class="link-chip" href="./v1.html">Open v1</a>
+        <div class="hero-meta">
+          <div class="eyebrow">WordFinder Requirements Build</div>
+          <div class="version-chip" id="version-chip">v00.00.12</div>
+          <a class="link-chip" href="./v1.html">Open v1.html</a>
         </div>
-        <div class="hero-copy">
-          <h1>WordFinder</h1>
-          <p class="subtitle">
-            Trace each hidden word as one exact orthogonal path. Use every playable tile exactly once,
-            switch between deterministic daily and practice boards, and replay any board from its seed.
-          </p>
-        </div>
+        <h1>WordFinder</h1>
+        <p class="subtitle">Trace the hidden word paths and use every playable tile exactly once.</p>
       </section>
 
       <section class="layout">
-        <section class="panel board-panel">
-          <div class="board-header">
+        <div class="panel board-panel">
+          <div class="topline">
             <div class="mode-pill" id="mode-pill">Daily puzzle</div>
             <div class="mode-pill" id="puzzle-pill">Puzzle</div>
           </div>
@@ -664,34 +532,13 @@
             <div class="board" id="board" aria-label="Word grid"></div>
           </div>
 
-          <div class="board-footer">
-            <div class="legend">
-              <span><i class="dot" style="background: var(--tile-active)"></i> Active path</span>
-              <span><i class="dot" style="background: var(--tile-found)"></i> Solved word</span>
-              <span><i class="dot" style="background: var(--tile-hint)"></i> Hint reveal</span>
-              <span><i class="dot" style="background: var(--wall)"></i> Blocked cell</span>
-            </div>
-
-            <div class="notes-strip">
-              <div class="notes-card">
-                <strong>How to play</strong>
-                <p>
-                  Drag or tap through adjacent letters, submit only exact stored paths, and clear the
-                  entire board by solving every hidden word.
-                </p>
-              </div>
-              <div class="notes-card">
-                <strong>Current build</strong>
-                <ul>
-                  <li>Deterministic daily and practice generation</li>
-                  <li>Custom seeds with grid-size prefixes</li>
-                  <li>Dictionary-backed constrained word modes</li>
-                  <li>Solved-word connectors, markers, and color modes</li>
-                </ul>
-              </div>
-            </div>
+          <div class="legend">
+            <span><i class="dot" style="background: var(--tile-active)"></i> Current path</span>
+            <span><i class="dot" style="background: var(--tile-found)"></i> Solved word</span>
+            <span><i class="dot" style="background: var(--tile-hint)"></i> Hint</span>
+            <span><i class="dot" style="background: var(--wall)"></i> Blocked cell</span>
           </div>
-        </section>
+        </div>
 
         <aside class="panel sidebar">
           <div class="stats">
@@ -709,98 +556,79 @@
             </div>
           </div>
 
-          <div class="control-card">
-            <strong class="control-card-title">Board mode</strong>
+          <div class="controls">
+            <button class="primary" id="daily-btn">Daily board</button>
+            <button class="secondary" id="practice-btn">New practice board</button>
+          </div>
+
+          <div class="field">
+            <label for="grid-size">Grid size</label>
+            <select id="grid-size"></select>
+          </div>
+
+          <div class="field">
+            <label for="seed-input">Seed</label>
             <div class="controls">
-              <button class="primary" id="daily-btn">Daily board</button>
-              <button class="secondary" id="practice-btn">New practice board</button>
+              <input id="seed-input" type="text" spellcheck="false" autocomplete="off" />
+              <button class="secondary" id="seed-apply-btn" type="button">Apply seed</button>
             </div>
           </div>
 
-          <div class="control-card">
-            <strong class="control-card-title">Configuration</strong>
-            <div class="field-grid">
-              <div class="field">
-                <label for="grid-size">Grid size</label>
-                <select id="grid-size"></select>
-              </div>
-
-              <div class="field">
-                <label for="seed-input">Seed</label>
-                <div class="seed-row">
-                  <input id="seed-input" type="text" spellcheck="false" autocomplete="off" />
-                  <button class="secondary" id="seed-apply-btn" type="button">Apply seed</button>
-                </div>
-              </div>
-
-              <div class="field">
-                <label for="word-mode">Word selection</label>
-                <select id="word-mode">
-                  <option value="any">Any words</option>
-                  <option value="contains-z">Only words with Z</option>
-                  <option value="contains-x">Only words with X</option>
-                  <option value="contains-q">Only words with Q</option>
-                  <option value="contains-ing">Only words with ING</option>
-                  <option value="contains-mm">Only words with MM</option>
-                  <option value="starts-with">Words beginning with...</option>
-                  <option value="fixed-length">Only N-letter words</option>
-                </select>
-              </div>
-
-              <div class="field" id="start-letter-field" hidden>
-                <label for="start-letter-input">Starting letter</label>
-                <input
-                  id="start-letter-input"
-                  type="text"
-                  inputmode="text"
-                  maxlength="1"
-                  spellcheck="false"
-                  autocomplete="off"
-                  value="A"
-                />
-              </div>
-
-              <div class="field" id="fixed-length-field" hidden>
-                <label for="fixed-length-input">Word length N</label>
-                <input id="fixed-length-input" type="number" min="4" max="12" step="1" value="5" />
-              </div>
-
-              <div class="field">
-                <label for="color-mode">Solved colors</label>
-                <select id="color-mode">
-                  <option value="hue">Different hues</option>
-                  <option value="saturation">Different saturation</option>
-                  <option value="value">Different values</option>
-                  <option value="palette-citrus-grove">Citrus Grove</option>
-                  <option value="palette-seaside-glass">Seaside Glass</option>
-                  <option value="palette-desert-bloom">Desert Bloom</option>
-                  <option value="palette-berry-market">Berry Market</option>
-                  <option value="palette-forest-canopy">Forest Canopy</option>
-                  <option value="palette-sunset-drive">Sunset Drive</option>
-                  <option value="palette-vintage-poster">Vintage Poster</option>
-                  <option value="palette-candy-shop">Candy Shop</option>
-                  <option value="palette-library-ink">Library Ink</option>
-                  <option value="palette-tropical-punch">Tropical Punch</option>
-                  <option value="palette-harvest-table">Harvest Table</option>
-                  <option value="palette-aurora-pop">Aurora Pop</option>
-                  <option value="palette-espresso-mint">Espresso Mint</option>
-                  <option value="palette-boardwalk">Boardwalk</option>
-                  <option value="palette-studio-paint">Studio Paint</option>
-                  <option value="palette-midnight-neon">Midnight Neon</option>
-                </select>
-              </div>
-            </div>
+          <div class="field">
+            <label for="word-mode">Word selection</label>
+            <select id="word-mode">
+              <option value="any">Any words</option>
+              <option value="contains-z">Only words with Z</option>
+              <option value="contains-x">Only words with X</option>
+              <option value="contains-q">Only words with Q</option>
+              <option value="contains-ing">Only words with ING</option>
+              <option value="contains-mm">Only words with MM</option>
+              <option value="starts-with">Words beginning with...</option>
+              <option value="fixed-length">Only N-letter words</option>
+            </select>
           </div>
 
-          <div class="control-card">
-            <strong class="control-card-title">Actions</strong>
-            <div class="actions">
-              <button class="primary" id="submit-btn">Submit path</button>
-              <button class="ghost" id="undo-btn">Undo</button>
-              <button class="warning" id="hint-btn">Hint</button>
-              <button class="secondary" id="solve-btn">Solve</button>
-              <button class="ghost" id="reset-btn">Reset</button>
-            </div>
+          <div class="field" id="start-letter-field" hidden>
+            <label for="start-letter-input">Starting letter</label>
+            <input id="start-letter-input" type="text" inputmode="text" maxlength="1" spellcheck="false" autocomplete="off" value="A" />
+          </div>
+
+          <div class="field" id="fixed-length-field" hidden>
+            <label for="fixed-length-input">Word length N</label>
+            <input id="fixed-length-input" type="number" min="4" max="12" step="1" value="5" />
+          </div>
+
+          <div class="field">
+            <label for="color-mode">Solved colors</label>
+            <select id="color-mode">
+              <option value="hue">Different hues</option>
+              <option value="saturation">Different saturation</option>
+              <option value="value">Different values</option>
+              <option value="palette-citrus-grove">Citrus Grove</option>
+              <option value="palette-seaside-glass">Seaside Glass</option>
+              <option value="palette-desert-bloom">Desert Bloom</option>
+              <option value="palette-berry-market">Berry Market</option>
+              <option value="palette-forest-canopy">Forest Canopy</option>
+              <option value="palette-sunset-drive">Sunset Drive</option>
+              <option value="palette-vintage-poster">Vintage Poster</option>
+              <option value="palette-candy-shop">Candy Shop</option>
+              <option value="palette-library-ink">Library Ink</option>
+              <option value="palette-tropical-punch">Tropical Punch</option>
+              <option value="palette-harvest-table">Harvest Table</option>
+              <option value="palette-aurora-pop">Aurora Pop</option>
+              <option value="palette-espresso-mint">Espresso Mint</option>
+              <option value="palette-boardwalk">Boardwalk</option>
+              <option value="palette-studio-paint">Studio Paint</option>
+              <option value="palette-midnight-neon">Midnight Neon</option>
+            </select>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="submit-btn">Submit path</button>
+            <button class="ghost" id="undo-btn">Undo</button>
+            <button class="warning" id="hint-btn">Hint</button>
+            <button class="secondary" id="solve-btn">Solve</button>
+            <button class="ghost" id="reset-btn">Reset</button>
           </div>
 
           <div class="message-box">
@@ -818,15 +646,14 @@
 
           <div class="slots" id="slots"></div>
 
-          <div class="notes-card">
-            <strong>Archive</strong>
-            <p>
-              v2 preserves the pre-rebuild shipped page. v1 preserves the earlier archived prototype line.
-            </p>
-            <div class="archive-links">
-              <a href="./v2.html">Open v2</a>
-              <a href="./v1.html">Open v1</a>
-            </div>
+          <div class="algorithm-box">
+            <strong>Spec-driven build</strong>
+            <ul>
+              <li>Deterministic daily and practice generation by size and seed</li>
+              <li>Single contiguous playable path with blocked cells</li>
+              <li>Word lengths planned between 4 and 12 with anti-uniform bias</li>
+              <li>Exact path matching instead of free-form dictionary entry</li>
+            </ul>
           </div>
         </aside>
       </section>
@@ -834,7 +661,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.31";
+      const APP_VERSION = "v00.00.30";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
