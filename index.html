@@ -654,7 +654,7 @@
       <section class="hero">
         <div class="hero-bar">
           <div class="eyebrow">Clean rebuild</div>
-          <div class="version-chip" id="version-chip">v00.00.35</div>
+          <div class="version-chip" id="version-chip">v00.00.36</div>
           <a class="link-chip" href="./v2.html">Open v2</a>
           <a class="link-chip" href="./v1.html">Open v1</a>
         </div>
@@ -885,7 +885,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.35";
+      const APP_VERSION = "v00.00.36";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1626,6 +1626,29 @@
         return clamp(Math.round(total * (layoutSettings.blankPercent / 100)), 0, Math.max(0, total - 4));
       }
 
+      function buildBlankTargets(requestedTarget, total, exactRequested) {
+        const maxTarget = Math.max(0, total - 4);
+        const seen = new Set();
+        const targets = [];
+        const push = (value) => {
+          const normalized = clamp(value, 0, maxTarget);
+          if (seen.has(normalized)) return;
+          seen.add(normalized);
+          targets.push(normalized);
+        };
+
+        push(requestedTarget);
+        const radius = requestedTarget;
+
+        for (let delta = 1; delta <= radius; delta += 1) {
+          push(requestedTarget - delta);
+          if (!exactRequested) push(requestedTarget + delta);
+        }
+
+        if (!exactRequested) push(0);
+        return targets;
+      }
+
       function lineSegmentCells(startRow, startCol, dr, dc, length, rows, cols) {
         const cells = [];
         for (let step = 0; step < length; step += 1) {
@@ -1696,6 +1719,21 @@
           }
         }
 
+        if (blocked.size < target) {
+          const remaining = [];
+          for (let index = 0; index < rows * cols; index += 1) {
+            if (!blocked.has(index)) remaining.push(index);
+          }
+          for (let i = remaining.length - 1; i > 0; i -= 1) {
+            const j = randInt(rng, 0, i);
+            [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+          }
+          for (const index of remaining) {
+            blocked.add(index);
+            if (blocked.size >= target) break;
+          }
+        }
+
         return blocked;
       }
 
@@ -1737,9 +1775,12 @@
 
       function slotOrientationsForLayout(mode) {
         switch (mode) {
+          case "verticals":
           case "horizontals":
-            return ["cols"];
           case "straights":
+          case "diag-slash":
+          case "diag-backslash":
+          case "diag-both":
             return ["rows", "cols"];
           default:
             return ["rows"];
@@ -1773,22 +1814,12 @@
         }
 
         const requestedTarget = targetBlankCount(rows, cols, layoutSettings);
-        const fallbackTargets = [...new Set([
-          requestedTarget,
-          Math.floor(requestedTarget * 0.9),
-          Math.floor(requestedTarget * 0.8),
-          Math.floor(requestedTarget * 0.7),
-          Math.floor(requestedTarget * 0.6),
-          Math.floor(requestedTarget * 0.5),
-          Math.floor(requestedTarget * 0.4),
-          Math.floor(requestedTarget * 0.3),
-          Math.floor(requestedTarget * 0.2),
-          Math.floor(requestedTarget * 0.1),
-          0
-        ])].filter((value) => value >= 0);
+        const exactRequested = layoutSettings.blankCount > 0;
+        const fallbackTargets = buildBlankTargets(requestedTarget, rows * cols, exactRequested);
+        const attemptsPerTarget = exactRequested ? 480 : 220;
 
         for (const target of fallbackTargets) {
-          for (let attempt = 0; attempt < 72; attempt += 1) {
+          for (let attempt = 0; attempt < attemptsPerTarget; attempt += 1) {
             const blocked = patternedBlockedMask(rows, cols, `${seedLabel}:pattern:${target}:${attempt}`, layoutSettings, target);
             const availableSet = collectPlayableSet(rows, cols, blocked);
             if (availableSet.size < 4) continue;
@@ -2742,7 +2773,19 @@
         renderMessage();
       }
 
+      function syncConfigFromControls() {
+        state.selectedWordMode = els.wordMode.value;
+        state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
+        state.selectedFixedLength = sanitizeFixedLength(els.fixedLengthInput.value);
+        state.selectedBlankLayout = els.blankLayout.value;
+        const { rows, cols } = currentGridSize();
+        state.selectedBlankPercent = sanitizeBlankPercent(els.blankPercentInput.value);
+        state.selectedBlankCount = sanitizeBlankCount(els.blankCountInput.value, rows, cols);
+        state.selectedBlankChar = sanitizeBlankChar(els.blankCharInput.value);
+      }
+
       function nextPracticePuzzle() {
+        syncConfigFromControls();
         const { rows, cols } = currentGridSize();
         state.practiceIndex += 1;
         const seed = buildPracticeSeed(rows, cols, state.practiceIndex);
@@ -2794,6 +2837,7 @@
       }
 
       function applySeedInput() {
+        syncConfigFromControls();
         const { rows, cols } = currentGridSize();
         const normalizedSeed = normalizeSeed(els.seedInput.value, rows, cols, "practice-0");
         state.practiceIndex = 0;
@@ -2823,7 +2867,12 @@
       els.blankLayout.addEventListener("change", applyLayoutSettings);
       els.blankPercentInput.addEventListener("change", () => {
         els.blankPercentInput.value = String(sanitizeBlankPercent(els.blankPercentInput.value));
+        els.blankCountInput.value = "0";
         applyLayoutSettings();
+      });
+      els.blankPercentInput.addEventListener("input", () => {
+        els.blankPercentInput.value = String(sanitizeBlankPercent(els.blankPercentInput.value));
+        els.blankCountInput.value = "0";
       });
       els.blankCountInput.addEventListener("change", () => {
         const { rows, cols } = currentGridSize();
