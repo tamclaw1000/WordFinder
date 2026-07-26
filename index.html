@@ -200,6 +200,13 @@
       .tile,
       .block {
         aspect-ratio: 1;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        margin: 0;
+        align-self: stretch;
+        justify-self: stretch;
         border-radius: var(--tile-radius, 16px);
         overflow: hidden;
       }
@@ -647,7 +654,7 @@
       <section class="hero">
         <div class="hero-bar">
           <div class="eyebrow">Clean rebuild</div>
-          <div class="version-chip" id="version-chip">v00.00.34</div>
+          <div class="version-chip" id="version-chip">v00.00.35</div>
           <a class="link-chip" href="./v2.html">Open v2</a>
           <a class="link-chip" href="./v1.html">Open v1</a>
         </div>
@@ -878,7 +885,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.34";
+      const APP_VERSION = "v00.00.35";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1692,6 +1699,69 @@
         return blocked;
       }
 
+      function collectPlayableRuns(rows, cols, blockedSet, orientation) {
+        const runs = [];
+
+        if (orientation === "rows") {
+          for (let row = 0; row < rows; row += 1) {
+            let current = [];
+            for (let col = 0; col < cols; col += 1) {
+              const index = row * cols + col;
+              if (blockedSet.has(index)) {
+                if (current.length > 0) runs.push(current);
+                current = [];
+                continue;
+              }
+              current.push(index);
+            }
+            if (current.length > 0) runs.push(current);
+          }
+          return runs;
+        }
+
+        for (let col = 0; col < cols; col += 1) {
+          let current = [];
+          for (let row = 0; row < rows; row += 1) {
+            const index = row * cols + col;
+            if (blockedSet.has(index)) {
+              if (current.length > 0) runs.push(current);
+              current = [];
+              continue;
+            }
+            current.push(index);
+          }
+          if (current.length > 0) runs.push(current);
+        }
+        return runs;
+      }
+
+      function slotOrientationsForLayout(mode) {
+        switch (mode) {
+          case "horizontals":
+            return ["cols"];
+          case "straights":
+            return ["rows", "cols"];
+          default:
+            return ["rows"];
+        }
+      }
+
+      function buildSlotPathsFromRuns(runs, cols, seedLabel, wordSettings) {
+        const slotPaths = [];
+        runs.forEach((run, runIndex) => {
+          if (run.length < 4) {
+            throw new Error("run-too-short");
+          }
+          const lengths = chooseWordLengths(run.length, cols, `${seedLabel}:run:${runIndex}`, wordSettings);
+          let offset = 0;
+          lengths.forEach((length) => {
+            slotPaths.push(run.slice(offset, offset + length));
+            offset += length;
+          });
+        });
+        return slotPaths;
+      }
+
       function buildPatternPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings) {
         const lengths = allowedWordLengths(wordSettings);
         if (layoutSettings.mode === "no-blanks" && canPartitionLengths(rows * cols, lengths)) {
@@ -1722,37 +1792,33 @@
             const blocked = patternedBlockedMask(rows, cols, `${seedLabel}:pattern:${target}:${attempt}`, layoutSettings, target);
             const availableSet = collectPlayableSet(rows, cols, blocked);
             if (availableSet.size < 4) continue;
-            if (!isPlayableConnected(availableSet, rows, cols)) continue;
             if (!canPartitionLengths(availableSet.size, lengths)) continue;
-            if (availableSet.size === rows * cols) {
-              return {
-                path: buildSnakePath(rows, cols),
-                cells: buildCellsFromPlayable(rows, cols, availableSet)
-              };
+
+            for (const orientation of slotOrientationsForLayout(layoutSettings.mode)) {
+              const runs = collectPlayableRuns(rows, cols, blocked, orientation);
+              if (runs.length === 0) continue;
+              if (runs.some((run) => run.length < 4 || !canPartitionLengths(run.length, lengths))) continue;
+
+              try {
+                const slotPaths = buildSlotPathsFromRuns(runs, cols, `${seedLabel}:slots:${target}:${attempt}:${orientation}`, wordSettings);
+                return {
+                  slotPaths,
+                  cells: buildCellsFromPlayable(rows, cols, availableSet),
+                  playableCount: availableSet.size
+                };
+              } catch {
+                continue;
+              }
             }
-
-            const path = growPathOnAvailable(
-              availableSet,
-              rows,
-              cols,
-              availableSet.size,
-              `${seedLabel}:pattern-path:${target}:${attempt}`,
-              Math.max(12000, availableSet.size * 180)
-            );
-            if (!path || path.length !== availableSet.size) continue;
-
-            return {
-              path,
-              cells: buildCellsFromPlayable(rows, cols, availableSet)
-            };
           }
         }
 
         const fallbackSet = new Set(Array.from({ length: rows * cols }, (_, index) => index));
+        const fallbackRuns = collectPlayableRuns(rows, cols, new Set(), "rows");
         return {
-          path: growPathOnAvailable(fallbackSet, rows, cols, rows * cols, `${seedLabel}:pattern-fallback`) ||
-            Array.from({ length: rows * cols }, (_, index) => index),
-          cells: buildCellsFromPlayable(rows, cols, fallbackSet)
+          slotPaths: buildSlotPathsFromRuns(fallbackRuns, cols, `${seedLabel}:pattern-fallback`, wordSettings),
+          cells: buildCellsFromPlayable(rows, cols, fallbackSet),
+          playableCount: rows * cols
         };
       }
 
@@ -2057,15 +2123,21 @@
         );
         const seedLabel = `${mode}:${normalizedSeed}`;
         const layout = buildPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings);
-        const lengths = chooseWordLengths(layout.path.length, cols, seedLabel, wordSettings);
-        let offset = 0;
-
-        const words = lengths.map((length, index) => {
-          const path = layout.path.slice(offset, offset + length);
-          const text = pickWord(length, index, seedLabel, wordSettings);
-          offset += length;
-          return { text, path };
-        });
+        const words = layout.slotPaths
+          ? layout.slotPaths.map((path, index) => ({
+            text: pickWord(path.length, index, seedLabel, wordSettings),
+            path
+          }))
+          : (() => {
+            const lengths = chooseWordLengths(layout.path.length, cols, seedLabel, wordSettings);
+            let offset = 0;
+            return lengths.map((length, index) => {
+              const path = layout.path.slice(offset, offset + length);
+              const text = pickWord(length, index, seedLabel, wordSettings);
+              offset += length;
+              return { text, path };
+            });
+          })();
 
         const cells = layout.cells.map((cell) => ({ ...cell }));
         words.forEach((word, wordIndex) => {
@@ -2088,7 +2160,7 @@
           cols,
           cells,
           words,
-          playableCount: layout.path.length,
+          playableCount: layout.playableCount || words.reduce((sum, word) => sum + word.path.length, 0),
           blankChar: layoutSettings.mode === "no-blanks" ? "" : layoutSettings.blankChar,
           blankLayout: layoutSettings.mode
         };
