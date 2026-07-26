@@ -1,0 +1,14 @@
+{
+  "name": "wordfinder",
+  "version": "0.0.44",
+  "private": true,
+  "description": "Playwright test harness for the WordFinder static web app",
+  "scripts": {
+    "test": "playwright test",
+    "test:all": "./run-all-tests.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2"
+  }
+}
+

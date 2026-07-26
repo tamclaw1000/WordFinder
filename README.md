@@ -2,11 +2,16 @@
 
 WordFinder is a prototype repository for a Wend-style word-path puzzle web app.
 
-Current prototype version: `v00.00.43`
+Current prototype version: `v00.00.45`
 
 ## Getting started
 
 Open `index.html` in a browser to play the current single-page prototype locally.
+
+To run the full automated browser suite:
+
+- run `./run-all-tests.sh`
+- inspect the timestamped output under `test-results/`
 
 ## Project docs
 
@@ -26,3 +31,5 @@ Open `index.html` in a browser to play the current single-page prototype locally
 - The active board configuration is mirrored into the URL as `?seed=...`, and loading that URL restores the encoded setup.
 - Tap-only play submits by tapping the current path end tile again instead of using a dedicated submit button.
 - `scripts/build-worker.mjs` packages the single-page prototype into `dist/index.js` for Sites deployment.
+- The repository now includes a Playwright-based requirements-traceable test suite, plus
+  `run-all-tests.sh` to rerun the complete UI, generator, and documentation coverage pass.

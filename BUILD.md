@@ -1,6 +1,6 @@
 # WordFinder Build Log
 
-Current prototype version: `v00.00.43`
+Current prototype version: `v00.00.45`
 
 ## Summary
 
@@ -301,12 +301,26 @@ and follow-up iterations.
 - Kept the gameplay-first main screen, top-right menu, popup settings tabs, URL-synced `?seed=...` state, archived-version submenu, and tap-to-submit interaction.
 - Regenerated `dist/index.js` from the fresh page implementation.
 
+### `df87516` `feat: require more turning word paths` (`v00.00.44`)
+
+- Added explicit turn bias to the non-patterned generators.
+- Targeted at least 25% corner-turning eligible words in the default generator family.
+- Improved traversal splitting so non-patterned boards rely less on one-direction runs.
+
+### `v00.00.45` Playwright harness and numbered requirement traceability
+
+- Added a full Playwright test suite for UI behavior, generator combinations, and requirement traceability.
+- Added `run-all-tests.sh` as the single rerunnable entrypoint for the full suite.
+- Added timestamped `test-results/` output generation plus a summarized markdown result file.
+- Reworked `REQUIREMENTS.md` and `TECHNICAL_SPECIFICATION.md` to use stable numbered requirement identifiers.
+- Updated the no-blanks path generation branch to use the same turn-aware placement strategy as the default non-patterned generator.
+
 ## Current State
 
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
-- Current version: `v00.00.43`
-- Latest published tag: `v00.00.43`
+- Current version: `v00.00.45`
+- Latest published tag: `v00.00.45`
 
 ## Notes
 
@@ -315,6 +329,8 @@ and follow-up iterations.
 - The current build includes popup settings, top-right menu navigation, full URL-synced seeds,
   named palette modes, connector/marker rendering, a solve action, and constrained real-word
   generation modes backed by embedded dictionary-derived pools.
+- The repository now also includes a Playwright-based browser suite that covers UI flows,
+  exhaustive size × word-mode × blank-layout generation combinations, and requirement traceability.
 - The archive line is now: `v1.html` for the early prototype, `v2.html` for the pre-rebuild shipped page,
   and `v3.html` for the last pre-documentation-driven rebuild.
 - The GitHub Pages deployment is the public-facing version.

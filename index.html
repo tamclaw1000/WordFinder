@@ -947,7 +947,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.43";
+      const APP_VERSION = "v00.00.45";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1670,19 +1670,10 @@
       }
 
       function buildDefaultLayout(rows, cols, seedLabel, wordSettings, layoutSettings) {
-        if (layoutSettings.mode === "no-blanks") {
-          const rng = makeRng(hashText(`${seedLabel}:noblanks`));
-          const traversal = snakeTraversal(rows, cols, rng);
-          const slotPaths = splitTraversalIntoSlots(traversal, rows * cols, wordSettings, cols, rng);
-          const playableSet = new Set(slotPaths.flat());
-          return {
-            cells: Array.from({ length: rows * cols }, (_, index) => playableSet.has(index) ? { type: "tile" } : { type: "block" }),
-            slotPaths,
-            playableCount: playableSet.size
-          };
-        }
-
-        const targetBlocked = clamp(targetBlockedForLayout(rows, cols, layoutSettings), 0, rows * cols - 4);
+        const targetBlocked =
+          layoutSettings.mode === "no-blanks"
+            ? 0
+            : clamp(targetBlockedForLayout(rows, cols, layoutSettings), 0, rows * cols - 4);
         const targetPlayable = rows * cols - targetBlocked;
         const rng = makeRng(hashText(`${seedLabel}:default`));
         let best = null;

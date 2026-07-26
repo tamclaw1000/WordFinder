@@ -5,6 +5,22 @@
 This document describes the practical testing strategies available for `WordFinder`, ranging from
 quick manual verification to stronger automated coverage.
 
+## Current Implemented Harness
+
+The repository now ships with a full Playwright-based harness:
+
+- `./run-all-tests.sh` is the canonical rerun entrypoint.
+- Timestamped outputs are written under `test-results/`.
+- Each run writes:
+  - a Playwright JSON report
+  - a Playwright HTML report
+  - a raw console log
+  - a timestamped markdown summary file
+- The current automated suite includes:
+  - UI component and interaction coverage
+  - exhaustive board-size × word-mode × blank-layout generation coverage
+  - requirements and technical-spec traceability validation
+
 The app is a deterministic, client-side single-page puzzle with:
 
 - seed-driven board generation
