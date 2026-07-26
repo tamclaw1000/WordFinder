@@ -201,6 +201,7 @@
       .block {
         aspect-ratio: 1;
         border-radius: var(--tile-radius, 16px);
+        overflow: hidden;
       }
 
       .tile {
@@ -317,7 +318,7 @@
         display: grid;
         place-items: center;
         color: rgba(255, 255, 255, 0.58);
-        font-size: clamp(10px, var(--tile-font-size, 18px) * 0.72, 20px);
+        font-size: clamp(10px, calc(var(--tile-font-size, 18px) * 0.72), 20px);
         font-weight: 800;
         line-height: 1;
       }
@@ -646,7 +647,7 @@
       <section class="hero">
         <div class="hero-bar">
           <div class="eyebrow">Clean rebuild</div>
-          <div class="version-chip" id="version-chip">v00.00.32</div>
+          <div class="version-chip" id="version-chip">v00.00.33</div>
           <a class="link-chip" href="./v2.html">Open v2</a>
           <a class="link-chip" href="./v1.html">Open v1</a>
         </div>
@@ -767,17 +768,17 @@
                 </select>
               </div>
 
-              <div class="field">
+              <div class="field" id="blank-percent-field" hidden>
                 <label for="blank-percent-input">Blank percent</label>
                 <input id="blank-percent-input" type="number" min="0" max="85" step="1" value="22" />
               </div>
 
-              <div class="field">
+              <div class="field" id="blank-count-field" hidden>
                 <label for="blank-count-input">Blank count</label>
                 <input id="blank-count-input" type="number" min="0" max="400" step="1" value="0" />
               </div>
 
-              <div class="field">
+              <div class="field" id="blank-char-field" hidden>
                 <label for="blank-char-input">Blank fill character</label>
                 <input
                   id="blank-char-input"
@@ -877,7 +878,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.32";
+      const APP_VERSION = "v00.00.33";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1101,8 +1102,11 @@
         seedApplyBtn: document.getElementById("seed-apply-btn"),
         wordMode: document.getElementById("word-mode"),
         blankLayout: document.getElementById("blank-layout"),
+        blankPercentField: document.getElementById("blank-percent-field"),
         blankPercentInput: document.getElementById("blank-percent-input"),
+        blankCountField: document.getElementById("blank-count-field"),
         blankCountInput: document.getElementById("blank-count-input"),
+        blankCharField: document.getElementById("blank-char-field"),
         blankCharInput: document.getElementById("blank-char-input"),
         startLetterField: document.getElementById("start-letter-field"),
         startLetterInput: document.getElementById("start-letter-input"),
@@ -1413,7 +1417,7 @@
           .sort((a, b) => b.blockedNeighbors - a.blockedNeighbors || a.noise - b.noise)
           .map((entry) => entry.index);
 
-        for (let attempt = 0; attempt < Math.min(18, startCandidates.length); attempt += 1) {
+        for (let attempt = 0; attempt < Math.min(64, startCandidates.length); attempt += 1) {
           const visited = new Set();
           const path = [];
           const start = startCandidates[attempt];
@@ -1576,12 +1580,26 @@
       }
 
       function currentLayoutSettings(rows = null, cols = null) {
+        const mode = state.selectedBlankLayout;
+        if (!blankControlsRelevant(mode)) {
+          return {
+            mode,
+            blankPercent: 0,
+            blankCount: 0,
+            blankChar: ""
+          };
+        }
+
         return {
-          mode: state.selectedBlankLayout,
+          mode,
           blankPercent: sanitizeBlankPercent(state.selectedBlankPercent),
           blankCount: sanitizeBlankCount(state.selectedBlankCount, rows || GRID_MAX, cols || GRID_MAX),
           blankChar: sanitizeBlankChar(state.selectedBlankChar)
         };
+      }
+
+      function blankControlsRelevant(layoutMode) {
+        return layoutMode !== "default" && layoutMode !== "no-blanks";
       }
 
       function targetBlankCount(rows, cols, layoutSettings) {
@@ -1620,8 +1638,8 @@
         return path;
       }
 
-      function patternedBlockedMask(rows, cols, seedLabel, layoutSettings) {
-        const target = targetBlankCount(rows, cols, layoutSettings);
+      function patternedBlockedMask(rows, cols, seedLabel, layoutSettings, explicitTarget = null) {
+        const target = explicitTarget ?? targetBlankCount(rows, cols, layoutSettings);
         if (target <= 0) return new Set();
 
         const directionMap = {
@@ -1676,32 +1694,49 @@
           };
         }
 
-        for (let attempt = 0; attempt < 80; attempt += 1) {
-          const blocked = patternedBlockedMask(rows, cols, `${seedLabel}:pattern:${attempt}`, layoutSettings);
-          const availableSet = collectPlayableSet(rows, cols, blocked);
-          if (availableSet.size < 4) continue;
-          if (!isPlayableConnected(availableSet, rows, cols)) continue;
-          if (!canPartitionLengths(availableSet.size, lengths)) continue;
-          if (availableSet.size === rows * cols) {
+        const requestedTarget = targetBlankCount(rows, cols, layoutSettings);
+        const fallbackTargets = [...new Set([
+          requestedTarget,
+          Math.floor(requestedTarget * 0.9),
+          Math.floor(requestedTarget * 0.8),
+          Math.floor(requestedTarget * 0.7),
+          Math.floor(requestedTarget * 0.6),
+          Math.floor(requestedTarget * 0.5),
+          Math.floor(requestedTarget * 0.4),
+          Math.floor(requestedTarget * 0.3),
+          Math.floor(requestedTarget * 0.2),
+          Math.floor(requestedTarget * 0.1),
+          0
+        ])].filter((value) => value >= 0);
+
+        for (const target of fallbackTargets) {
+          for (let attempt = 0; attempt < 160; attempt += 1) {
+            const blocked = patternedBlockedMask(rows, cols, `${seedLabel}:pattern:${target}:${attempt}`, layoutSettings, target);
+            const availableSet = collectPlayableSet(rows, cols, blocked);
+            if (availableSet.size < 4) continue;
+            if (!isPlayableConnected(availableSet, rows, cols)) continue;
+            if (!canPartitionLengths(availableSet.size, lengths)) continue;
+            if (availableSet.size === rows * cols) {
+              return {
+                path: buildSnakePath(rows, cols),
+                cells: buildCellsFromPlayable(rows, cols, availableSet)
+              };
+            }
+
+            const path = growPathOnAvailable(
+              availableSet,
+              rows,
+              cols,
+              availableSet.size,
+              `${seedLabel}:pattern-path:${target}:${attempt}`
+            );
+            if (!path || path.length !== availableSet.size) continue;
+
             return {
-              path: buildSnakePath(rows, cols),
+              path,
               cells: buildCellsFromPlayable(rows, cols, availableSet)
             };
           }
-
-          const path = growPathOnAvailable(
-            availableSet,
-            rows,
-            cols,
-            availableSet.size,
-            `${seedLabel}:pattern-path:${attempt}`
-          );
-          if (!path || path.length !== availableSet.size) continue;
-
-          return {
-            path,
-            cells: buildCellsFromPlayable(rows, cols, availableSet)
-          };
         }
 
         const fallbackSet = new Set(Array.from({ length: rows * cols }, (_, index) => index));
@@ -2602,6 +2637,10 @@
         els.blankPercentInput.value = String(sanitizeBlankPercent(state.selectedBlankPercent));
         els.blankCountInput.value = String(sanitizeBlankCount(state.selectedBlankCount, state.puzzle.rows, state.puzzle.cols));
         els.blankCharInput.value = sanitizeBlankChar(state.selectedBlankChar);
+        const showBlankControls = blankControlsRelevant(state.selectedBlankLayout);
+        els.blankPercentField.hidden = !showBlankControls;
+        els.blankCountField.hidden = !showBlankControls;
+        els.blankCharField.hidden = !showBlankControls;
         els.startLetterInput.value = sanitizeStartLetter(state.selectedStartLetter);
         els.fixedLengthInput.value = String(sanitizeFixedLength(state.selectedFixedLength));
         els.startLetterField.hidden = state.selectedWordMode !== "starts-with";
