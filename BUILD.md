@@ -1,6 +1,6 @@
 # WordFinder Build Log
 
-Current prototype version: `v00.00.42`
+Current prototype version: `v00.00.43`
 
 ## Summary
 
@@ -294,13 +294,19 @@ and follow-up iterations.
 - Moved `v2` and `v1` into an `Archived versions` submenu.
 - Added tap-to-submit by tapping the current path end tile again.
 
+### `v00.00.43` documentation-driven rebuild
+
+- Archived the previous shipped rebuild as `v3.html`.
+- Rebuilt `index.html` again from scratch using the current documentation set as the implementation source of truth.
+- Kept the gameplay-first main screen, top-right menu, popup settings tabs, URL-synced `?seed=...` state, archived-version submenu, and tap-to-submit interaction.
+- Regenerated `dist/index.js` from the fresh page implementation.
+
 ## Current State
 
 - Repository: `https://github.com/tamclaw1000/WordFinder`
 - GitHub Pages: `https://tamclaw1000.github.io/WordFinder/`
-- Current version: `v00.00.42`
-- Latest recorded commit at the time of this log: `f2bc514`
-- Latest published tag: `v00.00.42`
+- Current version: `v00.00.43`
+- Latest published tag: `v00.00.43`
 
 ## Notes
 
@@ -309,5 +315,7 @@ and follow-up iterations.
 - The current build includes popup settings, top-right menu navigation, full URL-synced seeds,
   named palette modes, connector/marker rendering, a solve action, and constrained real-word
   generation modes backed by embedded dictionary-derived pools.
+- The archive line is now: `v1.html` for the early prototype, `v2.html` for the pre-rebuild shipped page,
+  and `v3.html` for the last pre-documentation-driven rebuild.
 - The GitHub Pages deployment is the public-facing version.
 - The OpenAI Sites deployment remains useful for internal workspace-hosted iteration.

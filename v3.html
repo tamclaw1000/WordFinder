@@ -1,0 +1,3492 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WordFinder</title>
+    <style>
+      :root {
+        --bg: #f3efe6;
+        --paper: rgba(255, 252, 247, 0.9);
+        --paper-strong: rgba(255, 252, 247, 0.98);
+        --line: rgba(24, 42, 36, 0.12);
+        --ink: #1b2b27;
+        --muted: #64756f;
+        --accent: #145f56;
+        --accent-strong: #0f4b44;
+        --accent-soft: rgba(20, 95, 86, 0.12);
+        --tile: #fffdfa;
+        --tile-edge: rgba(24, 42, 36, 0.12);
+        --tile-active: #145f56;
+        --tile-found: #365fa4;
+        --tile-hint: #efc45b;
+        --wall: #253a35;
+        --wall-edge: rgba(255, 255, 255, 0.08);
+        --danger: #be4f42;
+        --shadow: 0 30px 90px rgba(51, 56, 44, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        color-scheme: light;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 12% 12%, rgba(239, 196, 91, 0.32), transparent 22%),
+          radial-gradient(circle at 88% 14%, rgba(20, 95, 86, 0.18), transparent 24%),
+          radial-gradient(circle at 75% 88%, rgba(54, 95, 164, 0.12), transparent 20%),
+          linear-gradient(180deg, #f6f1e8 0%, #ebe3d4 100%);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+        background-size: 34px 34px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.32), transparent 78%);
+      }
+
+      main {
+        width: min(1320px, calc(100% - 28px));
+        margin: 0 auto;
+        padding: 28px 0 44px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .hero {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+
+      .hero-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .hero-spacer {
+        flex: 1 1 auto;
+      }
+
+      .eyebrow,
+      .version-chip,
+      .link-chip,
+      .mode-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 7px 13px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 800;
+      }
+
+      .eyebrow {
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        background: rgba(20, 95, 86, 0.1);
+        color: var(--accent);
+      }
+
+      .version-chip {
+        background: rgba(27, 43, 39, 0.08);
+        color: var(--ink);
+      }
+
+      .link-chip {
+        color: var(--accent-strong);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid rgba(20, 95, 86, 0.1);
+      }
+
+      .app-menu {
+        position: relative;
+        margin-left: auto;
+      }
+
+      .app-menu > summary {
+        list-style: none;
+        cursor: pointer;
+      }
+
+      .app-menu > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .menu-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 7px 13px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--accent-strong);
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(20, 95, 86, 0.12);
+      }
+
+      .menu-sheet {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 10px);
+        width: min(280px, calc(100vw - 32px));
+        padding: 12px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid var(--line);
+        box-shadow: 0 20px 60px rgba(18, 26, 24, 0.18);
+        display: grid;
+        gap: 10px;
+        z-index: 30;
+      }
+
+      .menu-action,
+      .menu-link {
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--line);
+        background: rgba(250, 248, 243, 0.96);
+        color: var(--ink);
+        border-radius: 16px;
+        min-height: 42px;
+        padding: 10px 14px;
+        font-size: 0.92rem;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .menu-action:hover,
+      .menu-link:hover {
+        border-color: rgba(20, 95, 86, 0.22);
+        background: rgba(255, 255, 255, 0.98);
+      }
+
+      .menu-submenu {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(244, 238, 227, 0.75);
+        padding: 8px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .menu-submenu > summary {
+        list-style: none;
+        cursor: pointer;
+        font-size: 0.88rem;
+        font-weight: 800;
+        color: var(--ink);
+        padding: 6px 8px;
+      }
+
+      .menu-submenu > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .menu-submenu-links {
+        display: grid;
+        gap: 8px;
+      }
+
+      .hero-copy {
+        display: grid;
+        gap: 10px;
+        max-width: 72ch;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(2.7rem, 7vw, 5.3rem);
+        line-height: 0.9;
+        letter-spacing: -0.04em;
+        max-width: 8ch;
+      }
+
+      .subtitle {
+        margin: 0;
+        font-size: 1.04rem;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+
+      .layout {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+        align-items: start;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 32px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+      }
+
+      .board-panel {
+        padding: 22px;
+      }
+
+      .sidebar {
+        padding: 18px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .board-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+
+      .mode-pill {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .board-shell {
+        position: relative;
+        padding: clamp(12px, 2vw, 20px);
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 238, 227, 0.97)),
+          repeating-linear-gradient(
+            0deg,
+            rgba(20, 95, 86, 0.02) 0 24px,
+            rgba(20, 95, 86, 0.04) 24px 25px
+          );
+      }
+
+      .board {
+        display: grid;
+        gap: 6px;
+        touch-action: none;
+        user-select: none;
+        position: relative;
+      }
+
+      .tile,
+      .block {
+        aspect-ratio: 1;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        margin: 0;
+        align-self: stretch;
+        justify-self: stretch;
+        border-radius: var(--tile-radius, 16px);
+        overflow: hidden;
+      }
+
+      .tile {
+        appearance: none;
+        -webkit-appearance: none;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        position: relative;
+        z-index: 1;
+        border: 1px solid var(--tile-edge);
+        background: linear-gradient(180deg, #fffefb, #f7f0e4);
+        color: var(--ink);
+        font-size: var(--tile-font-size, 18px);
+        font-weight: 800;
+        line-height: 1;
+        box-shadow:
+          inset 0 -4px 0 rgba(24, 42, 36, 0.04),
+          0 8px 14px rgba(24, 42, 36, 0.06);
+      }
+
+      .tile-letter {
+        display: block;
+        transform: translateY(-1px);
+        line-height: 1;
+        pointer-events: none;
+      }
+
+      .tile.active {
+        background: var(--tile-active);
+        color: white;
+        border-color: rgba(255, 255, 255, 0.24);
+      }
+
+      .tile.found {
+        background: var(--tile-found);
+        color: white;
+      }
+
+      .tile.hinted:not(.found):not(.active) {
+        background: color-mix(in srgb, var(--tile) 66%, var(--tile-hint));
+      }
+
+      .tile.invalid {
+        background: var(--danger);
+        color: white;
+        animation: shake 240ms ease;
+      }
+
+      .tile.locked {
+        cursor: default;
+      }
+
+      .tile-index {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        font-size: var(--tile-index-size, 10px);
+        opacity: 0.78;
+      }
+
+      .path-arrow,
+      .path-end {
+        position: absolute;
+        bottom: 5px;
+        font-size: var(--tile-arrow-size, 10px);
+        font-weight: 900;
+        line-height: 1;
+        opacity: 0.95;
+        pointer-events: none;
+      }
+
+      .path-arrow {
+        left: 6px;
+      }
+
+      .path-end {
+        right: 7px;
+      }
+
+      .path-arrow.solved,
+      .path-end.solved {
+        color: rgba(255, 255, 255, 0.95);
+      }
+
+      .path-arrow.active,
+      .path-end.active {
+        color: rgba(255, 255, 255, 0.98);
+      }
+
+      .path-connector {
+        position: absolute;
+        border-radius: 999px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .path-connector.solved {
+        background: color-mix(in srgb, var(--tile-found) 82%, white 18%);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+
+      .path-connector.active {
+        background: color-mix(in srgb, var(--tile-active) 82%, white 18%);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+
+      .block {
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent),
+          var(--wall);
+        border: 1px solid var(--wall-edge);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+        display: grid;
+        place-items: center;
+        color: rgba(255, 255, 255, 0.58);
+        font-size: clamp(10px, calc(var(--tile-font-size, 18px) * 0.72), 20px);
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .board-footer {
+        display: grid;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        color: var(--muted);
+      }
+
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.92rem;
+      }
+
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        display: inline-block;
+      }
+
+      .notes-strip {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .notes-card,
+      .control-card,
+      .message-box,
+      .success-banner {
+        padding: 14px 16px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+      }
+
+      .notes-card {
+        background: rgba(255, 255, 255, 0.54);
+      }
+
+      .notes-card strong,
+      .control-card strong,
+      .message-box strong,
+      .success-banner strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .notes-card p,
+      .notes-card ul {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .notes-card ul {
+        padding-left: 18px;
+      }
+
+      .controls,
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .metric {
+        padding: 14px;
+        border-radius: 18px;
+        background: var(--paper-strong);
+        border: 1px solid var(--line);
+      }
+
+      .metric-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .metric-value {
+        display: block;
+        font-size: 1.15rem;
+        font-weight: 800;
+      }
+
+      .control-card {
+        background: rgba(255, 255, 255, 0.66);
+      }
+
+      .control-card-title {
+        margin-bottom: 10px;
+      }
+
+      .field-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field label {
+        font-size: 0.74rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      select,
+      input,
+      button {
+        font: inherit;
+      }
+
+      select,
+      input {
+        appearance: none;
+        width: 100%;
+        min-height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.84);
+        color: var(--ink);
+        font-weight: 800;
+      }
+
+      select {
+        padding-right: 40px;
+        background:
+          linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 20px) calc(50% - 2px) / 8px 8px no-repeat,
+          linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 14px) calc(50% - 2px) / 8px 8px no-repeat,
+          rgba(255, 255, 255, 0.84);
+      }
+
+      button {
+        min-height: 48px;
+        border: 0;
+        border-radius: 16px;
+        padding: 12px 16px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      .tile:focus-visible {
+        outline: 3px solid rgba(20, 95, 86, 0.25);
+        outline-offset: 2px;
+      }
+
+      .primary {
+        background: linear-gradient(180deg, #1a7b6f, #145f56);
+        color: white;
+        box-shadow: 0 14px 22px rgba(20, 95, 86, 0.24);
+      }
+
+      .secondary {
+        background: rgba(54, 95, 164, 0.12);
+        color: #365fa4;
+      }
+
+      .ghost {
+        background: rgba(27, 43, 39, 0.08);
+        color: var(--ink);
+      }
+
+      .warning {
+        background: rgba(239, 196, 91, 0.22);
+        color: #8c6208;
+      }
+
+      .seed-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+      }
+
+      .message-box {
+        background: rgba(20, 95, 86, 0.05);
+      }
+
+      .current-path {
+        margin-bottom: 8px;
+        font-size: 1.08rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+      }
+
+      .helper {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .success-banner {
+        background: linear-gradient(135deg, rgba(20, 95, 86, 0.18), rgba(239, 196, 91, 0.24));
+      }
+
+      .slots {
+        display: grid;
+        gap: 10px;
+      }
+
+      .slot {
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid var(--line);
+      }
+
+      .slot.solved {
+        border-color: rgba(54, 95, 164, 0.24);
+        background: rgba(54, 95, 164, 0.1);
+      }
+
+      .slot-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .slot-title {
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .slot-value {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.14rem;
+        letter-spacing: 0.14em;
+      }
+
+      .archive-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .archive-links a {
+        color: var(--accent-strong);
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .settings-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(16, 24, 22, 0.5);
+        backdrop-filter: blur(10px);
+      }
+
+      .settings-dialog {
+        width: min(980px, 100%);
+        max-height: min(88vh, 920px);
+        overflow: auto;
+        padding: 22px;
+        border-radius: 28px;
+        background: var(--paper-strong);
+        border: 1px solid rgba(255, 255, 255, 0.64);
+        box-shadow: 0 36px 120px rgba(18, 26, 24, 0.3);
+      }
+
+      .settings-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 18px;
+      }
+
+      .settings-header h2 {
+        margin: 0 0 6px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        line-height: 0.96;
+      }
+
+      .settings-subtitle {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .settings-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .tab-btn {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--ink);
+        border-radius: 999px;
+        min-height: 40px;
+        padding: 9px 16px;
+        font-size: 0.9rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .tab-btn.is-active {
+        background: var(--accent);
+        color: white;
+        border-color: transparent;
+      }
+
+      .settings-panel {
+        display: grid;
+        gap: 16px;
+      }
+
+      .settings-panel[hidden] {
+        display: none !important;
+      }
+
+      .settings-card {
+        padding: 16px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid var(--line);
+        display: grid;
+        gap: 14px;
+      }
+
+      .settings-card strong {
+        font-size: 0.98rem;
+      }
+
+      .seed-note {
+        font-size: 0.88rem;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-3px); }
+        40% { transform: translateX(4px); }
+        60% { transform: translateX(-2px); }
+        80% { transform: translateX(2px); }
+      }
+
+      @media (max-width: 1120px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          max-width: none;
+        }
+      }
+
+      @media (max-width: 760px) {
+        main {
+          width: min(100%, calc(100% - 18px));
+          padding-top: 18px;
+        }
+
+        .board-panel,
+        .sidebar {
+          padding: 16px;
+        }
+
+        .stats,
+        .notes-strip {
+          grid-template-columns: 1fr;
+        }
+
+        .seed-row {
+          grid-template-columns: 1fr;
+        }
+
+        .controls,
+        .actions {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .app-menu {
+          margin-left: 0;
+        }
+
+        .menu-sheet {
+          right: 0;
+          left: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="hero-bar">
+          <div class="eyebrow">Clean rebuild</div>
+          <div class="version-chip" id="version-chip">v00.00.39</div>
+          <div class="hero-spacer"></div>
+          <details class="app-menu" id="app-menu">
+            <summary class="menu-chip">Menu</summary>
+            <div class="menu-sheet">
+              <button class="menu-action" id="practice-btn" type="button">New practice board</button>
+              <button class="menu-action" id="settings-open-btn" type="button">Settings</button>
+              <details class="menu-submenu">
+                <summary>Archived versions</summary>
+                <div class="menu-submenu-links">
+                  <a class="menu-link" href="./v2.html">Open v2</a>
+                  <a class="menu-link" href="./v1.html">Open v1</a>
+                </div>
+              </details>
+            </div>
+          </details>
+        </div>
+        <div class="hero-copy">
+          <h1>WordFinder</h1>
+          <p class="subtitle">
+            Trace each hidden word as one exact orthogonal path. Use every playable tile exactly once,
+            switch between deterministic daily and practice boards, and replay any board from its seed.
+          </p>
+        </div>
+      </section>
+
+      <section class="layout">
+        <section class="panel board-panel">
+          <div class="board-header">
+            <div class="mode-pill" id="mode-pill">Daily puzzle</div>
+            <div class="mode-pill" id="puzzle-pill">Puzzle</div>
+          </div>
+
+          <div class="board-shell">
+            <div class="board" id="board" aria-label="Word grid"></div>
+          </div>
+
+          <div class="board-footer">
+            <div class="legend">
+              <span><i class="dot" style="background: var(--tile-active)"></i> Active path</span>
+              <span><i class="dot" style="background: var(--tile-found)"></i> Solved word</span>
+              <span><i class="dot" style="background: var(--tile-hint)"></i> Hint reveal</span>
+              <span><i class="dot" style="background: var(--wall)"></i> Blocked cell</span>
+            </div>
+
+            <div class="notes-strip">
+              <div class="notes-card">
+                <strong>How to play</strong>
+                <p>
+                  Drag or tap through adjacent letters, submit only exact stored paths, and clear the
+                  entire board by solving every hidden word.
+                </p>
+              </div>
+              <div class="notes-card">
+                <strong>Current build</strong>
+                <ul>
+                  <li>Deterministic daily and practice generation</li>
+                  <li>Simple shareable seeds mirrored into the URL</li>
+                  <li>Dictionary-backed constrained word modes</li>
+                  <li>Solved-word connectors, markers, and color modes</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="panel sidebar">
+          <div class="stats">
+            <div class="metric">
+              <span class="metric-label">Found</span>
+              <span class="metric-value" id="found-count">0 / 0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Hints</span>
+              <span class="metric-value" id="hint-count">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Time</span>
+              <span class="metric-value" id="timer">00:00</span>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <strong class="control-card-title">Actions</strong>
+            <div class="actions">
+              <button class="ghost" id="undo-btn">Undo</button>
+              <button class="warning" id="hint-btn">Hint</button>
+              <button class="secondary" id="solve-btn">Solve</button>
+              <button class="ghost" id="reset-btn">Reset</button>
+            </div>
+          </div>
+
+          <div class="message-box">
+            <strong>Current path</strong>
+            <div class="current-path" id="current-path">—</div>
+            <div class="helper" id="message-text">
+              Drag or tap through orthogonally adjacent letters, then submit the exact hidden path.
+            </div>
+          </div>
+
+          <div class="success-banner" id="success-banner" hidden>
+            <strong>Board solved.</strong>
+            <div id="success-text"></div>
+          </div>
+
+          <div class="slots" id="slots"></div>
+
+        </aside>
+      </section>
+    </main>
+
+    <div class="settings-overlay" id="settings-overlay" hidden>
+      <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="settings-header">
+          <div>
+            <h2 id="settings-title">Game Settings</h2>
+            <p class="settings-subtitle">
+              Keep the play view focused on tracing words. Use these tabs for setup, seed control, and generation rules.
+            </p>
+          </div>
+          <button class="ghost" id="settings-close-btn" type="button">Close</button>
+        </div>
+
+        <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+          <button class="tab-btn is-active" id="tab-ui-btn" data-tab="ui" type="button">UI</button>
+          <button class="tab-btn" id="tab-game-btn" data-tab="game" type="button">Game Configuration</button>
+          <button class="tab-btn" id="tab-generation-btn" data-tab="generation" type="button">Board & Word Mechanics</button>
+        </div>
+
+        <section class="settings-panel" id="settings-panel-ui">
+          <div class="settings-card">
+            <strong>Display</strong>
+            <div class="field-grid">
+              <div class="field">
+                <label for="color-mode">Solved colors</label>
+                <select id="color-mode">
+                  <option value="hue">Different hues</option>
+                  <option value="saturation">Different saturation</option>
+                  <option value="value">Different values</option>
+                  <option value="palette-citrus-grove">Citrus Grove</option>
+                  <option value="palette-seaside-glass">Seaside Glass</option>
+                  <option value="palette-desert-bloom">Desert Bloom</option>
+                  <option value="palette-berry-market">Berry Market</option>
+                  <option value="palette-forest-canopy">Forest Canopy</option>
+                  <option value="palette-sunset-drive">Sunset Drive</option>
+                  <option value="palette-vintage-poster">Vintage Poster</option>
+                  <option value="palette-candy-shop">Candy Shop</option>
+                  <option value="palette-library-ink">Library Ink</option>
+                  <option value="palette-tropical-punch">Tropical Punch</option>
+                  <option value="palette-harvest-table">Harvest Table</option>
+                  <option value="palette-aurora-pop">Aurora Pop</option>
+                  <option value="palette-espresso-mint">Espresso Mint</option>
+                  <option value="palette-boardwalk">Boardwalk</option>
+                  <option value="palette-studio-paint">Studio Paint</option>
+                  <option value="palette-midnight-neon">Midnight Neon</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <section class="settings-panel" id="settings-panel-game" hidden>
+          <div class="settings-card">
+            <strong>Board and Seed</strong>
+            <div class="field-grid">
+              <div class="field">
+                <label for="grid-size">Grid size</label>
+                <select id="grid-size"></select>
+              </div>
+
+              <div class="field">
+                <label for="seed-input">Seed</label>
+                <div class="seed-row">
+                  <input id="seed-input" type="text" spellcheck="false" autocomplete="off" />
+                  <button class="secondary" id="seed-apply-btn" type="button">Apply seed</button>
+                </div>
+                <div class="seed-note">The active seed is mirrored into the URL as <code>?seed=...</code>.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-panel" id="settings-panel-generation" hidden>
+          <div class="settings-card">
+            <strong>Word Rules</strong>
+            <div class="field-grid">
+              <div class="field">
+                <label for="word-mode">Word selection</label>
+                <select id="word-mode">
+                  <option value="any">Any words</option>
+                  <option value="contains-z">Only words with Z</option>
+                  <option value="contains-x">Only words with X</option>
+                  <option value="contains-q">Only words with Q</option>
+                  <option value="contains-ing">Only words with ING</option>
+                  <option value="contains-mm">Only words with MM</option>
+                  <option value="starts-with">Words beginning with...</option>
+                  <option value="fixed-length">Only N-letter words</option>
+                </select>
+              </div>
+
+              <div class="field" id="start-letter-field" hidden>
+                <label for="start-letter-input">Starting letter</label>
+                <input
+                  id="start-letter-input"
+                  type="text"
+                  inputmode="text"
+                  maxlength="1"
+                  spellcheck="false"
+                  autocomplete="off"
+                  value="A"
+                />
+              </div>
+
+              <div class="field" id="fixed-length-field" hidden>
+                <label for="fixed-length-input">Word length N</label>
+                <input id="fixed-length-input" type="number" min="4" max="12" step="1" value="5" />
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <strong>Blank Layout</strong>
+            <div class="field-grid">
+              <div class="field">
+                <label for="blank-layout">Blank layout</label>
+                <select id="blank-layout">
+                  <option value="default">Default</option>
+                  <option value="no-blanks">No blanks</option>
+                  <option value="verticals">Verticals</option>
+                  <option value="horizontals">Horizontals</option>
+                  <option value="straights">Straights</option>
+                  <option value="diag-slash">Diagonals /</option>
+                  <option value="diag-backslash">Diagonals \</option>
+                  <option value="diag-both">Diagonals both</option>
+                </select>
+              </div>
+
+              <div class="field" id="blank-percent-field" hidden>
+                <label for="blank-percent-input">Blank percent</label>
+                <input id="blank-percent-input" type="number" min="0" max="85" step="1" value="22" />
+              </div>
+
+              <div class="field" id="blank-count-field" hidden>
+                <label for="blank-count-input">Blank count</label>
+                <input id="blank-count-input" type="number" min="0" max="400" step="1" value="0" />
+              </div>
+
+              <div class="field" id="blank-char-field" hidden>
+                <label for="blank-char-input">Blank fill character</label>
+                <input
+                  id="blank-char-input"
+                  type="text"
+                  inputmode="text"
+                  maxlength="1"
+                  spellcheck="false"
+                  autocomplete="off"
+                  value=""
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="word-pools.js"></script>
+    <script>
+      const APP_VERSION = "v00.00.42";
+      const GRID_MIN = 4;
+      const GRID_MAX = 20;
+
+      const WORD_BANK = {
+        "4": ["ABLE", "ABLY", "ACHE", "ACID", "ACRE", "ACTS", "ADAM", "AERO", "ALTO", "ARCH", "ATOM", "AURA"],
+        "5": ["ABIDE", "ABODE", "ABOUT", "ABOVE", "ADORE", "AGILE", "ALBUM", "ALLOY", "ANGLE", "ARBOR", "ARRAY", "AUDIO"],
+        "6": ["ABLAZE", "ABOUND", "ABSENT", "ACROSS", "ADJOIN", "ADMIRE", "ALMOST", "ANCHOR", "ARCADE", "ARTIST", "AUBURN", "AZUREN"],
+        "7": ["ABILITY", "ABOLISH", "ABSENCE", "ADOPTER", "ALIGNED", "ANCIENT", "ARRANGE", "ARTICLE", "ASCENTS", "BALANCE", "BETWEEN", "CABLING"],
+        "8": ["ABUNDANT", "ACCURACY", "ADAPTERS", "AIRFIELD", "ALMANACS", "AMPLIFIER", "ARCHIVES", "ARTIFACT", "BASELINE", "BUILDERS", "CABINETS", "CALIBERS"],
+        "9": ["ABRIDGERS", "ABSOLUTES", "ACOUSTICS", "ADVENTURE", "ALIGNMENT", "ANALOGIES", "APERTURES", "BLUEPRINT", "BRIGHTENS", "CHARCOALS", "CLOUDLINE", "COMPANION"],
+        "10": ["ABNORMALITY", "ADAPTATION", "AERODROMES", "AFTERGLOWS", "ALTERNATES", "ANNOTATION", "BACKGROUND", "BRIDGEWORK", "CONSTRAINT", "CONVERGENT", "DASHBOARDS", "EVERYWHERE"],
+        "11": ["ABBREVIATED", "ACCLIMATING", "ADVENTURERS", "ARCHITECTED", "BACKTRACKER", "BROADCASTER", "CONSTRUCTED", "DETERMINISM", "ELEVATIONS", "FOUNDATIONS", "GENERATIONS", "HARVESTABLE"],
+        "12": ["ABBREVIATION", "ACCESSIBILITY", "ACCOMMODATED", "ADMINISTRATOR", "ALPHABETICAL", "AUTHENTICATED", "CONFIGURABLE", "DETERMINISTIC", "ORTHOGONALITY", "RESPONSIVENESS", "TRANSPARENCY", "VISUALIZATION"]
+      };
+
+      const COLOR_PALETTES = {
+        "palette-citrus-grove": [
+          { fill: "hsl(18 78% 44%)", accent: "hsl(18 90% 76%)" },
+          { fill: "hsl(42 88% 48%)", accent: "hsl(42 96% 78%)" },
+          { fill: "hsl(82 64% 36%)", accent: "hsl(82 78% 72%)" },
+          { fill: "hsl(128 58% 34%)", accent: "hsl(128 72% 70%)" },
+          { fill: "hsl(154 56% 40%)", accent: "hsl(154 72% 74%)" },
+          { fill: "hsl(196 72% 40%)", accent: "hsl(196 88% 76%)" },
+          { fill: "hsl(226 66% 44%)", accent: "hsl(226 82% 78%)" },
+          { fill: "hsl(332 62% 46%)", accent: "hsl(332 80% 80%)" }
+        ],
+        "palette-seaside-glass": [
+          { fill: "hsl(188 58% 36%)", accent: "hsl(188 70% 72%)" },
+          { fill: "hsl(196 80% 44%)", accent: "hsl(196 92% 80%)" },
+          { fill: "hsl(206 62% 34%)", accent: "hsl(206 80% 72%)" },
+          { fill: "hsl(170 44% 42%)", accent: "hsl(170 62% 76%)" },
+          { fill: "hsl(156 56% 36%)", accent: "hsl(156 72% 72%)" },
+          { fill: "hsl(216 58% 44%)", accent: "hsl(216 76% 78%)" },
+          { fill: "hsl(28 72% 48%)", accent: "hsl(28 88% 78%)" },
+          { fill: "hsl(344 54% 48%)", accent: "hsl(344 72% 80%)" }
+        ],
+        "palette-desert-bloom": [
+          { fill: "hsl(16 68% 42%)", accent: "hsl(16 84% 76%)" },
+          { fill: "hsl(28 78% 50%)", accent: "hsl(28 94% 82%)" },
+          { fill: "hsl(40 72% 48%)", accent: "hsl(40 88% 80%)" },
+          { fill: "hsl(336 58% 46%)", accent: "hsl(336 78% 80%)" },
+          { fill: "hsl(318 48% 42%)", accent: "hsl(318 68% 78%)" },
+          { fill: "hsl(144 44% 36%)", accent: "hsl(144 62% 72%)" },
+          { fill: "hsl(196 56% 40%)", accent: "hsl(196 74% 76%)" },
+          { fill: "hsl(224 52% 42%)", accent: "hsl(224 70% 78%)" }
+        ],
+        "palette-berry-market": [
+          { fill: "hsl(346 70% 44%)", accent: "hsl(346 86% 78%)" },
+          { fill: "hsl(332 58% 40%)", accent: "hsl(332 76% 74%)" },
+          { fill: "hsl(312 48% 42%)", accent: "hsl(312 68% 76%)" },
+          { fill: "hsl(276 54% 44%)", accent: "hsl(276 74% 78%)" },
+          { fill: "hsl(246 50% 40%)", accent: "hsl(246 70% 74%)" },
+          { fill: "hsl(206 62% 42%)", accent: "hsl(206 82% 78%)" },
+          { fill: "hsl(168 50% 38%)", accent: "hsl(168 68% 74%)" },
+          { fill: "hsl(28 74% 48%)", accent: "hsl(28 90% 80%)" }
+        ],
+        "palette-forest-canopy": [
+          { fill: "hsl(118 38% 30%)", accent: "hsl(118 56% 66%)" },
+          { fill: "hsl(130 48% 34%)", accent: "hsl(130 68% 72%)" },
+          { fill: "hsl(146 40% 30%)", accent: "hsl(146 58% 68%)" },
+          { fill: "hsl(164 42% 34%)", accent: "hsl(164 60% 70%)" },
+          { fill: "hsl(186 56% 38%)", accent: "hsl(186 74% 74%)" },
+          { fill: "hsl(34 62% 38%)", accent: "hsl(34 80% 72%)" },
+          { fill: "hsl(20 56% 34%)", accent: "hsl(20 72% 70%)" },
+          { fill: "hsl(220 44% 40%)", accent: "hsl(220 64% 76%)" }
+        ],
+        "palette-sunset-drive": [
+          { fill: "hsl(10 78% 46%)", accent: "hsl(10 94% 80%)" },
+          { fill: "hsl(24 86% 52%)", accent: "hsl(24 100% 84%)" },
+          { fill: "hsl(40 92% 50%)", accent: "hsl(40 100% 82%)" },
+          { fill: "hsl(326 70% 48%)", accent: "hsl(326 88% 82%)" },
+          { fill: "hsl(294 54% 44%)", accent: "hsl(294 72% 78%)" },
+          { fill: "hsl(256 52% 42%)", accent: "hsl(256 70% 76%)" },
+          { fill: "hsl(210 68% 44%)", accent: "hsl(210 86% 80%)" },
+          { fill: "hsl(188 56% 40%)", accent: "hsl(188 74% 76%)" }
+        ],
+        "palette-vintage-poster": [
+          { fill: "hsl(12 64% 40%)", accent: "hsl(12 80% 74%)" },
+          { fill: "hsl(34 72% 44%)", accent: "hsl(34 88% 76%)" },
+          { fill: "hsl(52 58% 42%)", accent: "hsl(52 74% 74%)" },
+          { fill: "hsl(88 38% 36%)", accent: "hsl(88 56% 70%)" },
+          { fill: "hsl(196 52% 36%)", accent: "hsl(196 70% 72%)" },
+          { fill: "hsl(216 48% 34%)", accent: "hsl(216 66% 70%)" },
+          { fill: "hsl(338 46% 38%)", accent: "hsl(338 64% 74%)" },
+          { fill: "hsl(278 38% 42%)", accent: "hsl(278 56% 76%)" }
+        ],
+        "palette-candy-shop": [
+          { fill: "hsl(338 82% 54%)", accent: "hsl(338 100% 84%)" },
+          { fill: "hsl(318 70% 52%)", accent: "hsl(318 88% 84%)" },
+          { fill: "hsl(284 74% 56%)", accent: "hsl(284 92% 84%)" },
+          { fill: "hsl(248 70% 54%)", accent: "hsl(248 88% 84%)" },
+          { fill: "hsl(198 72% 50%)", accent: "hsl(198 90% 84%)" },
+          { fill: "hsl(172 58% 46%)", accent: "hsl(172 76% 80%)" },
+          { fill: "hsl(42 86% 54%)", accent: "hsl(42 100% 84%)" },
+          { fill: "hsl(16 84% 54%)", accent: "hsl(16 100% 84%)" }
+        ],
+        "palette-library-ink": [
+          { fill: "hsl(218 42% 28%)", accent: "hsl(218 60% 64%)" },
+          { fill: "hsl(236 34% 30%)", accent: "hsl(236 52% 66%)" },
+          { fill: "hsl(268 28% 34%)", accent: "hsl(268 46% 68%)" },
+          { fill: "hsl(330 34% 38%)", accent: "hsl(330 52% 74%)" },
+          { fill: "hsl(14 50% 40%)", accent: "hsl(14 68% 74%)" },
+          { fill: "hsl(32 56% 42%)", accent: "hsl(32 74% 76%)" },
+          { fill: "hsl(166 34% 34%)", accent: "hsl(166 52% 70%)" },
+          { fill: "hsl(194 44% 36%)", accent: "hsl(194 62% 72%)" }
+        ],
+        "palette-tropical-punch": [
+          { fill: "hsl(354 80% 48%)", accent: "hsl(354 96% 82%)" },
+          { fill: "hsl(22 88% 52%)", accent: "hsl(22 100% 84%)" },
+          { fill: "hsl(48 92% 50%)", accent: "hsl(48 100% 82%)" },
+          { fill: "hsl(152 62% 42%)", accent: "hsl(152 80% 78%)" },
+          { fill: "hsl(176 66% 40%)", accent: "hsl(176 84% 76%)" },
+          { fill: "hsl(198 74% 44%)", accent: "hsl(198 92% 80%)" },
+          { fill: "hsl(226 66% 44%)", accent: "hsl(226 84% 80%)" },
+          { fill: "hsl(290 64% 48%)", accent: "hsl(290 82% 82%)" }
+        ],
+        "palette-harvest-table": [
+          { fill: "hsl(22 68% 40%)", accent: "hsl(22 84% 74%)" },
+          { fill: "hsl(34 74% 44%)", accent: "hsl(34 90% 78%)" },
+          { fill: "hsl(48 72% 42%)", accent: "hsl(48 88% 76%)" },
+          { fill: "hsl(76 46% 34%)", accent: "hsl(76 64% 68%)" },
+          { fill: "hsl(96 42% 32%)", accent: "hsl(96 60% 66%)" },
+          { fill: "hsl(182 42% 36%)", accent: "hsl(182 60% 72%)" },
+          { fill: "hsl(214 48% 38%)", accent: "hsl(214 66% 74%)" },
+          { fill: "hsl(348 44% 42%)", accent: "hsl(348 62% 76%)" }
+        ],
+        "palette-aurora-pop": [
+          { fill: "hsl(164 70% 40%)", accent: "hsl(164 88% 78%)" },
+          { fill: "hsl(184 78% 44%)", accent: "hsl(184 96% 80%)" },
+          { fill: "hsl(208 74% 46%)", accent: "hsl(208 92% 82%)" },
+          { fill: "hsl(238 68% 48%)", accent: "hsl(238 86% 82%)" },
+          { fill: "hsl(274 64% 50%)", accent: "hsl(274 82% 84%)" },
+          { fill: "hsl(308 62% 50%)", accent: "hsl(308 80% 84%)" },
+          { fill: "hsl(340 72% 50%)", accent: "hsl(340 90% 84%)" },
+          { fill: "hsl(34 88% 52%)", accent: "hsl(34 100% 84%)" }
+        ],
+        "palette-espresso-mint": [
+          { fill: "hsl(18 36% 24%)", accent: "hsl(18 52% 58%)" },
+          { fill: "hsl(28 44% 30%)", accent: "hsl(28 60% 64%)" },
+          { fill: "hsl(160 52% 34%)", accent: "hsl(160 70% 70%)" },
+          { fill: "hsl(176 50% 36%)", accent: "hsl(176 68% 72%)" },
+          { fill: "hsl(196 44% 38%)", accent: "hsl(196 62% 74%)" },
+          { fill: "hsl(220 34% 34%)", accent: "hsl(220 52% 70%)" },
+          { fill: "hsl(336 42% 38%)", accent: "hsl(336 60% 74%)" },
+          { fill: "hsl(44 64% 46%)", accent: "hsl(44 82% 80%)" }
+        ],
+        "palette-boardwalk": [
+          { fill: "hsl(192 68% 44%)", accent: "hsl(192 86% 80%)" },
+          { fill: "hsl(206 62% 40%)", accent: "hsl(206 80% 76%)" },
+          { fill: "hsl(224 56% 42%)", accent: "hsl(224 74% 78%)" },
+          { fill: "hsl(10 68% 48%)", accent: "hsl(10 84% 80%)" },
+          { fill: "hsl(24 78% 50%)", accent: "hsl(24 94% 82%)" },
+          { fill: "hsl(40 84% 48%)", accent: "hsl(40 100% 80%)" },
+          { fill: "hsl(154 50% 40%)", accent: "hsl(154 68% 76%)" },
+          { fill: "hsl(326 54% 48%)", accent: "hsl(326 72% 82%)" }
+        ],
+        "palette-studio-paint": [
+          { fill: "hsl(350 70% 48%)", accent: "hsl(350 88% 82%)" },
+          { fill: "hsl(18 78% 50%)", accent: "hsl(18 94% 84%)" },
+          { fill: "hsl(48 82% 50%)", accent: "hsl(48 100% 82%)" },
+          { fill: "hsl(132 54% 40%)", accent: "hsl(132 72% 76%)" },
+          { fill: "hsl(196 72% 44%)", accent: "hsl(196 90% 80%)" },
+          { fill: "hsl(226 66% 46%)", accent: "hsl(226 84% 82%)" },
+          { fill: "hsl(270 60% 48%)", accent: "hsl(270 78% 82%)" },
+          { fill: "hsl(316 62% 50%)", accent: "hsl(316 80% 84%)" }
+        ],
+        "palette-midnight-neon": [
+          { fill: "hsl(218 54% 26%)", accent: "hsl(218 72% 66%)" },
+          { fill: "hsl(188 84% 42%)", accent: "hsl(188 100% 78%)" },
+          { fill: "hsl(162 72% 40%)", accent: "hsl(162 90% 76%)" },
+          { fill: "hsl(124 68% 42%)", accent: "hsl(124 86% 78%)" },
+          { fill: "hsl(42 92% 50%)", accent: "hsl(42 100% 82%)" },
+          { fill: "hsl(16 88% 52%)", accent: "hsl(16 100% 84%)" },
+          { fill: "hsl(332 76% 50%)", accent: "hsl(332 94% 84%)" },
+          { fill: "hsl(286 72% 52%)", accent: "hsl(286 90% 84%)" }
+        ]
+      };
+
+      document.title = `WordFinder ${APP_VERSION}`;
+      document.getElementById("version-chip").textContent = APP_VERSION;
+
+      const state = {
+        mode: "daily",
+        selectedGridSize: "5x5",
+        selectedColorMode: "value",
+        selectedWordMode: "any",
+        selectedStartLetter: "A",
+        selectedFixedLength: 5,
+        selectedBlankLayout: "default",
+        selectedBlankPercent: 22,
+        selectedBlankCount: 0,
+        selectedBlankChar: "",
+        practiceIndex: 0,
+        currentSeed: "",
+        puzzle: null,
+        foundWords: [],
+        hints: {},
+        activePath: [],
+        invalidTiles: [],
+        message: "Drag or tap through orthogonally adjacent letters, then submit the exact hidden path.",
+        startTime: Date.now(),
+        timerHandle: null,
+        draggingPointerId: null,
+        gestureExtended: false
+      };
+
+      const els = {
+        board: document.getElementById("board"),
+        slots: document.getElementById("slots"),
+        modePill: document.getElementById("mode-pill"),
+        puzzlePill: document.getElementById("puzzle-pill"),
+        foundCount: document.getElementById("found-count"),
+        hintCount: document.getElementById("hint-count"),
+        timer: document.getElementById("timer"),
+        currentPath: document.getElementById("current-path"),
+        messageText: document.getElementById("message-text"),
+        successBanner: document.getElementById("success-banner"),
+        successText: document.getElementById("success-text"),
+        gridSize: document.getElementById("grid-size"),
+        seedInput: document.getElementById("seed-input"),
+        seedApplyBtn: document.getElementById("seed-apply-btn"),
+        wordMode: document.getElementById("word-mode"),
+        blankLayout: document.getElementById("blank-layout"),
+        blankPercentField: document.getElementById("blank-percent-field"),
+        blankPercentInput: document.getElementById("blank-percent-input"),
+        blankCountField: document.getElementById("blank-count-field"),
+        blankCountInput: document.getElementById("blank-count-input"),
+        blankCharField: document.getElementById("blank-char-field"),
+        blankCharInput: document.getElementById("blank-char-input"),
+        startLetterField: document.getElementById("start-letter-field"),
+        startLetterInput: document.getElementById("start-letter-input"),
+        fixedLengthField: document.getElementById("fixed-length-field"),
+        fixedLengthInput: document.getElementById("fixed-length-input"),
+        colorMode: document.getElementById("color-mode"),
+        appMenu: document.getElementById("app-menu"),
+        practiceBtn: document.getElementById("practice-btn"),
+        settingsOpenBtn: document.getElementById("settings-open-btn"),
+        settingsOverlay: document.getElementById("settings-overlay"),
+        settingsCloseBtn: document.getElementById("settings-close-btn"),
+        settingsTabButtons: Array.from(document.querySelectorAll(".tab-btn")),
+        settingsPanels: {
+          ui: document.getElementById("settings-panel-ui"),
+          game: document.getElementById("settings-panel-game"),
+          generation: document.getElementById("settings-panel-generation")
+        },
+        undoBtn: document.getElementById("undo-btn"),
+        hintBtn: document.getElementById("hint-btn"),
+        solveBtn: document.getElementById("solve-btn"),
+        resetBtn: document.getElementById("reset-btn")
+      };
+
+      function toCoord(index, cols) {
+        return [Math.floor(index / cols), index % cols];
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function hashText(text) {
+        let hash = 2166136261;
+        for (const char of text) {
+          hash ^= char.charCodeAt(0);
+          hash = Math.imul(hash, 16777619);
+        }
+        return hash >>> 0;
+      }
+
+      function makeRng(seed) {
+        let value = seed >>> 0;
+        return () => {
+          value = (value * 1664525 + 1013904223) >>> 0;
+          return value / 4294967296;
+        };
+      }
+
+      function randInt(rng, min, max) {
+        return min + Math.floor(rng() * (max - min + 1));
+      }
+
+      function getUrlSeed() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("seed") || "";
+      }
+
+      function setUrlSeed(seed) {
+        const url = new URL(window.location.href);
+        if (seed) {
+          url.searchParams.set("seed", seed);
+        } else {
+          url.searchParams.delete("seed");
+        }
+        window.history.replaceState({}, "", url);
+      }
+
+      function parseGridSizeToken(token) {
+        const match = String(token || "").match(/^(\d+)x(\d+)$/);
+        if (!match) return null;
+        const rows = Number(match[1]);
+        const cols = Number(match[2]);
+        if (!Number.isInteger(rows) || !Number.isInteger(cols)) return null;
+        if (rows < GRID_MIN || rows > GRID_MAX || cols < GRID_MIN || cols > GRID_MAX) return null;
+        return {
+          rows,
+          cols,
+          gridSize: `${rows}x${cols}`
+        };
+      }
+
+      function decodeWordSelectionSeedKey(key) {
+        const normalized = String(key || "any");
+        if (normalized === "z") return { mode: "contains-z", startLetter: "A", fixedLength: 5 };
+        if (normalized === "x") return { mode: "contains-x", startLetter: "A", fixedLength: 5 };
+        if (normalized === "q") return { mode: "contains-q", startLetter: "A", fixedLength: 5 };
+        if (normalized === "ing") return { mode: "contains-ing", startLetter: "A", fixedLength: 5 };
+        if (normalized === "mm") return { mode: "contains-mm", startLetter: "A", fixedLength: 5 };
+        if (normalized.startsWith("starts-")) {
+          return {
+            mode: "starts-with",
+            startLetter: sanitizeStartLetter(normalized.slice(7)),
+            fixedLength: 5
+          };
+        }
+        if (normalized.startsWith("n-")) {
+          return {
+            mode: "fixed-length",
+            startLetter: "A",
+            fixedLength: sanitizeFixedLength(normalized.slice(2))
+          };
+        }
+        return { mode: "any", startLetter: "A", fixedLength: 5 };
+      }
+
+      function decodeLayoutSelectionSeedKey(key, rows, cols) {
+        const [modeToken = "default", percentToken = "22", countToken = "0", charToken = "none"] =
+          String(key || "").split(",");
+        const allowedModes = new Set([
+          "default",
+          "no-blanks",
+          "verticals",
+          "horizontals",
+          "straights",
+          "diag-slash",
+          "diag-backslash",
+          "diag-both"
+        ]);
+        const mode = allowedModes.has(modeToken) ? modeToken : "default";
+        const parsedCharCode = Number.parseInt(charToken, 16);
+        const blankChar =
+          charToken === "none" || !Number.isFinite(parsedCharCode) ? "" : String.fromCharCode(parsedCharCode);
+        return {
+          mode,
+          blankPercent: sanitizeBlankPercent(percentToken),
+          blankCount: sanitizeBlankCount(countToken, rows, cols),
+          blankChar: sanitizeBlankChar(blankChar)
+        };
+      }
+
+      function parseGameSeed(seedValue, fallbackBase = "practice-0") {
+        const trimmed = simplifySeed(seedValue, fallbackBase);
+        const [baseSeed = fallbackBase, gridToken = "", wordToken = "", layoutToken = ""] = trimmed.split("~");
+        return {
+          baseSeed: simplifySeed(baseSeed, fallbackBase),
+          gridToken,
+          wordToken,
+          layoutToken,
+          fullSeed: trimmed
+        };
+      }
+
+      function neighborIndexes(index, rows, cols) {
+        const [row, col] = toCoord(index, cols);
+        const neighbors = [];
+        if (row > 0) neighbors.push(index - cols);
+        if (row < rows - 1) neighbors.push(index + cols);
+        if (col > 0) neighbors.push(index - 1);
+        if (col < cols - 1) neighbors.push(index + 1);
+        return neighbors;
+      }
+
+      function directionBetween(from, to, cols) {
+        const [fromRow, fromCol] = toCoord(from, cols);
+        const [toRow, toCol] = toCoord(to, cols);
+        return [toRow - fromRow, toCol - fromCol];
+      }
+
+      function reachableCount(start, visited, rows, cols) {
+        const seen = new Set([start]);
+        const queue = [start];
+
+        while (queue.length > 0) {
+          const current = queue.pop();
+          for (const next of neighborIndexes(current, rows, cols)) {
+            if (seen.has(next)) continue;
+            if (visited.has(next) && next !== start) continue;
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+
+        return seen.size;
+      }
+
+      function reachableCountInSet(start, visited, allowedSet, rows, cols) {
+        const seen = new Set([start]);
+        const queue = [start];
+
+        while (queue.length > 0) {
+          const current = queue.pop();
+          for (const next of neighborIndexes(current, rows, cols)) {
+            if (!allowedSet.has(next) || seen.has(next)) continue;
+            if (visited.has(next) && next !== start) continue;
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+
+        return seen.size;
+      }
+
+      function buildCellsFromPlayable(rows, cols, playableSet) {
+        return Array.from({ length: rows * cols }, (_, index) =>
+          playableSet.has(index) ? { type: "tile" } : { type: "block" }
+        );
+      }
+
+      function coarseNeighborIndexes(index, rows, cols) {
+        const row = Math.floor(index / cols);
+        const col = index % cols;
+        const neighbors = [];
+        if (row > 0) neighbors.push(index - cols);
+        if (row < rows - 1) neighbors.push(index + cols);
+        if (col > 0) neighbors.push(index - 1);
+        if (col < cols - 1) neighbors.push(index + 1);
+        return neighbors;
+      }
+
+      function countSetNeighbors(index, rows, cols, sourceSet, neighborFn = neighborIndexes) {
+        return neighborFn(index, rows, cols).filter((neighbor) => sourceSet.has(neighbor)).length;
+      }
+
+      function collectPlayableSet(rows, cols, blockedSet) {
+        const playable = new Set();
+        for (let index = 0; index < rows * cols; index += 1) {
+          if (!blockedSet.has(index)) playable.add(index);
+        }
+        return playable;
+      }
+
+      function isPlayableConnected(playableSet, rows, cols) {
+        const [start] = playableSet;
+        if (start === undefined) return false;
+        const seen = new Set([start]);
+        const queue = [start];
+
+        while (queue.length > 0) {
+          const current = queue.pop();
+          for (const next of neighborIndexes(current, rows, cols)) {
+            if (!playableSet.has(next) || seen.has(next)) continue;
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+
+        return seen.size === playableSet.size;
+      }
+
+      function generateBlockedMask(rows, cols, seedLabel, targetPlayable) {
+        const rng = makeRng(hashText(`${seedLabel}:blocked-mask`));
+        const total = rows * cols;
+        const targetBlocked = Math.max(0, total - targetPlayable);
+        const coarseRows = Math.ceil(rows / 2);
+        const coarseCols = Math.ceil(cols / 2);
+        const coarseTotal = coarseRows * coarseCols;
+        const coarseTargetBlocked = clamp(
+          Math.round(targetBlocked / 8),
+          2,
+          Math.max(2, Math.min(coarseTotal - 1, Math.round((rows + cols) / 2)))
+        );
+        const coarseBlocked = new Set();
+        const blockedOrder = [];
+        const regions = [];
+        const coarseOwner = new Map();
+        const regionTargets = [];
+        const seedCount = clamp(Math.round((rows + cols) / 8), 3, 8);
+
+        function chooseSeed(preferInterior) {
+          for (let attempt = 0; attempt < 50; attempt += 1) {
+            const row = preferInterior && coarseRows > 2
+              ? randInt(rng, 1, coarseRows - 2)
+              : randInt(rng, 0, coarseRows - 1);
+            const col = preferInterior && coarseCols > 2
+              ? randInt(rng, 1, coarseCols - 2)
+              : randInt(rng, 0, coarseCols - 1);
+            const index = row * coarseCols + col;
+            if (coarseBlocked.has(index)) continue;
+            return index;
+          }
+          return randInt(rng, 0, coarseTotal - 1);
+        }
+
+        for (let index = 0; index < seedCount; index += 1) {
+          const seed = chooseSeed(index % 2 === 0);
+          if (coarseBlocked.has(seed)) continue;
+          coarseBlocked.add(seed);
+          blockedOrder.push(seed);
+          regions.push([seed]);
+          coarseOwner.set(seed, regions.length - 1);
+          regionTargets.push(2 + randInt(rng, 0, 2));
+        }
+
+        while (coarseBlocked.size < coarseTargetBlocked) {
+          const regionOrder = regions
+            .map((region, index) => ({ region, index }))
+            .filter((entry) => entry.region.length < regionTargets[entry.index])
+            .map((region, index) => ({
+              index: region.index,
+              score: region.region.length + rng() * 0.8
+            }))
+            .sort((a, b) => a.score - b.score);
+
+          if (regionOrder.length === 0) {
+            const fallbackSeed = chooseSeed(false);
+            if (!coarseBlocked.has(fallbackSeed)) {
+              coarseBlocked.add(fallbackSeed);
+              blockedOrder.push(fallbackSeed);
+              regions.push([fallbackSeed]);
+              coarseOwner.set(fallbackSeed, regions.length - 1);
+              regionTargets.push(2 + randInt(rng, 0, 2));
+            }
+            continue;
+          }
+
+          let chosenRegionIndex = null;
+          let chosenCandidate = null;
+
+          for (const regionEntry of regionOrder) {
+            const region = regions[regionEntry.index];
+            const frontier = [...new Set(
+              region.flatMap((cell) => coarseNeighborIndexes(cell, coarseRows, coarseCols))
+            )].filter((candidate) => !coarseBlocked.has(candidate));
+
+            if (frontier.length === 0) continue;
+
+            const scored = frontier
+            .map((candidate) => {
+              const touching = countSetNeighbors(candidate, coarseRows, coarseCols, coarseBlocked, coarseNeighborIndexes);
+              const touchingRegion = countSetNeighbors(candidate, coarseRows, coarseCols, new Set(region), coarseNeighborIndexes);
+              const otherTouches = coarseNeighborIndexes(candidate, coarseRows, coarseCols)
+                .filter((neighbor) => coarseBlocked.has(neighbor) && coarseOwner.get(neighbor) !== regionEntry.index)
+                .length;
+              const row = Math.floor(candidate / coarseCols);
+              const col = candidate % coarseCols;
+              const centerDistance = Math.abs(row - coarseRows / 2) + Math.abs(col - coarseCols / 2);
+              const shapeScore =
+                touching === 1 ? 3.6 :
+                touching === 2 ? 2.4 :
+                touching === 3 ? 0.4 : -2.4;
+              return {
+                candidate,
+                score:
+                  shapeScore +
+                  touchingRegion * 0.9 -
+                  otherTouches * 3.5 -
+                  centerDistance * 0.03 +
+                  rng() * 0.7
+              };
+            })
+            .sort((a, b) => b.score - a.score);
+            chosenRegionIndex = regionEntry.index;
+            chosenCandidate = scored[0].candidate;
+            break;
+          }
+
+          if (chosenRegionIndex === null || chosenCandidate === null) {
+            const fallbackSeed = chooseSeed(false);
+            if (!coarseBlocked.has(fallbackSeed)) {
+              coarseBlocked.add(fallbackSeed);
+              blockedOrder.push(fallbackSeed);
+              regions.push([fallbackSeed]);
+              coarseOwner.set(fallbackSeed, regions.length - 1);
+            }
+            continue;
+          }
+
+          coarseBlocked.add(chosenCandidate);
+          blockedOrder.push(chosenCandidate);
+          regions[chosenRegionIndex].push(chosenCandidate);
+          coarseOwner.set(chosenCandidate, chosenRegionIndex);
+        }
+
+        const blocked = new Set();
+        for (const coarseIndex of coarseBlocked) {
+          const baseRow = Math.floor(coarseIndex / coarseCols) * 2;
+          const baseCol = (coarseIndex % coarseCols) * 2;
+          const patterns = [
+            [[0, 0], [0, 1], [1, 0], [1, 1]],
+            [[0, 0], [0, 1], [1, 0]],
+            [[0, 0], [0, 1], [1, 1]],
+            [[0, 0], [1, 0], [1, 1]],
+            [[0, 1], [1, 0], [1, 1]]
+          ];
+          const pattern = patterns[randInt(rng, 0, patterns.length - 1)];
+          for (const [dr, dc] of pattern) {
+            const row = baseRow + dr;
+            const col = baseCol + dc;
+            if (row >= rows || col >= cols) continue;
+            blocked.add(row * cols + col);
+          }
+        }
+
+        if (blocked.size <= targetBlocked / 2) {
+          for (let attempt = 0; attempt < rows * cols; attempt += 1) {
+            const index = randInt(rng, 0, rows * cols - 1);
+            if (blocked.has(index)) continue;
+            if (countSetNeighbors(index, rows, cols, blocked) >= 2) {
+              blocked.add(index);
+            }
+            if (blocked.size >= targetBlocked) break;
+          }
+        }
+
+        return blocked;
+      }
+
+      function growPathOnAvailable(availableSet, rows, cols, targetLength, seedLabel, searchBudget = null) {
+        const rng = makeRng(hashText(`${seedLabel}:available-path`));
+        let explored = 0;
+        const budget = searchBudget ?? Math.max(18000, targetLength * 320);
+        const startCandidates = [...availableSet]
+          .map((index) => ({
+            index,
+            noise: rng(),
+            blockedNeighbors: neighborIndexes(index, rows, cols).filter((neighbor) => !availableSet.has(neighbor)).length
+          }))
+          .sort((a, b) => b.blockedNeighbors - a.blockedNeighbors || a.noise - b.noise)
+          .map((entry) => entry.index);
+
+        for (let attempt = 0; attempt < Math.min(64, startCandidates.length); attempt += 1) {
+          const visited = new Set();
+          const path = [];
+          const start = startCandidates[attempt];
+
+          function dfs(current) {
+            explored += 1;
+            if (explored > budget) return false;
+            path.push(current);
+            visited.add(current);
+
+            if (path.length === targetLength) return true;
+
+            const previous = path[path.length - 2];
+            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols);
+
+            const candidates = neighborIndexes(current, rows, cols)
+              .filter((next) => availableSet.has(next) && !visited.has(next))
+              .map((next) => {
+                const nextDirection = directionBetween(current, next, cols);
+                const turnBonus = previousDirection &&
+                  (previousDirection[0] !== nextDirection[0] || previousDirection[1] !== nextDirection[1])
+                  ? 2.2
+                  : 0;
+                const onward = neighborIndexes(next, rows, cols)
+                  .filter((candidate) => availableSet.has(candidate) && !visited.has(candidate) && candidate !== current)
+                  .length;
+                const wallHug = neighborIndexes(next, rows, cols)
+                  .filter((candidate) => !availableSet.has(candidate))
+                  .length;
+
+                return {
+                  next,
+                  score: onward - turnBonus - wallHug * 0.4 + rng() * 0.6
+                };
+              })
+              .sort((a, b) => a.score - b.score);
+
+            for (const candidate of candidates) {
+              visited.add(candidate.next);
+              const reachable = reachableCountInSet(candidate.next, visited, availableSet, rows, cols);
+              visited.delete(candidate.next);
+              const remaining = targetLength - path.length;
+              if (reachable < remaining) continue;
+              if (dfs(candidate.next)) return true;
+            }
+
+            visited.delete(current);
+            path.pop();
+            return false;
+          }
+
+          if (dfs(start)) return [...path];
+        }
+
+        return null;
+      }
+
+      function buildFallbackLayout(rows, cols, seedLabel, wordSettings) {
+        const rng = makeRng(hashText(`${seedLabel}:fallback`));
+        const targetLength = chooseTargetLength(rows, cols, wordSettings);
+        const startCandidates = Array.from({ length: rows * cols }, (_, index) => index)
+          .sort(() => rng() - 0.5);
+        const fallbackBudget = Math.max(16000, targetLength * 260);
+
+        for (let attempt = 0; attempt < 24; attempt += 1) {
+          const visited = new Set();
+          const path = [];
+          const start = startCandidates[attempt % startCandidates.length];
+          let explored = 0;
+
+          function dfs(current) {
+            explored += 1;
+            if (explored > fallbackBudget) return false;
+            path.push(current);
+            visited.add(current);
+
+            if (path.length === targetLength) return true;
+
+            const previous = path[path.length - 2];
+            const previousDirection = previous === undefined ? null : directionBetween(previous, current, cols);
+
+            const candidates = neighborIndexes(current, rows, cols)
+              .filter((next) => !visited.has(next))
+              .map((next) => {
+                const nextDirection = directionBetween(current, next, cols);
+                const turns = previousDirection &&
+                  (previousDirection[0] !== nextDirection[0] || previousDirection[1] !== nextDirection[1])
+                  ? 2.4
+                  : 0;
+                const onward = neighborIndexes(next, rows, cols)
+                  .filter((candidate) => !visited.has(candidate) && candidate !== current)
+                  .length;
+                const [row, col] = toCoord(next, cols);
+                const centerBias = Math.abs(row - rows / 2) + Math.abs(col - cols / 2);
+
+                return {
+                  next,
+                  score: onward - turns + centerBias * 0.05 + rng() * 0.6
+                };
+              })
+              .sort((a, b) => a.score - b.score);
+
+            for (const candidate of candidates) {
+              visited.add(candidate.next);
+              const reachable = reachableCount(candidate.next, visited, rows, cols);
+              visited.delete(candidate.next);
+              const remaining = targetLength - path.length;
+              if (reachable < remaining) continue;
+              if (dfs(candidate.next)) return true;
+            }
+
+            visited.delete(current);
+            path.pop();
+            return false;
+          }
+
+          if (dfs(start)) {
+            const playableSet = new Set(path);
+            return {
+              path: [...path],
+              cells: buildCellsFromPlayable(rows, cols, playableSet)
+            };
+          }
+        }
+
+        const fallbackPath = Array.from({ length: targetLength }, (_, index) => index);
+        const playableSet = new Set(fallbackPath);
+        return {
+          path: fallbackPath,
+          cells: buildCellsFromPlayable(rows, cols, playableSet)
+        };
+      }
+
+      function chooseTargetLength(rows, cols, wordSettings) {
+        const lengths = allowedWordLengths(wordSettings);
+        const density = clamp(0.82 - cols * 0.012, 0.5, 0.78);
+        let target = Math.max(10, Math.floor(rows * cols * density));
+        if (wordSettings?.mode === "fixed-length") {
+          const fixedLength = wordSettings.fixedLength;
+          target -= target % fixedLength;
+          if (target < fixedLength) target = fixedLength;
+          return target;
+        }
+        while (target >= 4 && !canPartitionLengths(target, lengths)) {
+          target -= 1;
+        }
+        while (target > 8 && target % 2 === 1) target -= 1;
+        while (target >= 4 && !canPartitionLengths(target, lengths)) {
+          target -= 1;
+        }
+        return target;
+      }
+
+      function sanitizeBlankPercent(value) {
+        return clamp(Number.parseInt(value, 10) || 0, 0, 85);
+      }
+
+      function sanitizeBlankCount(value, rows = GRID_MAX, cols = GRID_MAX) {
+        const total = rows * cols;
+        return clamp(Number.parseInt(value, 10) || 0, 0, Math.max(0, total - 4));
+      }
+
+      function sanitizeBlankChar(value) {
+        const text = String(value || "").replace(/[^\x20-\x7E]/g, "");
+        return text[0] || "";
+      }
+
+      function currentLayoutSettings(rows = null, cols = null) {
+        const mode = state.selectedBlankLayout;
+        if (!blankControlsRelevant(mode)) {
+          return {
+            mode,
+            blankPercent: 0,
+            blankCount: 0,
+            blankChar: ""
+          };
+        }
+
+        return {
+          mode,
+          blankPercent: sanitizeBlankPercent(state.selectedBlankPercent),
+          blankCount: sanitizeBlankCount(state.selectedBlankCount, rows || GRID_MAX, cols || GRID_MAX),
+          blankChar: sanitizeBlankChar(state.selectedBlankChar)
+        };
+      }
+
+      function blankControlsRelevant(layoutMode) {
+        return layoutMode !== "default" && layoutMode !== "no-blanks";
+      }
+
+      function targetBlankCount(rows, cols, layoutSettings) {
+        const total = rows * cols;
+        if (layoutSettings.mode === "no-blanks") return 0;
+        if (layoutSettings.blankCount > 0) {
+          return clamp(layoutSettings.blankCount, 0, Math.max(0, total - 4));
+        }
+        return clamp(Math.round(total * (layoutSettings.blankPercent / 100)), 0, Math.max(0, total - 4));
+      }
+
+      function feasibleBlankTargets(rows, cols, requestedTarget, wordSettings, exactRequested) {
+        const total = rows * cols;
+        const lengths = allowedWordLengths(wordSettings);
+        const maxTarget = Math.max(0, total - 4);
+        const candidates = [];
+
+        for (let target = clamp(requestedTarget, 0, maxTarget); target >= 0; target -= 1) {
+          const playable = total - target;
+          if (playable < 4) continue;
+          if (canPartitionLengths(playable, lengths)) candidates.push(target);
+          if (exactRequested && candidates.length > 0) break;
+        }
+
+        if (!exactRequested) {
+          for (let target = clamp(requestedTarget, 0, maxTarget) + 1; target <= maxTarget; target += 1) {
+            const playable = total - target;
+            if (playable < 4) continue;
+            if (canPartitionLengths(playable, lengths)) candidates.push(target);
+          }
+        }
+
+        return candidates;
+      }
+
+      function buildBlankTargets(requestedTarget, total, exactRequested, feasibleTargets = null) {
+        if (feasibleTargets && feasibleTargets.length > 0) {
+          return feasibleTargets;
+        }
+        const maxTarget = Math.max(0, total - 4);
+        const seen = new Set();
+        const targets = [];
+        const push = (value) => {
+          const normalized = clamp(value, 0, maxTarget);
+          if (seen.has(normalized)) return;
+          seen.add(normalized);
+          targets.push(normalized);
+        };
+
+        push(requestedTarget);
+        const radius = requestedTarget;
+
+        for (let delta = 1; delta <= radius; delta += 1) {
+          push(requestedTarget - delta);
+          if (!exactRequested) push(requestedTarget + delta);
+        }
+
+        if (!exactRequested) push(0);
+        return targets;
+      }
+
+      function lineSegmentCells(startRow, startCol, dr, dc, length, rows, cols) {
+        const cells = [];
+        for (let step = 0; step < length; step += 1) {
+          const row = startRow + dr * step;
+          const col = startCol + dc * step;
+          if (row < 0 || row >= rows || col < 0 || col >= cols) break;
+          cells.push(row * cols + col);
+        }
+        return cells;
+      }
+
+      function buildSnakePath(rows, cols) {
+        const path = [];
+        for (let row = 0; row < rows; row += 1) {
+          if (row % 2 === 0) {
+            for (let col = 0; col < cols; col += 1) {
+              path.push(row * cols + col);
+            }
+          } else {
+            for (let col = cols - 1; col >= 0; col -= 1) {
+              path.push(row * cols + col);
+            }
+          }
+        }
+        return path;
+      }
+
+      function patternedBlockedMask(rows, cols, seedLabel, layoutSettings, explicitTarget = null) {
+        const target = explicitTarget ?? targetBlankCount(rows, cols, layoutSettings);
+        if (target <= 0) return new Set();
+
+        const directionMap = {
+          verticals: [[1, 0]],
+          horizontals: [[0, 1]],
+          straights: [[1, 0], [0, 1]],
+          "diag-slash": [[1, -1]],
+          "diag-backslash": [[1, 1]],
+          "diag-both": [[1, -1], [1, 1]]
+        };
+        const directions = directionMap[layoutSettings.mode] || [];
+        const rng = makeRng(hashText(`${seedLabel}:blank-pattern:${layoutSettings.mode}`));
+        const blocked = new Set();
+        if (directions.length === 0) return blocked;
+
+        for (let attempt = 0; attempt < rows * cols * 10 && blocked.size < target; attempt += 1) {
+          const [dr, dc] = directions[randInt(rng, 0, directions.length - 1)];
+          const startRow = randInt(rng, 0, rows - 1);
+          const startCol = randInt(rng, 0, cols - 1);
+          const maxForward = (() => {
+            let max = 0;
+            let row = startRow;
+            let col = startCol;
+            while (row >= 0 && row < rows && col >= 0 && col < cols) {
+              max += 1;
+              row += dr;
+              col += dc;
+            }
+            return max;
+          })();
+          if (maxForward <= 0) continue;
+          const segmentLength = randInt(rng, 1, Math.max(1, Math.min(maxForward, Math.max(2, Math.ceil(Math.max(rows, cols) / 2)))));
+          const cells = lineSegmentCells(startRow, startCol, dr, dc, segmentLength, rows, cols);
+          if (cells.length === 0) continue;
+
+          for (const cell of cells) {
+            blocked.add(cell);
+            if (blocked.size >= target) break;
+          }
+        }
+
+        if (blocked.size < target) {
+          const remaining = [];
+          for (let index = 0; index < rows * cols; index += 1) {
+            if (!blocked.has(index)) remaining.push(index);
+          }
+          for (let i = remaining.length - 1; i > 0; i -= 1) {
+            const j = randInt(rng, 0, i);
+            [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+          }
+          for (const index of remaining) {
+            blocked.add(index);
+            if (blocked.size >= target) break;
+          }
+        }
+
+        return blocked;
+      }
+
+      function maxFittableRunLength(runLength, lengths) {
+        for (let usable = runLength; usable >= 4; usable -= 1) {
+          if (canPartitionLengths(usable, lengths)) return usable;
+        }
+        return 0;
+      }
+
+      function runsPartitionableForOrientation(rows, cols, blockedSet, orientation, lengths) {
+        const runs = collectPlayableRuns(rows, cols, blockedSet, orientation);
+        if (runs.length === 0) return false;
+        const usableCells = runs.reduce((sum, run) => sum + maxFittableRunLength(run.length, lengths), 0);
+        return usableCells >= 4;
+      }
+
+      function constrainedPatternedBlockedMask(
+        rows,
+        cols,
+        seedLabel,
+        layoutSettings,
+        target,
+        slotOrientation,
+        lengths
+      ) {
+        const directionMap = {
+          verticals: [[1, 0]],
+          horizontals: [[0, 1]],
+          straights: [[1, 0], [0, 1]],
+          "diag-slash": [[1, -1]],
+          "diag-backslash": [[1, 1]],
+          "diag-both": [[1, -1], [1, 1]]
+        };
+        const directions = directionMap[layoutSettings.mode] || [];
+        const rng = makeRng(hashText(`${seedLabel}:blank-pattern:${layoutSettings.mode}:${slotOrientation}`));
+        const blocked = new Set();
+        if (directions.length === 0) return blocked;
+
+        const tryAddCells = (candidateCells) => {
+          const uniqueCells = candidateCells.filter((cell, index) =>
+            !blocked.has(cell) && candidateCells.indexOf(cell) === index
+          );
+          if (uniqueCells.length === 0) return false;
+          const remainingBudget = target - blocked.size;
+          if (remainingBudget <= 0) return false;
+          const cellsToAdd = uniqueCells.slice(0, remainingBudget);
+          cellsToAdd.forEach((cell) => blocked.add(cell));
+          const valid = runsPartitionableForOrientation(rows, cols, blocked, slotOrientation, lengths);
+          if (!valid) cellsToAdd.forEach((cell) => blocked.delete(cell));
+          return valid;
+        };
+
+        for (let attempt = 0; attempt < rows * cols * 80 && blocked.size < target; attempt += 1) {
+          const [dr, dc] = directions[randInt(rng, 0, directions.length - 1)];
+          const startRow = randInt(rng, 0, rows - 1);
+          const startCol = randInt(rng, 0, cols - 1);
+          const maxForward = (() => {
+            let max = 0;
+            let row = startRow;
+            let col = startCol;
+            while (row >= 0 && row < rows && col >= 0 && col < cols) {
+              max += 1;
+              row += dr;
+              col += dc;
+            }
+            return max;
+          })();
+          if (maxForward <= 0) continue;
+          const segmentLength = randInt(
+            rng,
+            1,
+            Math.max(1, Math.min(maxForward, Math.max(2, Math.ceil(Math.max(rows, cols) / 2))))
+          );
+          const cells = lineSegmentCells(startRow, startCol, dr, dc, segmentLength, rows, cols);
+          if (cells.length === 0) continue;
+          tryAddCells(cells);
+        }
+
+        if (blocked.size < target) {
+          const remaining = Array.from({ length: rows * cols }, (_, index) => index)
+            .filter((index) => !blocked.has(index));
+          for (let i = remaining.length - 1; i > 0; i -= 1) {
+            const j = randInt(rng, 0, i);
+            [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+          }
+          for (const index of remaining) {
+            if (blocked.size >= target) break;
+            tryAddCells([index]);
+          }
+        }
+
+        return blocked;
+      }
+
+      function collectPlayableRuns(rows, cols, blockedSet, orientation) {
+        const runs = [];
+
+        if (orientation === "rows") {
+          for (let row = 0; row < rows; row += 1) {
+            let current = [];
+            for (let col = 0; col < cols; col += 1) {
+              const index = row * cols + col;
+              if (blockedSet.has(index)) {
+                if (current.length > 0) runs.push(current);
+                current = [];
+                continue;
+              }
+              current.push(index);
+            }
+            if (current.length > 0) runs.push(current);
+          }
+          return runs;
+        }
+
+        for (let col = 0; col < cols; col += 1) {
+          let current = [];
+          for (let row = 0; row < rows; row += 1) {
+            const index = row * cols + col;
+            if (blockedSet.has(index)) {
+              if (current.length > 0) runs.push(current);
+              current = [];
+              continue;
+            }
+            current.push(index);
+          }
+          if (current.length > 0) runs.push(current);
+        }
+        return runs;
+      }
+
+      function slotOrientationsForLayout(mode) {
+        switch (mode) {
+          case "verticals":
+            return ["rows", "cols"];
+          case "horizontals":
+            return ["cols", "rows"];
+          case "straights":
+          case "diag-slash":
+          case "diag-backslash":
+          case "diag-both":
+            return ["rows", "cols"];
+          default:
+            return ["rows"];
+        }
+      }
+
+      function buildSlotPathsFromRuns(runs, cols, seedLabel, wordSettings) {
+        const slotPaths = [];
+        const droppedCells = [];
+        runs.forEach((run, runIndex) => {
+          const lengths = allowedWordLengths(wordSettings);
+          const usableLength = maxFittableRunLength(run.length, lengths);
+          if (usableLength === 0) {
+            droppedCells.push(...run);
+            return;
+          }
+
+          const trim = run.length - usableLength;
+          const trimSeed = hashText(`${seedLabel}:trim:${runIndex}`);
+          const dropFront = trim === 0 ? 0 : trimSeed % (trim + 1);
+          const dropBack = trim - dropFront;
+          const keptRun = run.slice(dropFront, run.length - dropBack);
+
+          if (dropFront > 0) droppedCells.push(...run.slice(0, dropFront));
+          if (dropBack > 0) droppedCells.push(...run.slice(run.length - dropBack));
+
+          const lengthsForRun = chooseWordLengths(keptRun.length, cols, `${seedLabel}:run:${runIndex}`, wordSettings);
+          let offset = 0;
+          lengthsForRun.forEach((length) => {
+            slotPaths.push(keptRun.slice(offset, offset + length));
+            offset += length;
+          });
+        });
+        return { slotPaths, droppedCells };
+      }
+
+      function buildPatternPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings) {
+        const lengths = allowedWordLengths(wordSettings);
+        if (layoutSettings.mode === "no-blanks" && canPartitionLengths(rows * cols, lengths)) {
+          const playableSet = new Set(Array.from({ length: rows * cols }, (_, index) => index));
+          return {
+            path: buildSnakePath(rows, cols),
+            cells: buildCellsFromPlayable(rows, cols, playableSet)
+          };
+        }
+
+        const requestedTarget = targetBlankCount(rows, cols, layoutSettings);
+        const exactRequested = layoutSettings.blankCount > 0;
+        const fallbackTargets = buildBlankTargets(
+          requestedTarget,
+          rows * cols,
+          exactRequested,
+          feasibleBlankTargets(rows, cols, requestedTarget, wordSettings, exactRequested)
+        );
+        const attemptsPerTarget = exactRequested ? 480 : 220;
+
+        for (const target of fallbackTargets) {
+          for (const orientation of slotOrientationsForLayout(layoutSettings.mode)) {
+            for (let attempt = 0; attempt < attemptsPerTarget; attempt += 1) {
+              const blocked = constrainedPatternedBlockedMask(
+                rows,
+                cols,
+                `${seedLabel}:pattern:${target}:${attempt}`,
+                layoutSettings,
+                target,
+                orientation,
+                lengths
+              );
+              if (blocked.size !== target) continue;
+              const runs = collectPlayableRuns(rows, cols, blocked, orientation);
+              if (runs.length === 0) continue;
+
+              try {
+                const { slotPaths, droppedCells } = buildSlotPathsFromRuns(
+                  runs,
+                  cols,
+                  `${seedLabel}:slots:${target}:${attempt}:${orientation}`,
+                  wordSettings
+                );
+                if (slotPaths.length === 0) continue;
+                const playableSet = new Set(slotPaths.flat());
+                const finalBlocked = new Set([...blocked, ...droppedCells]);
+                return {
+                  slotPaths,
+                  cells: buildCellsFromPlayable(rows, cols, playableSet),
+                  playableCount: playableSet.size,
+                  blockedCount: finalBlocked.size
+                };
+              } catch {
+                continue;
+              }
+            }
+          }
+        }
+
+        const fallbackSet = new Set(Array.from({ length: rows * cols }, (_, index) => index));
+        const fallbackRuns = collectPlayableRuns(rows, cols, new Set(), "rows");
+        return {
+          slotPaths: buildSlotPathsFromRuns(fallbackRuns, cols, `${seedLabel}:pattern-fallback`, wordSettings),
+          cells: buildCellsFromPlayable(rows, cols, fallbackSet),
+          playableCount: rows * cols
+        };
+      }
+
+      function buildPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings) {
+        if (layoutSettings.mode !== "default") {
+          return buildPatternPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings);
+        }
+        const targetLength = chooseTargetLength(rows, cols, wordSettings);
+        for (let attempt = 0; attempt < 10; attempt += 1) {
+          const blocked = generateBlockedMask(rows, cols, `${seedLabel}:mask:${attempt}`, targetLength);
+          const availableSet = collectPlayableSet(rows, cols, blocked);
+          if (availableSet.size < targetLength) continue;
+
+          const path = growPathOnAvailable(
+            availableSet,
+            rows,
+            cols,
+            targetLength,
+            `${seedLabel}:path:${attempt}`
+          );
+          if (!path) continue;
+
+          const playableSet = new Set(path);
+          return {
+            path,
+            cells: buildCellsFromPlayable(rows, cols, playableSet)
+          };
+        }
+
+        return buildFallbackLayout(rows, cols, `${seedLabel}:fallback`, wordSettings);
+      }
+
+      function sanitizeStartLetter(value) {
+        const letter = String(value || "").trim().toUpperCase().replace(/[^A-Z]/g, "");
+        return letter[0] || "A";
+      }
+
+      function sanitizeFixedLength(value) {
+        return clamp(Number.parseInt(value, 10) || 5, 4, 12);
+      }
+
+      function currentWordSettings() {
+        return {
+          mode: state.selectedWordMode,
+          startLetter: sanitizeStartLetter(state.selectedStartLetter),
+          fixedLength: sanitizeFixedLength(state.selectedFixedLength)
+        };
+      }
+
+      function matchesWordMode(word, wordSettings) {
+        switch (wordSettings.mode) {
+          case "contains-z":
+            return word.includes("Z");
+          case "contains-x":
+            return word.includes("X");
+          case "contains-q":
+            return word.includes("Q");
+          case "contains-ing":
+            return word.includes("ING");
+          case "contains-mm":
+            return word.includes("MM");
+          case "starts-with":
+            return word.startsWith(wordSettings.startLetter);
+          case "fixed-length":
+            return word.length === wordSettings.fixedLength;
+          default:
+            return true;
+        }
+      }
+
+      function uniqueWords(words) {
+        return [...new Set(words)];
+      }
+
+      function baseWordsForLength(length) {
+        return uniqueWords([
+          ...(WORD_BANK[String(length)] || []),
+          ...(GENERAL_WORD_BANK[String(length)] || [])
+        ]);
+      }
+
+      function getWordCandidatesForLength(length, wordSettings) {
+        if (wordSettings.mode === "contains-z" ||
+            wordSettings.mode === "contains-x" ||
+            wordSettings.mode === "contains-q" ||
+            wordSettings.mode === "contains-ing" ||
+            wordSettings.mode === "contains-mm") {
+          return uniqueWords([
+            ...((SPECIAL_WORD_BANK[wordSettings.mode] || {})[String(length)] || []),
+            ...baseWordsForLength(length).filter((word) => matchesWordMode(word, wordSettings))
+          ]);
+        }
+
+        if (wordSettings.mode === "starts-with") {
+          return baseWordsForLength(length).filter((word) => matchesWordMode(word, wordSettings));
+        }
+
+        return baseWordsForLength(length).filter((word) => matchesWordMode(word, wordSettings));
+      }
+
+      function allowedWordLengths(wordSettings) {
+        const lengths = [];
+        for (let length = 4; length <= 12; length += 1) {
+          if (getWordCandidatesForLength(length, wordSettings).length > 0) {
+            lengths.push(length);
+          }
+        }
+        return lengths;
+      }
+
+      function canPartitionLengths(remaining, lengths, memo = new Map()) {
+        if (remaining === 0) return true;
+        if (remaining < 0) return false;
+        const key = `${remaining}:${lengths.join(",")}`;
+        if (memo.has(key)) return memo.get(key);
+
+        for (const length of lengths) {
+          if (length > remaining) continue;
+          if (canPartitionLengths(remaining - length, lengths, memo)) {
+            memo.set(key, true);
+            return true;
+          }
+        }
+
+        memo.set(key, false);
+        return false;
+      }
+
+      function pickWord(length, slotIndex, seedLabel, wordSettings) {
+        const bank = getWordCandidatesForLength(length, wordSettings);
+        const seed = hashText(`${seedLabel}:word:${length}:${slotIndex}`);
+
+        if (bank.length === 0) {
+          return baseWordsForLength(length)[seed % baseWordsForLength(length).length] || "WORD";
+        }
+
+        return bank[(seed + slotIndex * 11) % bank.length];
+      }
+
+      function canPartition(remaining, minLen, maxLen) {
+        if (remaining === 0) return true;
+        if (remaining < minLen) return false;
+        const minWords = Math.ceil(remaining / maxLen);
+        const maxWords = Math.floor(remaining / minLen);
+        return minWords <= maxWords;
+      }
+
+      function chooseWordLengths(totalCells, cols, seedLabel, wordSettings) {
+        const allowedLengths = allowedWordLengths(wordSettings);
+
+        if (wordSettings.mode === "fixed-length") {
+          return Array.from(
+            { length: Math.floor(totalCells / wordSettings.fixedLength) },
+            () => wordSettings.fixedLength
+          );
+        }
+
+        const minLen = allowedLengths[0] || 4;
+        const maxLen = Math.min(
+          allowedLengths[allowedLengths.length - 1] || 12,
+          Math.max(7, Math.floor(cols * 0.7))
+        );
+        const rng = makeRng(hashText(`${seedLabel}:lengths`));
+        const lengths = [];
+        const counts = new Map();
+        let remaining = totalCells;
+        let previousLength = null;
+
+        while (remaining > 0) {
+          const candidates = [];
+
+          for (const length of allowedLengths) {
+            if (length > Math.min(maxLen, remaining)) continue;
+            const leftover = remaining - length;
+            if (leftover !== 0 && leftover < minLen) continue;
+            if (!canPartitionLengths(leftover, allowedLengths)) continue;
+
+            const usage = counts.get(length) || 0;
+            const band =
+              lengths.length % 3 === 0 ? minLen + randInt(rng, 0, 2) :
+              lengths.length % 3 === 1 ? Math.floor((minLen + maxLen) / 2) + randInt(rng, -1, 1) :
+              maxLen - randInt(rng, 0, 2);
+            const score =
+              -Math.abs(length - band) * 3
+              - usage * 5
+              - (length === previousLength ? 4 : 0)
+              + rng() * 2;
+
+            candidates.push({ length, score });
+          }
+
+          candidates.sort((a, b) => b.score - a.score);
+          const choice = candidates[0];
+          lengths.push(choice.length);
+          counts.set(choice.length, (counts.get(choice.length) || 0) + 1);
+          previousLength = choice.length;
+          remaining -= choice.length;
+        }
+
+        if (new Set(lengths).size < Math.min(4, lengths.length)) {
+          for (let index = 0; index < lengths.length - 1; index += 2) {
+            if (lengths[index] < maxLen && lengths[index + 1] > minLen) {
+              lengths[index] += 1;
+              lengths[index + 1] -= 1;
+            } else if (lengths[index] > minLen && lengths[index + 1] < maxLen) {
+              lengths[index] -= 1;
+              lengths[index + 1] += 1;
+            }
+          }
+        }
+
+        return lengths;
+      }
+
+      function wordSelectionSeedKey(wordSettings) {
+        switch (wordSettings.mode) {
+          case "contains-z":
+            return "z";
+          case "contains-x":
+            return "x";
+          case "contains-q":
+            return "q";
+          case "contains-ing":
+            return "ing";
+          case "contains-mm":
+            return "mm";
+          case "starts-with":
+            return `starts-${wordSettings.startLetter}`;
+          case "fixed-length":
+            return `n-${wordSettings.fixedLength}`;
+          default:
+            return "any";
+        }
+      }
+
+      function layoutSelectionSeedKey(layoutSettings) {
+        const char = sanitizeBlankChar(layoutSettings.blankChar);
+        const charCode = char ? char.charCodeAt(0).toString(16) : "none";
+        return [
+          layoutSettings.mode,
+          sanitizeBlankPercent(layoutSettings.blankPercent),
+          layoutSettings.blankCount,
+          charCode
+        ].join(",");
+      }
+
+      function simplifySeed(seedValue, fallback = "practice-0") {
+        const trimmed = String(seedValue || "").trim();
+        return trimmed || fallback;
+      }
+
+      function extractSeedBody(seedValue) {
+        return parseGameSeed(seedValue, "practice-0").baseSeed;
+      }
+
+      function normalizeSeed(seedValue, fallbackBody = "practice-0") {
+        return simplifySeed(seedValue, fallbackBody);
+      }
+
+      function composeGameSeed(baseSeed, rows, cols, wordSettings, layoutSettings) {
+        return [
+          normalizeSeed(baseSeed, "practice-0"),
+          `${rows}x${cols}`,
+          wordSelectionSeedKey(wordSettings),
+          layoutSelectionSeedKey(layoutSettings)
+        ].join("~");
+      }
+
+      function buildDailySeed(rows, cols) {
+        return composeGameSeed(
+          `daily-${getDailyVariant()}`,
+          rows,
+          cols,
+          currentWordSettings(),
+          currentLayoutSettings(rows, cols)
+        );
+      }
+
+      function buildPracticeSeed(rows, cols, variant) {
+        return composeGameSeed(
+          `practice-${variant}`,
+          rows,
+          cols,
+          currentWordSettings(),
+          currentLayoutSettings(rows, cols)
+        );
+      }
+
+      function materializePuzzle(rows, cols, mode, seedKey) {
+        const wordSettings = currentWordSettings();
+        const layoutSettings = currentLayoutSettings(rows, cols);
+        const normalizedSeed = normalizeSeed(
+          extractSeedBody(seedKey),
+          mode === "daily" ? `daily-${getDailyVariant()}` : "practice-0"
+        );
+        const fullSeed = composeGameSeed(normalizedSeed, rows, cols, wordSettings, layoutSettings);
+        const seedLabel = `${mode}:${fullSeed}`;
+        const layout = buildPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings);
+        const words = layout.slotPaths
+          ? layout.slotPaths.map((path, index) => ({
+            text: pickWord(path.length, index, seedLabel, wordSettings),
+            path
+          }))
+          : (() => {
+            const lengths = chooseWordLengths(layout.path.length, cols, seedLabel, wordSettings);
+            let offset = 0;
+            return lengths.map((length, index) => {
+              const path = layout.path.slice(offset, offset + length);
+              const text = pickWord(length, index, seedLabel, wordSettings);
+              offset += length;
+              return { text, path };
+            });
+          })();
+
+        const cells = layout.cells.map((cell) => ({ ...cell }));
+        words.forEach((word, wordIndex) => {
+          word.path.forEach((cellIndex, stepIndex) => {
+            cells[cellIndex] = {
+              ...cells[cellIndex],
+              type: "tile",
+              letter: word.text[stepIndex],
+              wordIndex,
+              step: stepIndex + 1
+            };
+          });
+        });
+
+        return {
+          id: `${mode}-${fullSeed}`,
+          name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
+          seedKey: fullSeed,
+          rows,
+          cols,
+          cells,
+          words,
+          playableCount: layout.playableCount || words.reduce((sum, word) => sum + word.path.length, 0),
+          blankChar: layoutSettings.mode === "no-blanks" ? "" : layoutSettings.blankChar,
+          blankLayout: layoutSettings.mode
+        };
+      }
+
+      function currentGridSize() {
+        const [rows, cols] = state.selectedGridSize.split("x").map(Number);
+        return { rows, cols };
+      }
+
+      function getDailyVariant() {
+        return Math.floor(Date.now() / 86400000);
+      }
+
+      function storageKeyFor(puzzle) {
+        return `wordfinder:${puzzle.id}`;
+      }
+
+      function saveState() {
+        if (!state.puzzle) return;
+        const payload = {
+          foundWords: state.foundWords,
+          hints: state.hints,
+          startTime: state.startTime
+        };
+        localStorage.setItem(storageKeyFor(state.puzzle), JSON.stringify(payload));
+      }
+
+      function loadStateForPuzzle(puzzle) {
+        try {
+          const raw = localStorage.getItem(storageKeyFor(puzzle));
+          if (!raw) return null;
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      }
+
+      function getDailyPuzzle() {
+        const { rows, cols } = currentGridSize();
+        return materializePuzzle(rows, cols, "daily", buildDailySeed(rows, cols));
+      }
+
+      function isSolvedWord(wordIndex) {
+        return state.foundWords.includes(wordIndex);
+      }
+
+      function isLockedTile(index) {
+        const cell = state.puzzle.cells[index];
+        return cell.type === "tile" && isSolvedWord(cell.wordIndex);
+      }
+
+      function isAdjacent(a, b) {
+        const [r1, c1] = toCoord(a, state.puzzle.cols);
+        const [r2, c2] = toCoord(b, state.puzzle.cols);
+        return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
+      }
+
+      function arrowForStep(from, to, cols) {
+        if (to === undefined) return null;
+        const [r1, c1] = toCoord(from, cols);
+        const [r2, c2] = toCoord(to, cols);
+        if (r2 === r1 - 1) return "↑";
+        if (r2 === r1 + 1) return "↓";
+        if (c2 === c1 - 1) return "←";
+        if (c2 === c1 + 1) return "→";
+        return null;
+      }
+
+      function buildArrowMap() {
+        const solved = new Map();
+        const active = new Map();
+        const solvedEnds = new Set();
+        const activeEnds = new Set();
+
+        state.puzzle.words.forEach((word, wordIndex) => {
+          if (!isSolvedWord(wordIndex)) return;
+          for (let index = 0; index < word.path.length - 1; index += 1) {
+            const from = word.path[index];
+            const to = word.path[index + 1];
+            const arrow = arrowForStep(from, to, state.puzzle.cols);
+            solved.set(from, index === 0 ? `○${arrow}` : arrow);
+          }
+          solvedEnds.add(word.path[word.path.length - 1]);
+        });
+
+        for (let index = 0; index < state.activePath.length - 1; index += 1) {
+          const from = state.activePath[index];
+          const to = state.activePath[index + 1];
+          const arrow = arrowForStep(from, to, state.puzzle.cols);
+          active.set(from, index === 0 ? `○${arrow}` : arrow);
+        }
+        if (state.activePath.length > 0) {
+          activeEnds.add(state.activePath[state.activePath.length - 1]);
+        }
+
+        return { solved, active, solvedEnds, activeEnds };
+      }
+
+      function buildConnectorSegments() {
+        const solved = [];
+        const active = [];
+
+        state.puzzle.words.forEach((word, wordIndex) => {
+          if (!isSolvedWord(wordIndex)) return;
+          for (let index = 0; index < word.path.length - 1; index += 1) {
+            solved.push([word.path[index], word.path[index + 1], wordIndex]);
+          }
+        });
+
+        for (let index = 0; index < state.activePath.length - 1; index += 1) {
+          active.push([state.activePath[index], state.activePath[index + 1]]);
+        }
+
+        return { solved, active };
+      }
+
+      function solvedWordSaturation(wordIndex) {
+        return 44 + (wordIndex * 11) % 40;
+      }
+
+      function solvedWordLightness(wordIndex) {
+        return wordIndex % 2 === 0 ? 34 : 58;
+      }
+
+      function paletteColorSet(mode, wordIndex) {
+        const palette = COLOR_PALETTES[mode];
+        if (!palette) return null;
+        return palette[wordIndex % palette.length];
+      }
+
+      function currentColorMode() {
+        return state.selectedColorMode;
+      }
+
+      function solvedWordColor(wordIndex) {
+        const mode = currentColorMode();
+        if (mode === "hue") {
+          return `hsl(${(wordIndex * 67 + 204) % 360} 62% 46%)`;
+        }
+        if (mode === "saturation") {
+          return `hsl(204 ${solvedWordSaturation(wordIndex)}% 44%)`;
+        }
+        if (mode === "value") {
+          return `hsl(204 62% ${wordIndex % 2 === 0 ? 34 : 58}%)`;
+        }
+        const paletteSet = paletteColorSet(mode, wordIndex);
+        if (paletteSet) {
+          return paletteSet.fill;
+        }
+        return `hsl(204 ${solvedWordSaturation(wordIndex)}% ${solvedWordLightness(wordIndex)}%)`;
+      }
+
+      function solvedWordAccent(wordIndex) {
+        const mode = currentColorMode();
+        if (mode === "hue") {
+          return `hsl(${(wordIndex * 67 + 204) % 360} 78% 72%)`;
+        }
+        if (mode === "saturation") {
+          return `hsl(204 ${Math.min(96, solvedWordSaturation(wordIndex) + 18)}% 68%)`;
+        }
+        if (mode === "value") {
+          return `hsl(204 78% ${wordIndex % 2 === 0 ? 72 : 28}%)`;
+        }
+        const paletteSet = paletteColorSet(mode, wordIndex);
+        if (paletteSet) {
+          return paletteSet.accent;
+        }
+        const accentLightness = wordIndex % 2 === 0 ? 72 : 28;
+        return `hsl(204 ${Math.min(96, solvedWordSaturation(wordIndex) + 16)}% ${accentLightness}%)`;
+      }
+
+      function activeWordPath() {
+        return state.activePath
+          .map((index) => state.puzzle.cells[index].letter)
+          .join("");
+      }
+
+      function setMessage(text) {
+        state.message = text;
+        renderMessage();
+      }
+
+      function renderMessage() {
+        els.currentPath.textContent = activeWordPath() || "—";
+        els.messageText.textContent = state.message;
+      }
+
+      function ensureTimer() {
+        if (state.timerHandle) clearInterval(state.timerHandle);
+        updateTimer();
+        state.timerHandle = setInterval(updateTimer, 1000);
+      }
+
+      function updateTimer() {
+        const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+        const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
+        const seconds = String(elapsed % 60).padStart(2, "0");
+        els.timer.textContent = `${minutes}:${seconds}`;
+      }
+
+      function startPuzzle(puzzle, mode, options = {}) {
+        state.mode = mode;
+        state.puzzle = puzzle;
+        state.currentSeed = puzzle.seedKey;
+        setUrlSeed(puzzle.seedKey);
+        state.activePath = [];
+        state.invalidTiles = [];
+        state.draggingPointerId = null;
+        state.gestureExtended = false;
+        const saved = options.ignoreSavedState ? null : loadStateForPuzzle(puzzle);
+        state.foundWords = saved?.foundWords || [];
+        state.hints = saved?.hints || {};
+        state.startTime = saved?.startTime || Date.now();
+        state.message = "Trace the exact hidden path for each word. Every playable tile must be claimed.";
+        ensureTimer();
+        render();
+      }
+
+      function clearInvalidTiles() {
+        if (state.invalidTiles.length === 0) return;
+        state.invalidTiles = [];
+        render();
+      }
+
+      function submitPath() {
+        if (state.activePath.length === 0) {
+          setMessage("Start a path before submitting.");
+          return;
+        }
+
+        const matchedWordIndex = state.puzzle.words.findIndex((word, index) => {
+          if (isSolvedWord(index)) return false;
+          if (word.path.length !== state.activePath.length) return false;
+          return word.path.every((cellIndex, pathIndex) => cellIndex === state.activePath[pathIndex]);
+        });
+
+        if (matchedWordIndex === -1) {
+          state.invalidTiles = [...state.activePath];
+          state.activePath = [];
+          setMessage("That path is not one of the hidden answers.");
+          render();
+          window.setTimeout(clearInvalidTiles, 420);
+          return;
+        }
+
+        state.foundWords = [...state.foundWords, matchedWordIndex].sort((a, b) => a - b);
+        state.activePath = [];
+        saveState();
+
+        if (state.foundWords.length === state.puzzle.words.length) {
+          setMessage("Solved. Every playable tile is accounted for.");
+        } else {
+          const remaining = state.puzzle.words.length - state.foundWords.length;
+          setMessage(`Correct. ${remaining} word${remaining === 1 ? "" : "s"} remaining.`);
+        }
+
+        render();
+      }
+
+      function extendPath(index) {
+        const cell = state.puzzle.cells[index];
+        if (!cell || cell.type !== "tile" || isLockedTile(index)) return;
+
+        const last = state.activePath[state.activePath.length - 1];
+        const previous = state.activePath[state.activePath.length - 2];
+
+        if (last === index) return;
+
+        if (previous === index) {
+          state.activePath.pop();
+          state.gestureExtended = true;
+          renderMessage();
+          renderBoard();
+          return;
+        }
+
+        if (state.activePath.includes(index)) return;
+        if (last !== undefined && !isAdjacent(last, index)) return;
+
+        state.activePath.push(index);
+        if (last !== undefined) state.gestureExtended = true;
+        renderMessage();
+        renderBoard();
+      }
+
+      function beginPath(index, pointerId = null) {
+        clearInvalidTiles();
+        if (state.activePath.length === 0) {
+          state.activePath = [index];
+        } else {
+          extendPath(index);
+        }
+        state.draggingPointerId = pointerId;
+        state.gestureExtended = false;
+        setMessage("Build a path through orthogonally adjacent letters, then release or tap the end tile again to submit.");
+        render();
+      }
+
+      function handlePointerDown(index, event) {
+        const cell = state.puzzle.cells[index];
+        if (!cell || cell.type !== "tile" || isLockedTile(index)) return;
+        beginPath(index, event.pointerId);
+      }
+
+      function handlePointerEnter(index, event) {
+        if (state.draggingPointerId !== event.pointerId) return;
+        extendPath(index);
+      }
+
+      function handlePointerUp(event) {
+        if (state.draggingPointerId !== event.pointerId) return;
+        if (state.gestureExtended && state.activePath.length > 0) submitPath();
+        state.draggingPointerId = null;
+        state.gestureExtended = false;
+      }
+
+      function handleTileClick(index) {
+        const cell = state.puzzle.cells[index];
+        if (!cell || cell.type !== "tile" || isLockedTile(index)) return;
+
+        const last = state.activePath[state.activePath.length - 1];
+        if (last === index && state.activePath.length > 1) {
+          submitPath();
+          return;
+        }
+
+        if (state.activePath.length === 0) {
+          state.activePath = [index];
+          setMessage("Tap adjacent letters to build a path, then tap the current end tile again to submit.");
+        } else {
+          extendPath(index);
+        }
+        render();
+      }
+
+      function revealHint() {
+        const nextWordIndex = state.puzzle.words.findIndex((_, index) => !isSolvedWord(index));
+        if (nextWordIndex === -1) return;
+        const revealed = state.hints[nextWordIndex] || 0;
+        state.hints[nextWordIndex] = Math.min(
+          state.puzzle.words[nextWordIndex].text.length,
+          revealed + 1
+        );
+        saveState();
+        setMessage(`Hint revealed for the next ${state.puzzle.words[nextWordIndex].text.length}-letter word.`);
+        render();
+      }
+
+      function undoPath() {
+        if (state.activePath.length === 0) return;
+        state.activePath.pop();
+        setMessage("Last step removed.");
+        render();
+      }
+
+      function resetProgress() {
+        state.activePath = [];
+        state.foundWords = [];
+        state.hints = {};
+        state.invalidTiles = [];
+        state.startTime = Date.now();
+        saveState();
+        setMessage("Board reset. Start from any open tile.");
+        render();
+      }
+
+      function solvePuzzle() {
+        state.activePath = [];
+        state.invalidTiles = [];
+        state.hints = {};
+        state.foundWords = state.puzzle.words.map((_, index) => index);
+        saveState();
+        setMessage("Puzzle solved. Every word has been revealed.");
+        render();
+      }
+
+      function computeTileMetrics() {
+        const cols = state.puzzle.cols;
+        const gap =
+          cols >= 18 ? 2 :
+          cols >= 14 ? 4 :
+          cols >= 10 ? 6 : 8;
+        const boardWidth =
+          els.board.getBoundingClientRect().width ||
+          els.board.parentElement.getBoundingClientRect().width - 28;
+        const tileSize = (boardWidth - gap * (cols - 1)) / cols;
+        return {
+          gap,
+          tileSize,
+          fontSize: clamp(tileSize * 0.46, 8, 24),
+          hintSize: clamp(tileSize * 0.22, 6, 11),
+          arrowSize: clamp(tileSize * 0.24, 7, 12),
+          radius: clamp(tileSize * 0.2, 4, 18)
+        };
+      }
+
+      function renderBoard() {
+        if (!state.puzzle) return;
+        const metrics = computeTileMetrics();
+        els.board.style.gridTemplateColumns = `repeat(${state.puzzle.cols}, minmax(0, 1fr))`;
+        els.board.style.gap = `${metrics.gap}px`;
+        els.board.style.setProperty("--tile-font-size", `${metrics.fontSize}px`);
+        els.board.style.setProperty("--tile-index-size", `${metrics.hintSize}px`);
+        els.board.style.setProperty("--tile-arrow-size", `${metrics.arrowSize}px`);
+        els.board.style.setProperty("--tile-radius", `${metrics.radius}px`);
+        els.board.innerHTML = "";
+        const arrowMap = buildArrowMap();
+        const connectors = buildConnectorSegments();
+
+        function appendConnector(from, to, className, wordIndex = null) {
+          const [fromRow, fromCol] = toCoord(from, state.puzzle.cols);
+          const [toRow, toCol] = toCoord(to, state.puzzle.cols);
+          const step = metrics.tileSize + metrics.gap;
+          const x1 = fromCol * step + metrics.tileSize / 2;
+          const y1 = fromRow * step + metrics.tileSize / 2;
+          const x2 = toCol * step + metrics.tileSize / 2;
+          const y2 = toRow * step + metrics.tileSize / 2;
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const length = Math.hypot(dx, dy);
+          const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+          const thickness = Math.max(8, metrics.tileSize * 0.24);
+
+          const connector = document.createElement("div");
+          connector.className = `path-connector ${className}`;
+          if (className === "solved" && wordIndex !== null) {
+            connector.style.background = solvedWordAccent(wordIndex);
+          }
+          connector.style.width = `${length}px`;
+          connector.style.height = `${thickness}px`;
+          connector.style.left = `${x1}px`;
+          connector.style.top = `${y1 - thickness / 2}px`;
+          connector.style.transformOrigin = "0 50%";
+          connector.style.transform = `rotate(${angle}deg)`;
+          els.board.appendChild(connector);
+        }
+
+        connectors.solved.forEach(([from, to, wordIndex]) => appendConnector(from, to, "solved", wordIndex));
+        connectors.active.forEach(([from, to]) => appendConnector(from, to, "active"));
+
+        state.puzzle.cells.forEach((cell, index) => {
+          if (cell.type === "block") {
+            const block = document.createElement("div");
+            block.className = "block";
+            if (state.puzzle.blankChar) {
+              block.textContent = state.puzzle.blankChar;
+              block.setAttribute("aria-hidden", "true");
+            }
+            els.board.appendChild(block);
+            return;
+          }
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "tile";
+          button.setAttribute("aria-label", `Letter ${cell.letter}`);
+
+          const letter = document.createElement("span");
+          letter.className = "tile-letter";
+          letter.textContent = cell.letter;
+          button.appendChild(letter);
+
+          if (state.activePath.includes(index)) button.classList.add("active");
+          if (isSolvedWord(cell.wordIndex)) {
+            button.classList.add("found", "locked");
+            button.style.background = solvedWordColor(cell.wordIndex);
+            button.style.borderColor = solvedWordAccent(cell.wordIndex);
+          }
+          if (state.invalidTiles.includes(index)) button.classList.add("invalid");
+          if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
+            button.classList.add("hinted");
+          }
+
+          const badge = document.createElement("span");
+          badge.className = "tile-index";
+          if ((state.hints[cell.wordIndex] || 0) >= cell.step && !isSolvedWord(cell.wordIndex)) {
+            badge.textContent = cell.step;
+          }
+          button.appendChild(badge);
+
+          const activeArrow = arrowMap.active.get(index);
+          const solvedArrow = arrowMap.solved.get(index);
+          const arrow = activeArrow || solvedArrow;
+          if (arrow) {
+            const arrowEl = document.createElement("span");
+            arrowEl.className = `path-arrow ${activeArrow ? "active" : "solved"}`;
+            arrowEl.textContent = arrow;
+            if (!activeArrow && isSolvedWord(cell.wordIndex)) {
+              arrowEl.style.color = solvedWordAccent(cell.wordIndex);
+            }
+            button.appendChild(arrowEl);
+          }
+
+          const isActiveEnd = arrowMap.activeEnds.has(index);
+          const isSolvedEnd = arrowMap.solvedEnds.has(index);
+          if (isActiveEnd || isSolvedEnd) {
+            const endEl = document.createElement("span");
+            endEl.className = `path-end ${isActiveEnd ? "active" : "solved"}`;
+            endEl.textContent = "●";
+            if (!isActiveEnd && isSolvedWord(cell.wordIndex)) {
+              endEl.style.color = solvedWordAccent(cell.wordIndex);
+            }
+            button.appendChild(endEl);
+          }
+
+          button.addEventListener("pointerdown", (event) => handlePointerDown(index, event));
+          button.addEventListener("pointerenter", (event) => handlePointerEnter(index, event));
+          button.addEventListener("pointerup", handlePointerUp);
+          button.addEventListener("click", () => handleTileClick(index));
+          els.board.appendChild(button);
+        });
+      }
+
+      function hintedDisplay(word, wordIndex) {
+        const count = state.hints[wordIndex] || 0;
+        return word.text
+          .split("")
+          .map((letter, index) => (index < count ? letter : "•"))
+          .join(" ");
+      }
+
+      function renderSlots() {
+        els.slots.innerHTML = "";
+        state.puzzle.words.forEach((word, index) => {
+          const solved = isSolvedWord(index);
+          const slot = document.createElement("div");
+          slot.className = `slot${solved ? " solved" : ""}`;
+
+          const header = document.createElement("div");
+          header.className = "slot-header";
+
+          const left = document.createElement("span");
+          left.className = "slot-title";
+          left.textContent = `${word.text.length} letters`;
+
+          const right = document.createElement("span");
+          right.className = "slot-title";
+          right.textContent = solved ? "Solved" : "Hidden";
+
+          const value = document.createElement("div");
+          value.className = "slot-value";
+          value.textContent = solved ? word.text.split("").join(" ") : hintedDisplay(word, index);
+
+          header.append(left, right);
+          slot.append(header, value);
+          els.slots.appendChild(slot);
+        });
+      }
+
+      function renderSummary() {
+        els.modePill.textContent = state.mode === "daily" ? "Daily puzzle" : "Practice puzzle";
+        els.puzzlePill.textContent = `${state.puzzle.name} • ${state.puzzle.playableCount} playable`;
+        els.foundCount.textContent = `${state.foundWords.length} / ${state.puzzle.words.length}`;
+        els.hintCount.textContent = String(
+          Object.values(state.hints).reduce((sum, value) => sum + value, 0)
+        );
+        els.gridSize.value = state.selectedGridSize;
+        els.seedInput.value = state.currentSeed;
+        els.wordMode.value = state.selectedWordMode;
+        els.blankLayout.value = state.selectedBlankLayout;
+        els.blankPercentInput.value = String(sanitizeBlankPercent(state.selectedBlankPercent));
+        els.blankCountInput.value = String(sanitizeBlankCount(state.selectedBlankCount, state.puzzle.rows, state.puzzle.cols));
+        els.blankCharInput.value = sanitizeBlankChar(state.selectedBlankChar);
+        const showBlankControls = blankControlsRelevant(state.selectedBlankLayout);
+        els.blankPercentField.hidden = !showBlankControls;
+        els.blankCountField.hidden = !showBlankControls;
+        els.blankCharField.hidden = !showBlankControls;
+        els.startLetterInput.value = sanitizeStartLetter(state.selectedStartLetter);
+        els.fixedLengthInput.value = String(sanitizeFixedLength(state.selectedFixedLength));
+        els.startLetterField.hidden = state.selectedWordMode !== "starts-with";
+        els.fixedLengthField.hidden = state.selectedWordMode !== "fixed-length";
+        els.colorMode.value = state.selectedColorMode;
+
+        const solved = state.foundWords.length === state.puzzle.words.length;
+        els.successBanner.hidden = !solved;
+        if (solved) {
+          els.successText.textContent = `Solved in ${els.timer.textContent} with ${els.hintCount.textContent} hint(s).`;
+        }
+      }
+
+      function render() {
+        renderBoard();
+        renderSlots();
+        renderSummary();
+        renderMessage();
+      }
+
+      function selectSettingsTab(tab) {
+        Object.entries(els.settingsPanels).forEach(([key, panel]) => {
+          panel.hidden = key !== tab;
+        });
+        els.settingsTabButtons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.tab === tab);
+        });
+      }
+
+      function openSettings(tab = "game") {
+        selectSettingsTab(tab);
+        if (els.appMenu) els.appMenu.open = false;
+        els.settingsOverlay.hidden = false;
+      }
+
+      function closeSettings() {
+        els.settingsOverlay.hidden = true;
+      }
+
+      function syncConfigFromControls() {
+        state.selectedWordMode = els.wordMode.value;
+        state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
+        state.selectedFixedLength = sanitizeFixedLength(els.fixedLengthInput.value);
+        state.selectedBlankLayout = els.blankLayout.value;
+        const { rows, cols } = currentGridSize();
+        state.selectedBlankPercent = sanitizeBlankPercent(els.blankPercentInput.value);
+        state.selectedBlankCount = sanitizeBlankCount(els.blankCountInput.value, rows, cols);
+        state.selectedBlankChar = sanitizeBlankChar(els.blankCharInput.value);
+      }
+
+      function applySeedConfiguration(seedValue, fallbackBase = "practice-0") {
+        const parsed = parseGameSeed(seedValue, fallbackBase);
+        const grid = parseGridSizeToken(parsed.gridToken);
+        if (grid) {
+          state.selectedGridSize = grid.gridSize;
+        }
+        const { rows, cols } = currentGridSize();
+
+        if (parsed.wordToken) {
+          const wordSettings = decodeWordSelectionSeedKey(parsed.wordToken);
+          state.selectedWordMode = wordSettings.mode;
+          state.selectedStartLetter = wordSettings.startLetter;
+          state.selectedFixedLength = wordSettings.fixedLength;
+        }
+
+        if (parsed.layoutToken) {
+          const layoutSettings = decodeLayoutSelectionSeedKey(parsed.layoutToken, rows, cols);
+          state.selectedBlankLayout = layoutSettings.mode;
+          state.selectedBlankPercent = layoutSettings.blankPercent;
+          state.selectedBlankCount = layoutSettings.blankCount;
+          state.selectedBlankChar = layoutSettings.blankChar;
+        }
+
+        return {
+          baseSeed: parsed.baseSeed,
+          rows,
+          cols,
+          mode: parsed.baseSeed.startsWith("daily-") ? "daily" : "practice",
+          fullSeed: composeGameSeed(
+            parsed.baseSeed,
+            rows,
+            cols,
+            currentWordSettings(),
+            currentLayoutSettings(rows, cols)
+          )
+        };
+      }
+
+      function nextPracticePuzzle() {
+        syncConfigFromControls();
+        if (els.appMenu) els.appMenu.open = false;
+        const { rows, cols } = currentGridSize();
+        state.practiceIndex += 1;
+        const seed = buildPracticeSeed(rows, cols, state.practiceIndex);
+        startPuzzle(materializePuzzle(rows, cols, "practice", seed), "practice", { ignoreSavedState: true });
+      }
+
+      function applyGridSize(value) {
+        state.selectedGridSize = value;
+        const { rows, cols } = currentGridSize();
+        const currentSeedBody = extractSeedBody(els.seedInput.value);
+        state.practiceIndex = 0;
+        if (state.mode === "practice") {
+          const seed = normalizeSeed(currentSeedBody, "practice-0");
+          startPuzzle(materializePuzzle(rows, cols, "practice", seed), "practice");
+        } else {
+          startPuzzle(getDailyPuzzle(), "daily");
+        }
+      }
+
+      function applyWordSettings() {
+        state.selectedWordMode = els.wordMode.value;
+        state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
+        state.selectedFixedLength = sanitizeFixedLength(els.fixedLengthInput.value);
+        const { rows, cols } = currentGridSize();
+        const currentSeedBody = extractSeedBody(els.seedInput.value);
+
+        if (state.mode === "practice") {
+          startPuzzle(materializePuzzle(rows, cols, "practice", currentSeedBody), "practice");
+          return;
+        }
+
+        startPuzzle(materializePuzzle(rows, cols, "daily", `daily-${getDailyVariant()}`), "daily");
+      }
+
+      function handleWordModeChange() {
+        state.selectedWordMode = els.wordMode.value;
+        state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
+        state.selectedFixedLength = sanitizeFixedLength(els.fixedLengthInput.value);
+        renderSummary();
+
+        if (state.selectedWordMode === "starts-with" || state.selectedWordMode === "fixed-length") {
+          setMessage("Choose the extra word filter, then the board will regenerate.");
+          return;
+        }
+
+        applyWordSettings();
+      }
+
+      function applyLayoutSettings() {
+        state.selectedBlankLayout = els.blankLayout.value;
+        const { rows, cols } = currentGridSize();
+        state.selectedBlankPercent = sanitizeBlankPercent(els.blankPercentInput.value);
+        state.selectedBlankCount = sanitizeBlankCount(els.blankCountInput.value, rows, cols);
+        state.selectedBlankChar = sanitizeBlankChar(els.blankCharInput.value);
+        const currentSeedBody = extractSeedBody(els.seedInput.value);
+
+        if (state.mode === "practice") {
+          startPuzzle(materializePuzzle(rows, cols, "practice", currentSeedBody), "practice");
+          return;
+        }
+
+        startPuzzle(materializePuzzle(rows, cols, "daily", `daily-${getDailyVariant()}`), "daily");
+      }
+
+      function applySeedInput() {
+        syncConfigFromControls();
+        const { rows, cols, mode, fullSeed } = applySeedConfiguration(els.seedInput.value, "practice-0");
+        state.practiceIndex = 0;
+        startPuzzle(materializePuzzle(rows, cols, mode, fullSeed), mode);
+      }
+
+      function applyColorMode(value) {
+        state.selectedColorMode = value;
+        render();
+      }
+
+      function populateGridSizeOptions() {
+        els.gridSize.innerHTML = "";
+        for (let size = GRID_MIN; size <= GRID_MAX; size += 1) {
+          const option = document.createElement("option");
+          option.value = `${size}x${size}`;
+          option.textContent = `${size} x ${size}`;
+          if (size === 5) option.selected = true;
+          els.gridSize.appendChild(option);
+        }
+      }
+
+      els.practiceBtn.addEventListener("click", nextPracticePuzzle);
+      els.settingsOpenBtn.addEventListener("click", () => openSettings("game"));
+      els.settingsCloseBtn.addEventListener("click", closeSettings);
+      els.settingsOverlay.addEventListener("click", (event) => {
+        if (event.target === els.settingsOverlay) closeSettings();
+      });
+      els.settingsTabButtons.forEach((button) => {
+        button.addEventListener("click", () => selectSettingsTab(button.dataset.tab));
+      });
+      els.seedApplyBtn.addEventListener("click", applySeedInput);
+      els.wordMode.addEventListener("change", handleWordModeChange);
+      els.blankLayout.addEventListener("change", applyLayoutSettings);
+      els.blankPercentInput.addEventListener("change", () => {
+        els.blankPercentInput.value = String(sanitizeBlankPercent(els.blankPercentInput.value));
+        els.blankCountInput.value = "0";
+        applyLayoutSettings();
+      });
+      els.blankPercentInput.addEventListener("input", () => {
+        els.blankPercentInput.value = String(sanitizeBlankPercent(els.blankPercentInput.value));
+        els.blankCountInput.value = "0";
+      });
+      els.blankCountInput.addEventListener("change", () => {
+        const { rows, cols } = currentGridSize();
+        els.blankCountInput.value = String(sanitizeBlankCount(els.blankCountInput.value, rows, cols));
+        applyLayoutSettings();
+      });
+      els.blankCharInput.addEventListener("input", () => {
+        els.blankCharInput.value = sanitizeBlankChar(els.blankCharInput.value);
+        applyLayoutSettings();
+      });
+      els.startLetterInput.addEventListener("input", () => {
+        els.startLetterInput.value = sanitizeStartLetter(els.startLetterInput.value);
+        if (state.selectedWordMode === "starts-with") applyWordSettings();
+      });
+      els.fixedLengthInput.addEventListener("change", () => {
+        els.fixedLengthInput.value = String(sanitizeFixedLength(els.fixedLengthInput.value));
+        if (state.selectedWordMode === "fixed-length") applyWordSettings();
+      });
+      els.undoBtn.addEventListener("click", undoPath);
+      els.hintBtn.addEventListener("click", revealHint);
+      els.solveBtn.addEventListener("click", solvePuzzle);
+      els.resetBtn.addEventListener("click", resetProgress);
+      els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
+      els.seedInput.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        applySeedInput();
+      });
+      els.colorMode.addEventListener("change", (event) => applyColorMode(event.target.value));
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !els.settingsOverlay.hidden) closeSettings();
+      });
+      window.addEventListener("pointerup", handlePointerUp);
+      window.addEventListener("resize", renderBoard);
+
+      populateGridSizeOptions();
+      const urlSeed = getUrlSeed();
+      if (urlSeed) {
+        const fallbackBase = urlSeed.startsWith("daily-") ? `daily-${getDailyVariant()}` : "practice-0";
+        const { rows, cols, mode, fullSeed } = applySeedConfiguration(urlSeed, fallbackBase);
+        startPuzzle(materializePuzzle(rows, cols, mode, fullSeed), mode, { ignoreSavedState: true });
+      } else {
+        startPuzzle(getDailyPuzzle(), "daily");
+      }
+    </script>
+  </body>
+</html>

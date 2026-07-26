@@ -37,6 +37,7 @@ This document describes the current build as shipped, including:
 - Current main application document: `index.html`
 - Archived earlier prototype page: `v1.html`
 - Archived pre-rebuild shipped page: `v2.html`
+- Archived pre-documentation-driven rebuild page: `v3.html`
 
 No server process, API, or database is required.
 
@@ -154,7 +155,7 @@ The sidebar metrics display:
 
 #### Archived Versions
 
-- Provides submenu links to `v2.html` and `v1.html`.
+- Provides submenu links to `v3.html`, `v2.html`, and `v1.html`.
 
 ### 7.3 Grid Size
 
@@ -627,9 +628,8 @@ Each word entry must include:
 
 At the time of this specification update:
 
-- latest repo commit: `f2bc514`
-- latest app release line: `v00.00.42`
-- latest docs refresh: current in-place documentation update after `v00.00.42`
+- latest app release line: `v00.00.43`
+- latest docs refresh: current in-place documentation update after the documentation-driven rebuild
 
 ## 22. Future Extension Areas
 

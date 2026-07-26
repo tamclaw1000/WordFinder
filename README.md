@@ -2,7 +2,7 @@
 
 WordFinder is a prototype repository for a Wend-style word-path puzzle web app.
 
-Current prototype version: `v00.00.42`
+Current prototype version: `v00.00.43`
 
 ## Getting started
 
@@ -16,6 +16,7 @@ Open `index.html` in a browser to play the current single-page prototype locally
 
 - `v1.html` preserves the earlier prototype line through `v00.00.05`.
 - `v2.html` preserves the pre-rebuild shipped page.
+- `v3.html` preserves the pre-documentation-driven rebuild page through `v00.00.42`.
 - `index.html` is the current rebuilt main app.
 - The current build supports deterministic daily/practice boards for selectable square grids from `4x4` up to `20x20`.
 - Generated boards include blocked cells, exact path validation, local progress persistence, scalable large-grid rendering, and multiple blank-layout strategies.
