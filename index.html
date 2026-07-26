@@ -81,6 +81,10 @@
         align-items: center;
       }
 
+      .hero-spacer {
+        flex: 1 1 auto;
+      }
+
       .eyebrow,
       .version-chip,
       .link-chip,
@@ -112,6 +116,98 @@
         text-decoration: none;
         background: rgba(255, 255, 255, 0.68);
         border: 1px solid rgba(20, 95, 86, 0.1);
+      }
+
+      .app-menu {
+        position: relative;
+        margin-left: auto;
+      }
+
+      .app-menu > summary {
+        list-style: none;
+        cursor: pointer;
+      }
+
+      .app-menu > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .menu-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 7px 13px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--accent-strong);
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(20, 95, 86, 0.12);
+      }
+
+      .menu-sheet {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 10px);
+        width: min(280px, calc(100vw - 32px));
+        padding: 12px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid var(--line);
+        box-shadow: 0 20px 60px rgba(18, 26, 24, 0.18);
+        display: grid;
+        gap: 10px;
+        z-index: 30;
+      }
+
+      .menu-action,
+      .menu-link {
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--line);
+        background: rgba(250, 248, 243, 0.96);
+        color: var(--ink);
+        border-radius: 16px;
+        min-height: 42px;
+        padding: 10px 14px;
+        font-size: 0.92rem;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .menu-action:hover,
+      .menu-link:hover {
+        border-color: rgba(20, 95, 86, 0.22);
+        background: rgba(255, 255, 255, 0.98);
+      }
+
+      .menu-submenu {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(244, 238, 227, 0.75);
+        padding: 8px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .menu-submenu > summary {
+        list-style: none;
+        cursor: pointer;
+        font-size: 0.88rem;
+        font-weight: 800;
+        color: var(--ink);
+        padding: 6px 8px;
+      }
+
+      .menu-submenu > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .menu-submenu-links {
+        display: grid;
+        gap: 8px;
       }
 
       .hero-copy {
@@ -603,12 +699,6 @@
         text-decoration: none;
       }
 
-      .play-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-
       .settings-overlay {
         position: fixed;
         inset: 0;
@@ -750,6 +840,15 @@
           display: grid;
           grid-template-columns: 1fr 1fr;
         }
+
+        .app-menu {
+          margin-left: 0;
+        }
+
+        .menu-sheet {
+          right: 0;
+          left: auto;
+        }
       }
     </style>
   </head>
@@ -759,8 +858,21 @@
         <div class="hero-bar">
           <div class="eyebrow">Clean rebuild</div>
           <div class="version-chip" id="version-chip">v00.00.39</div>
-          <a class="link-chip" href="./v2.html">Open v2</a>
-          <a class="link-chip" href="./v1.html">Open v1</a>
+          <div class="hero-spacer"></div>
+          <details class="app-menu" id="app-menu">
+            <summary class="menu-chip">Menu</summary>
+            <div class="menu-sheet">
+              <button class="menu-action" id="practice-btn" type="button">New practice board</button>
+              <button class="menu-action" id="settings-open-btn" type="button">Settings</button>
+              <details class="menu-submenu">
+                <summary>Archived versions</summary>
+                <div class="menu-submenu-links">
+                  <a class="menu-link" href="./v2.html">Open v2</a>
+                  <a class="menu-link" href="./v1.html">Open v1</a>
+                </div>
+              </details>
+            </div>
+          </details>
         </div>
         <div class="hero-copy">
           <h1>WordFinder</h1>
@@ -828,18 +940,8 @@
           </div>
 
           <div class="control-card">
-            <strong class="control-card-title">Play</strong>
-            <div class="play-toolbar">
-              <button class="primary" id="daily-btn">Daily board</button>
-              <button class="secondary" id="practice-btn">New practice board</button>
-              <button class="ghost" id="settings-open-btn">Settings</button>
-            </div>
-          </div>
-
-          <div class="control-card">
             <strong class="control-card-title">Actions</strong>
             <div class="actions">
-              <button class="primary" id="submit-btn">Submit path</button>
               <button class="ghost" id="undo-btn">Undo</button>
               <button class="warning" id="hint-btn">Hint</button>
               <button class="secondary" id="solve-btn">Solve</button>
@@ -862,16 +964,6 @@
 
           <div class="slots" id="slots"></div>
 
-          <div class="notes-card">
-            <strong>Archive</strong>
-            <p>
-              v2 preserves the pre-rebuild shipped page. v1 preserves the earlier archived prototype line.
-            </p>
-            <div class="archive-links">
-              <a href="./v2.html">Open v2</a>
-              <a href="./v1.html">Open v1</a>
-            </div>
-          </div>
         </aside>
       </section>
     </main>
@@ -925,16 +1017,6 @@
             </div>
           </div>
 
-          <div class="settings-card">
-            <strong>Archive</strong>
-            <p class="seed-note">
-              v2 preserves the pre-rebuild shipped page. v1 preserves the earlier archived prototype line.
-            </p>
-            <div class="archive-links">
-              <a href="./v2.html">Open v2</a>
-              <a href="./v1.html">Open v1</a>
-            </div>
-          </div>
         </section>
 
         <section class="settings-panel" id="settings-panel-game" hidden>
@@ -1043,7 +1125,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.41";
+      const APP_VERSION = "v00.00.42";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1278,7 +1360,7 @@
         fixedLengthField: document.getElementById("fixed-length-field"),
         fixedLengthInput: document.getElementById("fixed-length-input"),
         colorMode: document.getElementById("color-mode"),
-        dailyBtn: document.getElementById("daily-btn"),
+        appMenu: document.getElementById("app-menu"),
         practiceBtn: document.getElementById("practice-btn"),
         settingsOpenBtn: document.getElementById("settings-open-btn"),
         settingsOverlay: document.getElementById("settings-overlay"),
@@ -1289,7 +1371,6 @@
           game: document.getElementById("settings-panel-game"),
           generation: document.getElementById("settings-panel-generation")
         },
-        submitBtn: document.getElementById("submit-btn"),
         undoBtn: document.getElementById("undo-btn"),
         hintBtn: document.getElementById("hint-btn"),
         solveBtn: document.getElementById("solve-btn"),
@@ -2891,7 +2972,7 @@
         }
         state.draggingPointerId = pointerId;
         state.gestureExtended = false;
-        setMessage("Build a path through orthogonally adjacent letters, then submit.");
+        setMessage("Build a path through orthogonally adjacent letters, then release or tap the end tile again to submit.");
         render();
       }
 
@@ -2917,9 +2998,15 @@
         const cell = state.puzzle.cells[index];
         if (!cell || cell.type !== "tile" || isLockedTile(index)) return;
 
+        const last = state.activePath[state.activePath.length - 1];
+        if (last === index && state.activePath.length > 1) {
+          submitPath();
+          return;
+        }
+
         if (state.activePath.length === 0) {
           state.activePath = [index];
-          setMessage("Tap adjacent letters to build a path, then submit.");
+          setMessage("Tap adjacent letters to build a path, then tap the current end tile again to submit.");
         } else {
           extendPath(index);
         }
@@ -3189,6 +3276,7 @@
 
       function openSettings(tab = "game") {
         selectSettingsTab(tab);
+        if (els.appMenu) els.appMenu.open = false;
         els.settingsOverlay.hidden = false;
       }
 
@@ -3247,6 +3335,7 @@
 
       function nextPracticePuzzle() {
         syncConfigFromControls();
+        if (els.appMenu) els.appMenu.open = false;
         const { rows, cols } = currentGridSize();
         state.practiceIndex += 1;
         const seed = buildPracticeSeed(rows, cols, state.practiceIndex);
@@ -3334,7 +3423,6 @@
         }
       }
 
-      els.dailyBtn.addEventListener("click", () => startPuzzle(getDailyPuzzle(), "daily"));
       els.practiceBtn.addEventListener("click", nextPracticePuzzle);
       els.settingsOpenBtn.addEventListener("click", () => openSettings("game"));
       els.settingsCloseBtn.addEventListener("click", closeSettings);
@@ -3373,7 +3461,6 @@
         els.fixedLengthInput.value = String(sanitizeFixedLength(els.fixedLengthInput.value));
         if (state.selectedWordMode === "fixed-length") applyWordSettings();
       });
-      els.submitBtn.addEventListener("click", submitPath);
       els.undoBtn.addEventListener("click", undoPath);
       els.hintBtn.addEventListener("click", revealHint);
       els.solveBtn.addEventListener("click", solvePuzzle);
