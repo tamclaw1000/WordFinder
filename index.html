@@ -314,6 +314,12 @@
           var(--wall);
         border: 1px solid var(--wall-edge);
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+        display: grid;
+        place-items: center;
+        color: rgba(255, 255, 255, 0.58);
+        font-size: clamp(10px, var(--tile-font-size, 18px) * 0.72, 20px);
+        font-weight: 800;
+        line-height: 1;
       }
 
       .board-footer {
@@ -640,7 +646,7 @@
       <section class="hero">
         <div class="hero-bar">
           <div class="eyebrow">Clean rebuild</div>
-          <div class="version-chip" id="version-chip">v00.00.31</div>
+          <div class="version-chip" id="version-chip">v00.00.32</div>
           <a class="link-chip" href="./v2.html">Open v2</a>
           <a class="link-chip" href="./v1.html">Open v1</a>
         </div>
@@ -747,6 +753,43 @@
                 </select>
               </div>
 
+              <div class="field">
+                <label for="blank-layout">Blank layout</label>
+                <select id="blank-layout">
+                  <option value="default">Default</option>
+                  <option value="no-blanks">No blanks</option>
+                  <option value="verticals">Verticals</option>
+                  <option value="horizontals">Horizontals</option>
+                  <option value="straights">Straights</option>
+                  <option value="diag-slash">Diagonals /</option>
+                  <option value="diag-backslash">Diagonals \</option>
+                  <option value="diag-both">Diagonals both</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="blank-percent-input">Blank percent</label>
+                <input id="blank-percent-input" type="number" min="0" max="85" step="1" value="22" />
+              </div>
+
+              <div class="field">
+                <label for="blank-count-input">Blank count</label>
+                <input id="blank-count-input" type="number" min="0" max="400" step="1" value="0" />
+              </div>
+
+              <div class="field">
+                <label for="blank-char-input">Blank fill character</label>
+                <input
+                  id="blank-char-input"
+                  type="text"
+                  inputmode="text"
+                  maxlength="1"
+                  spellcheck="false"
+                  autocomplete="off"
+                  value=""
+                />
+              </div>
+
               <div class="field" id="start-letter-field" hidden>
                 <label for="start-letter-input">Starting letter</label>
                 <input
@@ -834,7 +877,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.31";
+      const APP_VERSION = "v00.00.32";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1023,6 +1066,10 @@
         selectedWordMode: "any",
         selectedStartLetter: "A",
         selectedFixedLength: 5,
+        selectedBlankLayout: "default",
+        selectedBlankPercent: 22,
+        selectedBlankCount: 0,
+        selectedBlankChar: "",
         practiceIndex: 0,
         currentSeed: "",
         puzzle: null,
@@ -1053,6 +1100,10 @@
         seedInput: document.getElementById("seed-input"),
         seedApplyBtn: document.getElementById("seed-apply-btn"),
         wordMode: document.getElementById("word-mode"),
+        blankLayout: document.getElementById("blank-layout"),
+        blankPercentInput: document.getElementById("blank-percent-input"),
+        blankCountInput: document.getElementById("blank-count-input"),
+        blankCharInput: document.getElementById("blank-char-input"),
         startLetterField: document.getElementById("start-letter-field"),
         startLetterInput: document.getElementById("start-letter-input"),
         fixedLengthField: document.getElementById("fixed-length-field"),
@@ -1510,7 +1561,161 @@
         return target;
       }
 
-      function buildPlayableLayout(rows, cols, seedLabel, wordSettings) {
+      function sanitizeBlankPercent(value) {
+        return clamp(Number.parseInt(value, 10) || 0, 0, 85);
+      }
+
+      function sanitizeBlankCount(value, rows = GRID_MAX, cols = GRID_MAX) {
+        const total = rows * cols;
+        return clamp(Number.parseInt(value, 10) || 0, 0, Math.max(0, total - 4));
+      }
+
+      function sanitizeBlankChar(value) {
+        const text = String(value || "").replace(/[^\x20-\x7E]/g, "");
+        return text[0] || "";
+      }
+
+      function currentLayoutSettings(rows = null, cols = null) {
+        return {
+          mode: state.selectedBlankLayout,
+          blankPercent: sanitizeBlankPercent(state.selectedBlankPercent),
+          blankCount: sanitizeBlankCount(state.selectedBlankCount, rows || GRID_MAX, cols || GRID_MAX),
+          blankChar: sanitizeBlankChar(state.selectedBlankChar)
+        };
+      }
+
+      function targetBlankCount(rows, cols, layoutSettings) {
+        const total = rows * cols;
+        if (layoutSettings.mode === "no-blanks") return 0;
+        if (layoutSettings.blankCount > 0) {
+          return clamp(layoutSettings.blankCount, 0, Math.max(0, total - 4));
+        }
+        return clamp(Math.round(total * (layoutSettings.blankPercent / 100)), 0, Math.max(0, total - 4));
+      }
+
+      function lineSegmentCells(startRow, startCol, dr, dc, length, rows, cols) {
+        const cells = [];
+        for (let step = 0; step < length; step += 1) {
+          const row = startRow + dr * step;
+          const col = startCol + dc * step;
+          if (row < 0 || row >= rows || col < 0 || col >= cols) break;
+          cells.push(row * cols + col);
+        }
+        return cells;
+      }
+
+      function buildSnakePath(rows, cols) {
+        const path = [];
+        for (let row = 0; row < rows; row += 1) {
+          if (row % 2 === 0) {
+            for (let col = 0; col < cols; col += 1) {
+              path.push(row * cols + col);
+            }
+          } else {
+            for (let col = cols - 1; col >= 0; col -= 1) {
+              path.push(row * cols + col);
+            }
+          }
+        }
+        return path;
+      }
+
+      function patternedBlockedMask(rows, cols, seedLabel, layoutSettings) {
+        const target = targetBlankCount(rows, cols, layoutSettings);
+        if (target <= 0) return new Set();
+
+        const directionMap = {
+          verticals: [[1, 0]],
+          horizontals: [[0, 1]],
+          straights: [[1, 0], [0, 1]],
+          "diag-slash": [[1, -1]],
+          "diag-backslash": [[1, 1]],
+          "diag-both": [[1, -1], [1, 1]]
+        };
+        const directions = directionMap[layoutSettings.mode] || [];
+        const rng = makeRng(hashText(`${seedLabel}:blank-pattern:${layoutSettings.mode}`));
+        const blocked = new Set();
+        if (directions.length === 0) return blocked;
+
+        for (let attempt = 0; attempt < rows * cols * 10 && blocked.size < target; attempt += 1) {
+          const [dr, dc] = directions[randInt(rng, 0, directions.length - 1)];
+          const startRow = randInt(rng, 0, rows - 1);
+          const startCol = randInt(rng, 0, cols - 1);
+          const maxForward = (() => {
+            let max = 0;
+            let row = startRow;
+            let col = startCol;
+            while (row >= 0 && row < rows && col >= 0 && col < cols) {
+              max += 1;
+              row += dr;
+              col += dc;
+            }
+            return max;
+          })();
+          if (maxForward <= 0) continue;
+          const segmentLength = randInt(rng, 1, Math.max(1, Math.min(maxForward, Math.max(2, Math.ceil(Math.max(rows, cols) / 2)))));
+          const cells = lineSegmentCells(startRow, startCol, dr, dc, segmentLength, rows, cols);
+          if (cells.length === 0) continue;
+
+          for (const cell of cells) {
+            blocked.add(cell);
+            if (blocked.size >= target) break;
+          }
+        }
+
+        return blocked;
+      }
+
+      function buildPatternPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings) {
+        const lengths = allowedWordLengths(wordSettings);
+        if (layoutSettings.mode === "no-blanks" && canPartitionLengths(rows * cols, lengths)) {
+          const playableSet = new Set(Array.from({ length: rows * cols }, (_, index) => index));
+          return {
+            path: buildSnakePath(rows, cols),
+            cells: buildCellsFromPlayable(rows, cols, playableSet)
+          };
+        }
+
+        for (let attempt = 0; attempt < 80; attempt += 1) {
+          const blocked = patternedBlockedMask(rows, cols, `${seedLabel}:pattern:${attempt}`, layoutSettings);
+          const availableSet = collectPlayableSet(rows, cols, blocked);
+          if (availableSet.size < 4) continue;
+          if (!isPlayableConnected(availableSet, rows, cols)) continue;
+          if (!canPartitionLengths(availableSet.size, lengths)) continue;
+          if (availableSet.size === rows * cols) {
+            return {
+              path: buildSnakePath(rows, cols),
+              cells: buildCellsFromPlayable(rows, cols, availableSet)
+            };
+          }
+
+          const path = growPathOnAvailable(
+            availableSet,
+            rows,
+            cols,
+            availableSet.size,
+            `${seedLabel}:pattern-path:${attempt}`
+          );
+          if (!path || path.length !== availableSet.size) continue;
+
+          return {
+            path,
+            cells: buildCellsFromPlayable(rows, cols, availableSet)
+          };
+        }
+
+        const fallbackSet = new Set(Array.from({ length: rows * cols }, (_, index) => index));
+        return {
+          path: growPathOnAvailable(fallbackSet, rows, cols, rows * cols, `${seedLabel}:pattern-fallback`) ||
+            Array.from({ length: rows * cols }, (_, index) => index),
+          cells: buildCellsFromPlayable(rows, cols, fallbackSet)
+        };
+      }
+
+      function buildPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings) {
+        if (layoutSettings.mode !== "default") {
+          return buildPatternPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings);
+        }
         const targetLength = chooseTargetLength(rows, cols, wordSettings);
         for (let attempt = 0; attempt < 10; attempt += 1) {
           const blocked = generateBlockedMask(rows, cols, `${seedLabel}:mask:${attempt}`, targetLength);
@@ -1739,12 +1944,18 @@
         }
       }
 
+      function layoutSelectionSeedKey(layoutSettings) {
+        const char = sanitizeBlankChar(layoutSettings.blankChar);
+        const charCode = char ? char.charCodeAt(0).toString(16) : "none";
+        return `${layoutSettings.mode}-${sanitizeBlankPercent(layoutSettings.blankPercent)}-${layoutSettings.blankCount}-${charCode}`;
+      }
+
       function gridSeedPrefix(rows, cols) {
         return `${rows}x${cols}:`;
       }
 
       function extractSeedBody(seedValue, rows, cols) {
-        const trimmed = String(seedValue || "").trim().replace(/\|words=[^|]+$/, "");
+        const trimmed = String(seedValue || "").trim().split("|")[0];
         const prefix = gridSeedPrefix(rows, cols);
         if (trimmed.startsWith(prefix)) {
           return trimmed.slice(prefix.length).trim() || "practice-0";
@@ -1755,30 +1966,53 @@
         return trimmed || "practice-0";
       }
 
-      function normalizeSeed(seedValue, rows, cols, fallbackBody = "practice-0", wordSettings = currentWordSettings()) {
+      function normalizeSeed(
+        seedValue,
+        rows,
+        cols,
+        fallbackBody = "practice-0",
+        wordSettings = currentWordSettings(),
+        layoutSettings = currentLayoutSettings(rows, cols)
+      ) {
         const body = extractSeedBody(seedValue, rows, cols) || fallbackBody;
-        return `${gridSeedPrefix(rows, cols)}${body}|words=${wordSelectionSeedKey(wordSettings)}`;
+        return `${gridSeedPrefix(rows, cols)}${body}|words=${wordSelectionSeedKey(wordSettings)}|layout=${layoutSelectionSeedKey(layoutSettings)}`;
       }
 
       function buildDailySeed(rows, cols) {
-        return normalizeSeed(`daily-${getDailyVariant()}`, rows, cols, "daily-0", currentWordSettings());
+        return normalizeSeed(
+          `daily-${getDailyVariant()}`,
+          rows,
+          cols,
+          "daily-0",
+          currentWordSettings(),
+          currentLayoutSettings(rows, cols)
+        );
       }
 
       function buildPracticeSeed(rows, cols, variant) {
-        return normalizeSeed(`practice-${variant}`, rows, cols, "practice-0", currentWordSettings());
+        return normalizeSeed(
+          `practice-${variant}`,
+          rows,
+          cols,
+          "practice-0",
+          currentWordSettings(),
+          currentLayoutSettings(rows, cols)
+        );
       }
 
       function materializePuzzle(rows, cols, mode, seedKey) {
         const wordSettings = currentWordSettings();
+        const layoutSettings = currentLayoutSettings(rows, cols);
         const normalizedSeed = normalizeSeed(
           seedKey,
           rows,
           cols,
           mode === "daily" ? `daily-${getDailyVariant()}` : "practice-0",
-          wordSettings
+          wordSettings,
+          layoutSettings
         );
         const seedLabel = `${mode}:${normalizedSeed}`;
-        const layout = buildPlayableLayout(rows, cols, seedLabel, wordSettings);
+        const layout = buildPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings);
         const lengths = chooseWordLengths(layout.path.length, cols, seedLabel, wordSettings);
         let offset = 0;
 
@@ -1810,7 +2044,9 @@
           cols,
           cells,
           words,
-          playableCount: layout.path.length
+          playableCount: layout.path.length,
+          blankChar: layoutSettings.mode === "no-blanks" ? "" : layoutSettings.blankChar,
+          blankLayout: layoutSettings.mode
         };
       }
 
@@ -2247,6 +2483,10 @@
           if (cell.type === "block") {
             const block = document.createElement("div");
             block.className = "block";
+            if (state.puzzle.blankChar) {
+              block.textContent = state.puzzle.blankChar;
+              block.setAttribute("aria-hidden", "true");
+            }
             els.board.appendChild(block);
             return;
           }
@@ -2358,6 +2598,10 @@
         els.gridSize.value = state.selectedGridSize;
         els.seedInput.value = state.currentSeed;
         els.wordMode.value = state.selectedWordMode;
+        els.blankLayout.value = state.selectedBlankLayout;
+        els.blankPercentInput.value = String(sanitizeBlankPercent(state.selectedBlankPercent));
+        els.blankCountInput.value = String(sanitizeBlankCount(state.selectedBlankCount, state.puzzle.rows, state.puzzle.cols));
+        els.blankCharInput.value = sanitizeBlankChar(state.selectedBlankChar);
         els.startLetterInput.value = sanitizeStartLetter(state.selectedStartLetter);
         els.fixedLengthInput.value = String(sanitizeFixedLength(state.selectedFixedLength));
         els.startLetterField.hidden = state.selectedWordMode !== "starts-with";
@@ -2413,6 +2657,22 @@
         startPuzzle(materializePuzzle(rows, cols, "daily", `daily-${getDailyVariant()}`), "daily");
       }
 
+      function applyLayoutSettings() {
+        state.selectedBlankLayout = els.blankLayout.value;
+        const { rows, cols } = currentGridSize();
+        state.selectedBlankPercent = sanitizeBlankPercent(els.blankPercentInput.value);
+        state.selectedBlankCount = sanitizeBlankCount(els.blankCountInput.value, rows, cols);
+        state.selectedBlankChar = sanitizeBlankChar(els.blankCharInput.value);
+        const currentSeedBody = extractSeedBody(els.seedInput.value, rows, cols);
+
+        if (state.mode === "practice") {
+          startPuzzle(materializePuzzle(rows, cols, "practice", currentSeedBody), "practice");
+          return;
+        }
+
+        startPuzzle(materializePuzzle(rows, cols, "daily", `daily-${getDailyVariant()}`), "daily");
+      }
+
       function applySeedInput() {
         const { rows, cols } = currentGridSize();
         const normalizedSeed = normalizeSeed(els.seedInput.value, rows, cols, "practice-0");
@@ -2440,6 +2700,20 @@
       els.practiceBtn.addEventListener("click", nextPracticePuzzle);
       els.seedApplyBtn.addEventListener("click", applySeedInput);
       els.wordMode.addEventListener("change", applyWordSettings);
+      els.blankLayout.addEventListener("change", applyLayoutSettings);
+      els.blankPercentInput.addEventListener("change", () => {
+        els.blankPercentInput.value = String(sanitizeBlankPercent(els.blankPercentInput.value));
+        applyLayoutSettings();
+      });
+      els.blankCountInput.addEventListener("change", () => {
+        const { rows, cols } = currentGridSize();
+        els.blankCountInput.value = String(sanitizeBlankCount(els.blankCountInput.value, rows, cols));
+        applyLayoutSettings();
+      });
+      els.blankCharInput.addEventListener("input", () => {
+        els.blankCharInput.value = sanitizeBlankChar(els.blankCharInput.value);
+        applyLayoutSettings();
+      });
       els.startLetterInput.addEventListener("input", () => {
         els.startLetterInput.value = sanitizeStartLetter(els.startLetterInput.value);
         if (state.selectedWordMode === "starts-with") applyWordSettings();
