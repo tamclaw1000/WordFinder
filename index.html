@@ -1043,7 +1043,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.40";
+      const APP_VERSION = "v00.00.41";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -1338,6 +1338,81 @@
           url.searchParams.delete("seed");
         }
         window.history.replaceState({}, "", url);
+      }
+
+      function parseGridSizeToken(token) {
+        const match = String(token || "").match(/^(\d+)x(\d+)$/);
+        if (!match) return null;
+        const rows = Number(match[1]);
+        const cols = Number(match[2]);
+        if (!Number.isInteger(rows) || !Number.isInteger(cols)) return null;
+        if (rows < GRID_MIN || rows > GRID_MAX || cols < GRID_MIN || cols > GRID_MAX) return null;
+        return {
+          rows,
+          cols,
+          gridSize: `${rows}x${cols}`
+        };
+      }
+
+      function decodeWordSelectionSeedKey(key) {
+        const normalized = String(key || "any");
+        if (normalized === "z") return { mode: "contains-z", startLetter: "A", fixedLength: 5 };
+        if (normalized === "x") return { mode: "contains-x", startLetter: "A", fixedLength: 5 };
+        if (normalized === "q") return { mode: "contains-q", startLetter: "A", fixedLength: 5 };
+        if (normalized === "ing") return { mode: "contains-ing", startLetter: "A", fixedLength: 5 };
+        if (normalized === "mm") return { mode: "contains-mm", startLetter: "A", fixedLength: 5 };
+        if (normalized.startsWith("starts-")) {
+          return {
+            mode: "starts-with",
+            startLetter: sanitizeStartLetter(normalized.slice(7)),
+            fixedLength: 5
+          };
+        }
+        if (normalized.startsWith("n-")) {
+          return {
+            mode: "fixed-length",
+            startLetter: "A",
+            fixedLength: sanitizeFixedLength(normalized.slice(2))
+          };
+        }
+        return { mode: "any", startLetter: "A", fixedLength: 5 };
+      }
+
+      function decodeLayoutSelectionSeedKey(key, rows, cols) {
+        const [modeToken = "default", percentToken = "22", countToken = "0", charToken = "none"] =
+          String(key || "").split(",");
+        const allowedModes = new Set([
+          "default",
+          "no-blanks",
+          "verticals",
+          "horizontals",
+          "straights",
+          "diag-slash",
+          "diag-backslash",
+          "diag-both"
+        ]);
+        const mode = allowedModes.has(modeToken) ? modeToken : "default";
+        const parsedCharCode = Number.parseInt(charToken, 16);
+        const blankChar =
+          charToken === "none" || !Number.isFinite(parsedCharCode) ? "" : String.fromCharCode(parsedCharCode);
+        return {
+          mode,
+          blankPercent: sanitizeBlankPercent(percentToken),
+          blankCount: sanitizeBlankCount(countToken, rows, cols),
+          blankChar: sanitizeBlankChar(blankChar)
+        };
+      }
+
+      function parseGameSeed(seedValue, fallbackBase = "practice-0") {
+        const trimmed = simplifySeed(seedValue, fallbackBase);
+        const [baseSeed = fallbackBase, gridToken = "", wordToken = "", layoutToken = ""] = trimmed.split("~");
+        return {
+          baseSeed: simplifySeed(baseSeed, fallbackBase),
+          gridToken,
+          wordToken,
+          layoutToken,
+          fullSeed: trimmed
+        };
       }
 
       function neighborIndexes(index, rows, cols) {
@@ -2423,7 +2498,12 @@
       function layoutSelectionSeedKey(layoutSettings) {
         const char = sanitizeBlankChar(layoutSettings.blankChar);
         const charCode = char ? char.charCodeAt(0).toString(16) : "none";
-        return `${layoutSettings.mode}-${sanitizeBlankPercent(layoutSettings.blankPercent)}-${layoutSettings.blankCount}-${charCode}`;
+        return [
+          layoutSettings.mode,
+          sanitizeBlankPercent(layoutSettings.blankPercent),
+          layoutSettings.blankCount,
+          charCode
+        ].join(",");
       }
 
       function simplifySeed(seedValue, fallback = "practice-0") {
@@ -2432,29 +2512,51 @@
       }
 
       function extractSeedBody(seedValue) {
-        return simplifySeed(seedValue, "practice-0");
+        return parseGameSeed(seedValue, "practice-0").baseSeed;
       }
 
       function normalizeSeed(seedValue, fallbackBody = "practice-0") {
         return simplifySeed(seedValue, fallbackBody);
       }
 
-      function buildDailySeed() {
-        return normalizeSeed(`daily-${getDailyVariant()}`, "daily-0");
+      function composeGameSeed(baseSeed, rows, cols, wordSettings, layoutSettings) {
+        return [
+          normalizeSeed(baseSeed, "practice-0"),
+          `${rows}x${cols}`,
+          wordSelectionSeedKey(wordSettings),
+          layoutSelectionSeedKey(layoutSettings)
+        ].join("~");
       }
 
-      function buildPracticeSeed(_rows, _cols, variant) {
-        return normalizeSeed(`practice-${variant}`, "practice-0");
+      function buildDailySeed(rows, cols) {
+        return composeGameSeed(
+          `daily-${getDailyVariant()}`,
+          rows,
+          cols,
+          currentWordSettings(),
+          currentLayoutSettings(rows, cols)
+        );
+      }
+
+      function buildPracticeSeed(rows, cols, variant) {
+        return composeGameSeed(
+          `practice-${variant}`,
+          rows,
+          cols,
+          currentWordSettings(),
+          currentLayoutSettings(rows, cols)
+        );
       }
 
       function materializePuzzle(rows, cols, mode, seedKey) {
         const wordSettings = currentWordSettings();
         const layoutSettings = currentLayoutSettings(rows, cols);
         const normalizedSeed = normalizeSeed(
-          seedKey,
+          extractSeedBody(seedKey),
           mode === "daily" ? `daily-${getDailyVariant()}` : "practice-0"
         );
-        const seedLabel = `${mode}:${rows}x${cols}:${normalizedSeed}|words=${wordSelectionSeedKey(wordSettings)}|layout=${layoutSelectionSeedKey(layoutSettings)}`;
+        const fullSeed = composeGameSeed(normalizedSeed, rows, cols, wordSettings, layoutSettings);
+        const seedLabel = `${mode}:${fullSeed}`;
         const layout = buildPlayableLayout(rows, cols, seedLabel, wordSettings, layoutSettings);
         const words = layout.slotPaths
           ? layout.slotPaths.map((path, index) => ({
@@ -2486,9 +2588,9 @@
         });
 
         return {
-          id: `${mode}-${rows}x${cols}-${normalizedSeed}-${wordSelectionSeedKey(wordSettings)}-${layoutSelectionSeedKey(layoutSettings)}`,
+          id: `${mode}-${fullSeed}`,
           name: `${rows}x${cols} ${mode === "daily" ? "Daily Matrix" : "Practice Matrix"}`,
-          seedKey: normalizedSeed,
+          seedKey: fullSeed,
           rows,
           cols,
           cells,
@@ -2534,7 +2636,7 @@
 
       function getDailyPuzzle() {
         const { rows, cols } = currentGridSize();
-        return materializePuzzle(rows, cols, "daily", buildDailySeed());
+        return materializePuzzle(rows, cols, "daily", buildDailySeed(rows, cols));
       }
 
       function isSolvedWord(wordIndex) {
@@ -3105,6 +3207,44 @@
         state.selectedBlankChar = sanitizeBlankChar(els.blankCharInput.value);
       }
 
+      function applySeedConfiguration(seedValue, fallbackBase = "practice-0") {
+        const parsed = parseGameSeed(seedValue, fallbackBase);
+        const grid = parseGridSizeToken(parsed.gridToken);
+        if (grid) {
+          state.selectedGridSize = grid.gridSize;
+        }
+        const { rows, cols } = currentGridSize();
+
+        if (parsed.wordToken) {
+          const wordSettings = decodeWordSelectionSeedKey(parsed.wordToken);
+          state.selectedWordMode = wordSettings.mode;
+          state.selectedStartLetter = wordSettings.startLetter;
+          state.selectedFixedLength = wordSettings.fixedLength;
+        }
+
+        if (parsed.layoutToken) {
+          const layoutSettings = decodeLayoutSelectionSeedKey(parsed.layoutToken, rows, cols);
+          state.selectedBlankLayout = layoutSettings.mode;
+          state.selectedBlankPercent = layoutSettings.blankPercent;
+          state.selectedBlankCount = layoutSettings.blankCount;
+          state.selectedBlankChar = layoutSettings.blankChar;
+        }
+
+        return {
+          baseSeed: parsed.baseSeed,
+          rows,
+          cols,
+          mode: parsed.baseSeed.startsWith("daily-") ? "daily" : "practice",
+          fullSeed: composeGameSeed(
+            parsed.baseSeed,
+            rows,
+            cols,
+            currentWordSettings(),
+            currentLayoutSettings(rows, cols)
+          )
+        };
+      }
+
       function nextPracticePuzzle() {
         syncConfigFromControls();
         const { rows, cols } = currentGridSize();
@@ -3173,10 +3313,9 @@
 
       function applySeedInput() {
         syncConfigFromControls();
-        const { rows, cols } = currentGridSize();
-        const normalizedSeed = normalizeSeed(els.seedInput.value, "practice-0");
+        const { rows, cols, mode, fullSeed } = applySeedConfiguration(els.seedInput.value, "practice-0");
         state.practiceIndex = 0;
-        startPuzzle(materializePuzzle(rows, cols, "practice", normalizedSeed), "practice");
+        startPuzzle(materializePuzzle(rows, cols, mode, fullSeed), mode);
       }
 
       function applyColorMode(value) {
@@ -3255,8 +3394,9 @@
       populateGridSizeOptions();
       const urlSeed = getUrlSeed();
       if (urlSeed) {
-        const { rows, cols } = currentGridSize();
-        startPuzzle(materializePuzzle(rows, cols, "practice", urlSeed), "practice", { ignoreSavedState: true });
+        const fallbackBase = urlSeed.startsWith("daily-") ? `daily-${getDailyVariant()}` : "practice-0";
+        const { rows, cols, mode, fullSeed } = applySeedConfiguration(urlSeed, fallbackBase);
+        startPuzzle(materializePuzzle(rows, cols, mode, fullSeed), mode, { ignoreSavedState: true });
       } else {
         startPuzzle(getDailyPuzzle(), "daily");
       }
