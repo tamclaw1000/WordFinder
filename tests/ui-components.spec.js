@@ -109,12 +109,14 @@ requirementTest(
 
     await page.locator("#word-mode").selectOption("contains-text");
     await expect(page.locator("#required-text-field")).toBeVisible();
+    await expect(page.locator("#required-text-input")).toHaveValue("");
     await page.locator("#required-text-input").fill("iNg!");
     await expect(page.locator("#required-text-input")).toHaveValue("ING");
 
     await page.locator("#word-mode").selectOption("starts-with");
     await expect(page.locator("#required-text-field")).toBeHidden();
     await expect(page.locator("#start-letter-field")).toBeVisible();
+    await expect(page.locator("#start-letter-input")).toHaveValue("");
     await page.locator("#start-letter-input").fill("z");
     await expect(page.locator("#start-letter-input")).toHaveValue("Z");
 

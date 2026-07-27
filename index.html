@@ -947,7 +947,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.46";
+      const APP_VERSION = "v00.00.47";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -978,8 +978,8 @@
         selectedGridSize: "5x5",
         selectedColorMode: "value",
         selectedWordMode: "any",
-        selectedRequiredText: "Z",
-        selectedStartLetter: "A",
+        selectedRequiredText: "",
+        selectedStartLetter: "",
         selectedFixedLength: 5,
         selectedBlankLayout: "default",
         selectedBlankPercent: 22,
@@ -1098,14 +1098,14 @@
         return [...new Set(words.filter(Boolean).map((word) => String(word).toUpperCase()))];
       }
 
-      function sanitizeStartLetter(value) {
+      function sanitizeStartLetter(value, fallback = "") {
         const letter = String(value || "").replace(/[^a-z]/gi, "").slice(0, 1).toUpperCase();
-        return letter || "A";
+        return letter || fallback;
       }
 
-      function sanitizeRequiredText(value) {
+      function sanitizeRequiredText(value, fallback = "") {
         const text = String(value || "").replace(/[^a-z]/gi, "").slice(0, 12).toUpperCase();
-        return text || "Z";
+        return text || fallback;
       }
 
       function sanitizeFixedLength(value) {
@@ -1149,8 +1149,8 @@
       function currentWordSettings() {
         return {
           mode: state.selectedWordMode,
-          requiredText: sanitizeRequiredText(state.selectedRequiredText),
-          startLetter: sanitizeStartLetter(state.selectedStartLetter),
+          requiredText: sanitizeRequiredText(state.selectedRequiredText, "Z"),
+          startLetter: sanitizeStartLetter(state.selectedStartLetter, "A"),
           fixedLength: sanitizeFixedLength(state.selectedFixedLength)
         };
       }
@@ -1265,21 +1265,21 @@
 
       function decodeWordSelectionSeedKey(key) {
         const normalized = String(key || "any");
-        if (normalized === "z") return { mode: "contains-text", requiredText: "Z", startLetter: "A", fixedLength: 5 };
-        if (normalized === "x") return { mode: "contains-text", requiredText: "X", startLetter: "A", fixedLength: 5 };
-        if (normalized === "q") return { mode: "contains-text", requiredText: "Q", startLetter: "A", fixedLength: 5 };
-        if (normalized === "ing") return { mode: "contains-text", requiredText: "ING", startLetter: "A", fixedLength: 5 };
-        if (normalized === "mm") return { mode: "contains-text", requiredText: "MM", startLetter: "A", fixedLength: 5 };
+        if (normalized === "z") return { mode: "contains-text", requiredText: "Z", startLetter: "", fixedLength: 5 };
+        if (normalized === "x") return { mode: "contains-text", requiredText: "X", startLetter: "", fixedLength: 5 };
+        if (normalized === "q") return { mode: "contains-text", requiredText: "Q", startLetter: "", fixedLength: 5 };
+        if (normalized === "ing") return { mode: "contains-text", requiredText: "ING", startLetter: "", fixedLength: 5 };
+        if (normalized === "mm") return { mode: "contains-text", requiredText: "MM", startLetter: "", fixedLength: 5 };
         if (normalized.startsWith("contains-")) {
-          return { mode: "contains-text", requiredText: sanitizeRequiredText(normalized.slice(9)), startLetter: "A", fixedLength: 5 };
+          return { mode: "contains-text", requiredText: sanitizeRequiredText(normalized.slice(9)), startLetter: "", fixedLength: 5 };
         }
         if (normalized.startsWith("starts-")) {
-          return { mode: "starts-with", requiredText: "Z", startLetter: sanitizeStartLetter(normalized.slice(7)), fixedLength: 5 };
+          return { mode: "starts-with", requiredText: "", startLetter: sanitizeStartLetter(normalized.slice(7)), fixedLength: 5 };
         }
         if (normalized.startsWith("n-")) {
-          return { mode: "fixed-length", requiredText: "Z", startLetter: "A", fixedLength: sanitizeFixedLength(normalized.slice(2)) };
+          return { mode: "fixed-length", requiredText: "", startLetter: "", fixedLength: sanitizeFixedLength(normalized.slice(2)) };
         }
-        return { mode: "any", requiredText: "Z", startLetter: "A", fixedLength: 5 };
+        return { mode: "any", requiredText: "", startLetter: "", fixedLength: 5 };
       }
 
       function layoutSelectionSeedKey(layoutSettings) {
@@ -2242,8 +2242,8 @@
         els.gridSize.value = state.selectedGridSize;
         els.seedInput.value = state.currentSeed;
         els.wordMode.value = state.selectedWordMode;
-        els.requiredTextInput.value = sanitizeRequiredText(state.selectedRequiredText);
-        els.startLetterInput.value = sanitizeStartLetter(state.selectedStartLetter);
+        els.requiredTextInput.value = state.selectedRequiredText;
+        els.startLetterInput.value = state.selectedStartLetter;
         els.fixedLengthInput.value = String(sanitizeFixedLength(state.selectedFixedLength));
         els.blankLayout.value = state.selectedBlankLayout;
         els.blankPercentInput.value = String(sanitizeBlankPercent(state.selectedBlankPercent));
@@ -2334,6 +2334,8 @@
         renderSummary();
         if (state.selectedWordMode === "contains-text" || state.selectedWordMode === "starts-with" || state.selectedWordMode === "fixed-length") {
           setMessage("Choose the extra word filter, then the board will regenerate.");
+          if (state.selectedWordMode === "contains-text" && !state.selectedRequiredText) return;
+          if (state.selectedWordMode === "starts-with" && !state.selectedStartLetter) return;
           return;
         }
         regenerateCurrentMode();
@@ -2389,18 +2391,26 @@
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
       els.wordMode.addEventListener("change", applyWordSettings);
       els.requiredTextInput.addEventListener("input", () => {
+        state.selectedRequiredText = sanitizeRequiredText(els.requiredTextInput.value);
         if (state.selectedWordMode === "contains-text") {
-          state.selectedRequiredText = sanitizeRequiredText(els.requiredTextInput.value);
           renderSummary();
+          if (!state.selectedRequiredText) {
+            setMessage("Enter the required letter or letters to regenerate this mode.");
+            return;
+          }
           regenerateCurrentMode();
         } else {
           renderSummary();
         }
       });
       els.startLetterInput.addEventListener("input", () => {
+        state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
         if (state.selectedWordMode === "starts-with") {
-          state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
           renderSummary();
+          if (!state.selectedStartLetter) {
+            setMessage("Enter the starting letter to regenerate this mode.");
+            return;
+          }
           regenerateCurrentMode();
         } else {
           renderSummary();
