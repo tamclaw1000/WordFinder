@@ -73,6 +73,15 @@ async function dragWordPath(page, wordIndex) {
   await page.mouse.up();
 }
 
+async function tapWordPath(page, wordIndex) {
+  const path = await page.evaluate((index) => [...state.puzzle.words[index].path], wordIndex);
+  const cells = page.locator("#board .tile, #board .block");
+  for (const cellIndex of path) {
+    await cells.nth(cellIndex).tap();
+  }
+  await cells.nth(path[path.length - 1]).tap();
+}
+
 module.exports = {
   gotoApp,
   openMenu,
@@ -81,5 +90,6 @@ module.exports = {
   setSelect,
   getPuzzleSnapshot,
   clickWordPath,
-  dragWordPath
+  dragWordPath,
+  tapWordPath
 };

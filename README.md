@@ -2,7 +2,7 @@
 
 WordFinder is a prototype repository for a Wend-style word-path puzzle web app.
 
-Current prototype version: `v00.00.48`
+Current prototype version: `v00.00.49`
 
 ## Getting started
 

@@ -947,7 +947,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.48";
+      const APP_VERSION = "v00.00.49";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -2444,7 +2444,7 @@
       if (urlSeed) {
         const fallbackBase = urlSeed.startsWith("daily-") ? buildDailyBaseSeed() : "practice-0";
         const { rows, cols, mode, fullSeed } = applySeedConfiguration(urlSeed, fallbackBase);
-        startPuzzle(materializePuzzle(rows, cols, mode, fullSeed), mode, { ignoreSavedState: true });
+        startPuzzle(materializePuzzle(rows, cols, mode, fullSeed), mode);
       } else {
         startPuzzle(getDailyPuzzle(), "daily");
       }

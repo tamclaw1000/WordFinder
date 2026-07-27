@@ -60,7 +60,7 @@ requirementTest(
     await gotoApp(page);
 
     await expect(page.locator(".eyebrow")).toHaveText("Doc rebuild");
-    await expect(page.locator("#version-chip")).toHaveText("v00.00.48");
+    await expect(page.locator("#version-chip")).toHaveText("v00.00.49");
     await expect(page.locator(".subtitle")).toContainText("Trace each hidden word as one exact orthogonal path.");
 
     await expect(page.locator("#mode-pill")).toContainText("Daily");
@@ -233,6 +233,155 @@ requirementTest(
     await expect(page.locator("#blank-percent-field")).toBeHidden();
     await expect(page.locator("#blank-count-field")).toBeHidden();
     await expect(page.locator("#blank-char-field")).toBeHidden();
+  }
+);
+
+requirementTest(
+  [
+    "REQ-017","REQ-019","REQ-020","REQ-021","REQ-030","REQ-033","REQ-052","REQ-054","REQ-055",
+    "REQ-056","REQ-058"
+  ],
+  "Malformed URL seeds normalize into safe reproducible browser state",
+  async ({ page }) => {
+    const malformedSeed = "   stress seed   ~99x99~contains-a!b@c123defghiJKLmnop~verticals,999,-7,1f600";
+    await gotoApp(page, malformedSeed);
+
+    const restored = await page.evaluate(() => ({
+      currentSeed: state.currentSeed,
+      mode: state.mode,
+      rows: state.puzzle.rows,
+      cols: state.puzzle.cols,
+      gridSize: state.selectedGridSize,
+      wordMode: state.selectedWordMode,
+      requiredText: state.selectedRequiredText,
+      blankLayout: state.selectedBlankLayout,
+      blankPercent: state.selectedBlankPercent,
+      blankCount: state.selectedBlankCount,
+      blankChar: state.selectedBlankChar
+    }));
+
+    expect(restored.mode).toBe("practice");
+    expect(restored.rows).toBe(5);
+    expect(restored.cols).toBe(5);
+    expect(restored.gridSize).toBe("5x5");
+    expect(restored.wordMode).toBe("contains-text");
+    expect(restored.requiredText).toBe("ABCDEFGHIJKL");
+    expect(restored.blankLayout).toBe("verticals");
+    expect(restored.blankPercent).toBe(85);
+    expect(restored.blankCount).toBe(0);
+    expect(restored.blankChar).toBe("");
+    expect(restored.currentSeed).toBe("stress seed~5x5~contains-ABCDEFGHIJKL~verticals,85,0,none");
+
+    const url = new URL(page.url());
+    expect(url.searchParams.get("seed")).toBe(restored.currentSeed);
+
+    await openSettings(page, "generation");
+    await expect(page.locator("#required-text-field")).toBeVisible();
+    await expect(page.locator("#required-text-input")).toHaveValue("ABCDEFGHIJKL");
+    await expect(page.locator("#blank-layout")).toHaveValue("verticals");
+    await expect(page.locator("#blank-percent-input")).toHaveValue("85");
+    await expect(page.locator("#blank-count-input")).toHaveValue("0");
+    await expect(page.locator("#blank-char-input")).toHaveValue("");
+  }
+);
+
+requirementTest(
+  [
+    "REQ-018","REQ-030","REQ-031","REQ-032","REQ-033","REQ-034","REQ-049","REQ-050","REQ-052",
+    "REQ-053","REQ-054","REQ-055","REQ-056","REQ-057","REQ-058","REQ-087"
+  ],
+  "Repeated empty or partial values and rapid control changes keep puzzle state coherent",
+  async ({ page }) => {
+    await gotoApp(page);
+
+    const initialPuzzleId = await page.evaluate(() => state.puzzle.id);
+
+    await openSettings(page, "generation");
+    await page.locator("#word-mode").selectOption("contains-text");
+    await expect(page.locator("#required-text-field")).toBeVisible();
+
+    await page.locator("#required-text-input").fill("!!!");
+    await expect(page.locator("#required-text-input")).toHaveValue("");
+    await expect(page.locator("#message-text")).toContainText("Enter the required letter or letters");
+    expect(await page.evaluate(() => state.puzzle.id)).toBe(initialPuzzleId);
+
+    await page.locator("#required-text-input").fill("abcdEFghIJKLmnop!!");
+    await expect(page.locator("#required-text-input")).toHaveValue("ABCDEFGHIJKL");
+    await expect.poll(() => page.evaluate(() => state.currentSeed)).toContain("~contains-ABCDEFGHIJKL~");
+
+    await page.locator("#word-mode").selectOption("starts-with");
+    await expect(page.locator("#start-letter-field")).toBeVisible();
+    await page.locator("#start-letter-input").fill("7");
+    await expect(page.locator("#start-letter-input")).toHaveValue("");
+    await expect(page.locator("#message-text")).toContainText("Enter the starting letter");
+    await page.locator("#start-letter-input").fill("q");
+    await expect(page.locator("#start-letter-input")).toHaveValue("Q");
+    await expect.poll(() => page.evaluate(() => state.currentSeed)).toContain("~starts-Q~");
+
+    await page.locator("#word-mode").selectOption("fixed-length");
+    await expect(page.locator("#fixed-length-field")).toBeVisible();
+    await page.locator("#fixed-length-input").fill("999");
+    await page.locator("#fixed-length-input").press("Tab");
+    await expect.poll(() => page.evaluate(() => state.selectedFixedLength)).toBe(12);
+    await expect.poll(() => page.evaluate(() => state.currentSeed)).toContain("~n-12~");
+
+    await page.locator("#tab-game-btn").click();
+    for (const gridSize of ["4x4", "9x9", "6x6", "10x10"]) {
+      await page.locator("#grid-size").selectOption(gridSize);
+    }
+    await expect(page.locator("#board .tile, #board .block")).toHaveCount(100);
+
+    await page.locator("#tab-generation-btn").click();
+    for (const layout of ["verticals", "diag-slash", "horizontals", "diag-both", "verticals"]) {
+      await page.locator("#blank-layout").selectOption(layout);
+    }
+    await expect(page.locator("#blank-percent-field")).toBeVisible();
+    await expect(page.locator("#blank-count-field")).toBeVisible();
+    await expect(page.locator("#blank-char-field")).toBeVisible();
+
+    await page.locator("#blank-percent-input").fill("");
+    await page.locator("#blank-percent-input").press("Tab");
+    await expect(page.locator("#blank-percent-input")).toHaveValue("0");
+
+    await page.locator("#blank-percent-input").fill("999");
+    await page.locator("#blank-percent-input").press("Tab");
+    await expect(page.locator("#blank-percent-input")).toHaveValue("85");
+
+    await page.locator("#blank-count-input").fill("");
+    await page.locator("#blank-count-input").press("Tab");
+    await expect(page.locator("#blank-count-input")).toHaveValue("0");
+
+    await page.locator("#blank-count-input").fill("9999");
+    await page.locator("#blank-count-input").press("Tab");
+    await expect(page.locator("#blank-count-input")).toHaveValue("100");
+
+    await page.locator("#blank-char-input").fill("##");
+    await expect(page.locator("#blank-char-input")).toHaveValue("#");
+
+    const finalState = await page.evaluate(() => ({
+      currentSeed: state.currentSeed,
+      rows: state.puzzle.rows,
+      cols: state.puzzle.cols,
+      gridSize: state.selectedGridSize,
+      wordMode: state.selectedWordMode,
+      fixedLength: state.selectedFixedLength,
+      blankLayout: state.selectedBlankLayout,
+      blankPercent: state.selectedBlankPercent,
+      blankCount: state.selectedBlankCount,
+      blankChar: state.selectedBlankChar
+    }));
+
+    expect(finalState.rows).toBe(10);
+    expect(finalState.cols).toBe(10);
+    expect(finalState.gridSize).toBe("10x10");
+    expect(finalState.wordMode).toBe("fixed-length");
+    expect(finalState.fixedLength).toBe(12);
+    expect(finalState.blankLayout).toBe("verticals");
+    expect(finalState.blankPercent).toBe(85);
+    expect(finalState.blankCount).toBe(100);
+    expect(finalState.blankChar).toBe("#");
+    expect(finalState.currentSeed).toContain("~10x10~n-12~verticals,85,100,23");
+    expect(new URL(page.url()).searchParams.get("seed")).toBe(finalState.currentSeed);
   }
 );
 

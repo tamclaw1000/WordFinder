@@ -54,6 +54,22 @@ const TEST_CASES = [
   },
   {
     file: "ui-components.spec.js",
+    title: "Malformed URL seeds normalize into safe reproducible browser state",
+    requirements: [
+      "REQ-017","REQ-019","REQ-020","REQ-021","REQ-030","REQ-033","REQ-052","REQ-054","REQ-055",
+      "REQ-056","REQ-058"
+    ]
+  },
+  {
+    file: "ui-components.spec.js",
+    title: "Repeated empty or partial values and rapid control changes keep puzzle state coherent",
+    requirements: [
+      "REQ-018","REQ-030","REQ-031","REQ-032","REQ-033","REQ-034","REQ-049","REQ-050","REQ-052",
+      "REQ-053","REQ-054","REQ-055","REQ-056","REQ-057","REQ-058","REQ-087"
+    ]
+  },
+  {
+    file: "ui-components.spec.js",
     title: "Slots, message box, invalid feedback, metrics, and success banner component states update correctly",
     requirements: [
       "REQ-014","REQ-044","REQ-045","REQ-046","REQ-059","REQ-060","REQ-061","REQ-062","REQ-063",
@@ -80,6 +96,42 @@ const TEST_CASES = [
       "REQ-056","REQ-057","REQ-058","REQ-066","REQ-067","REQ-068","REQ-069","REQ-070","REQ-071",
       "REQ-072","REQ-073","REQ-074","REQ-075","REQ-076","REQ-077","REQ-078","REQ-079","REQ-080",
       "REQ-089","REQ-090"
+    ]
+  },
+  {
+    file: "deep-browser-coverage.spec.js",
+    title: "Current-app configuration round-trips from controls to URL seed to reload without losing visible state",
+    requirements: [
+      "REQ-017","REQ-018","REQ-019","REQ-020","REQ-021","REQ-049","REQ-050","REQ-052","REQ-054",
+      "REQ-055","REQ-056","REQ-057","REQ-058"
+    ]
+  },
+  {
+    file: "deep-browser-coverage.spec.js",
+    title: "Current-app progress and hints persist across reload for the same puzzle seed",
+    requirements: [
+      "REQ-017","REQ-019","REQ-021","REQ-059","REQ-060","REQ-064","REQ-085","REQ-089"
+    ]
+  },
+  {
+    file: "deep-browser-coverage.spec.js",
+    title: "Current-app remains usable in a mobile viewport with touch interactions and no horizontal scrolling",
+    requirements: [
+      "REQ-015","REQ-016","REQ-035","REQ-036","REQ-037","REQ-083","REQ-088"
+    ]
+  },
+  {
+    file: "deep-browser-coverage.spec.js",
+    title: "Current-app rejects invalid path mutations, supports drag backtracking, and ignores locked tiles",
+    requirements: [
+      "REQ-008","REQ-009","REQ-010","REQ-011","REQ-015","REQ-016","REQ-065","REQ-088"
+    ]
+  },
+  {
+    file: "deep-browser-coverage.spec.js",
+    title: "Current-app tolerates repeated large-board regenerations and control churn without browser-side failures",
+    requirements: [
+      "REQ-005","REQ-049","REQ-055","REQ-056","REQ-057","REQ-069","REQ-070","REQ-080"
     ]
   },
   {
