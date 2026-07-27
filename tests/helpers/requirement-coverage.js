@@ -22,6 +22,14 @@ const TEST_CASES = [
   },
   {
     file: "ui-components.spec.js",
+    title: "Hero, board chrome, legend, notes, metrics, actions, and current-path components render completely",
+    requirements: [
+      "REQ-001","REQ-005","REQ-006","REQ-014","REQ-035","REQ-042","REQ-043","REQ-044","REQ-045",
+      "REQ-046","REQ-081","REQ-082","REQ-083","REQ-084","REQ-088"
+    ]
+  },
+  {
+    file: "ui-components.spec.js",
     title: "Solved-color control, grid size, seed application, and URL sync work from settings",
     requirements: [
       "REQ-017","REQ-018","REQ-019","REQ-020","REQ-021","REQ-022","REQ-023","REQ-024","REQ-025",
@@ -30,10 +38,26 @@ const TEST_CASES = [
   },
   {
     file: "ui-components.spec.js",
+    title: "Settings dialog shell, close behaviors, tabs, and control inventories are fully exposed",
+    requirements: [
+      "REQ-026","REQ-027","REQ-028","REQ-037","REQ-047","REQ-048","REQ-049","REQ-051","REQ-053",
+      "REQ-055","REQ-056","REQ-057","REQ-058","REQ-087","REQ-088"
+    ]
+  },
+  {
+    file: "ui-components.spec.js",
     title: "Word mode and blank layout conditional controls only appear when relevant and sanitize input",
     requirements: [
       "REQ-026","REQ-027","REQ-028","REQ-029","REQ-030","REQ-031","REQ-032","REQ-033","REQ-034",
       "REQ-055","REQ-056","REQ-057","REQ-058","REQ-087"
+    ]
+  },
+  {
+    file: "ui-components.spec.js",
+    title: "Slots, message box, invalid feedback, metrics, and success banner component states update correctly",
+    requirements: [
+      "REQ-014","REQ-044","REQ-045","REQ-046","REQ-059","REQ-060","REQ-061","REQ-062","REQ-063",
+      "REQ-064","REQ-065","REQ-084","REQ-085","REQ-086"
     ]
   },
   {
@@ -69,4 +93,3 @@ module.exports = {
   REQUIREMENT_IDS,
   TEST_CASES
 };
-
