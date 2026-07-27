@@ -2,7 +2,7 @@
 
 WordFinder is a prototype repository for a Wend-style word-path puzzle web app.
 
-Current prototype version: `v00.00.45`
+Current prototype version: `v00.00.46`
 
 ## Getting started
 
@@ -29,6 +29,7 @@ To run the full automated browser suite:
 - Patterned blank modes generate blank structures first, derive straight playable runs, and fill those runs with valid words.
 - The main screen is now gameplay-first: configuration lives in a popup settings dialog, while a top-right menu holds `New practice board`, `Settings`, and archived version links.
 - The active board configuration is mirrored into the URL as `?seed=...`, and loading that URL restores the encoded setup.
+- Word selection now supports user-chosen required letter sequences instead of only a few hardcoded contains presets.
 - Tap-only play submits by tapping the current path end tile again instead of using a dedicated submit button.
 - `scripts/build-worker.mjs` packages the single-page prototype into `dist/index.js` for Sites deployment.
 - The repository now includes a Playwright-based requirements-traceable test suite, plus

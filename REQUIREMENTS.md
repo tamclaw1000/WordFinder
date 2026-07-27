@@ -44,11 +44,11 @@ suite can trace implementation coverage directly back to the product contract.
 - `REQ-027` The settings dialog shall provide a `Game Configuration` tab.
 - `REQ-028` The settings dialog shall provide a `Board & Word Mechanics` tab.
 - `REQ-029` The `Word selection` control shall provide `Any words`.
-- `REQ-030` The `Word selection` control shall provide the constrained modes `Z`, `X`, `Q`, `ING`, and `MM`.
+- `REQ-030` The `Word selection` control shall provide a `Words containing...` mode that accepts user-chosen required letter sequences.
 - `REQ-031` The `Word selection` control shall provide a `Words beginning with...` mode.
 - `REQ-032` The `Word selection` control shall provide an `Only N-letter words` mode.
-- `REQ-033` The `Starting letter` field shall only appear when the `Words beginning with...` mode is active.
-- `REQ-034` The `Word length N` field shall only appear when the fixed-length mode is active.
+- `REQ-033` The `Required letter or letters` field shall only appear when the `Words containing...` mode is active.
+- `REQ-034` The `Starting letter` field and `Word length N` field shall only appear when their corresponding modes are active.
 
 ## 5. Main UI And Navigation Requirements
 
@@ -92,7 +92,7 @@ suite can trace implementation coverage directly back to the product contract.
 - `REQ-066` Generated boards shall partition their playable tiles into multiple words.
 - `REQ-067` Word paths shall be contiguous and orthogonal.
 - `REQ-068` Word paths shall not overlap one another.
-- `REQ-069` Generated words in constrained modes shall satisfy the active constraint.
+- `REQ-069` Generated words in constrained modes shall satisfy the active contains, starts-with, or fixed-length constraint.
 - `REQ-070` Fixed-length generation shall emit only words whose length matches `N`.
 
 ## 8. Generation Algorithm Requirements

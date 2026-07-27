@@ -891,14 +891,14 @@
                 <label for="word-mode">Word selection</label>
                 <select id="word-mode">
                   <option value="any">Any words</option>
-                  <option value="contains-z">Only words with Z</option>
-                  <option value="contains-x">Only words with X</option>
-                  <option value="contains-q">Only words with Q</option>
-                  <option value="contains-ing">Only words with ING</option>
-                  <option value="contains-mm">Only words with MM</option>
+                  <option value="contains-text">Words containing...</option>
                   <option value="starts-with">Words beginning with...</option>
                   <option value="fixed-length">Only N-letter words</option>
                 </select>
+              </div>
+              <div class="field" id="required-text-field" hidden>
+                <label for="required-text-input">Required letter or letters</label>
+                <input id="required-text-input" type="text" maxlength="12" spellcheck="false" autocomplete="off" />
               </div>
               <div class="field" id="start-letter-field" hidden>
                 <label for="start-letter-input">Starting letter</label>
@@ -947,7 +947,7 @@
 
     <script src="word-pools.js"></script>
     <script>
-      const APP_VERSION = "v00.00.45";
+      const APP_VERSION = "v00.00.46";
       const GRID_MIN = 4;
       const GRID_MAX = 20;
 
@@ -978,6 +978,7 @@
         selectedGridSize: "5x5",
         selectedColorMode: "value",
         selectedWordMode: "any",
+        selectedRequiredText: "Z",
         selectedStartLetter: "A",
         selectedFixedLength: 5,
         selectedBlankLayout: "default",
@@ -1026,6 +1027,8 @@
         seedApplyBtn: document.getElementById("seed-apply-btn"),
         colorMode: document.getElementById("color-mode"),
         wordMode: document.getElementById("word-mode"),
+        requiredTextField: document.getElementById("required-text-field"),
+        requiredTextInput: document.getElementById("required-text-input"),
         startLetterField: document.getElementById("start-letter-field"),
         startLetterInput: document.getElementById("start-letter-input"),
         fixedLengthField: document.getElementById("fixed-length-field"),
@@ -1100,6 +1103,11 @@
         return letter || "A";
       }
 
+      function sanitizeRequiredText(value) {
+        const text = String(value || "").replace(/[^a-z]/gi, "").slice(0, 12).toUpperCase();
+        return text || "Z";
+      }
+
       function sanitizeFixedLength(value) {
         return clamp(Number.parseInt(value, 10) || 5, 4, 12);
       }
@@ -1141,6 +1149,7 @@
       function currentWordSettings() {
         return {
           mode: state.selectedWordMode,
+          requiredText: sanitizeRequiredText(state.selectedRequiredText),
           startLetter: sanitizeStartLetter(state.selectedStartLetter),
           fixedLength: sanitizeFixedLength(state.selectedFixedLength)
         };
@@ -1162,16 +1171,8 @@
 
       function matchesWordMode(word, wordSettings) {
         switch (wordSettings.mode) {
-          case "contains-z":
-            return word.includes("Z");
-          case "contains-x":
-            return word.includes("X");
-          case "contains-q":
-            return word.includes("Q");
-          case "contains-ing":
-            return word.includes("ING");
-          case "contains-mm":
-            return word.includes("MM");
+          case "contains-text":
+            return word.includes(wordSettings.requiredText);
           case "starts-with":
             return word.startsWith(wordSettings.startLetter);
           case "fixed-length":
@@ -1186,13 +1187,13 @@
       }
 
       function getWordCandidatesForLength(length, wordSettings) {
-        if (wordSettings.mode === "contains-z" ||
-            wordSettings.mode === "contains-x" ||
-            wordSettings.mode === "contains-q" ||
-            wordSettings.mode === "contains-ing" ||
-            wordSettings.mode === "contains-mm") {
+        if (wordSettings.mode === "contains-text") {
+          const specialMatches = Object.entries(SPECIAL_WORD_BANK).flatMap(([mode, lengths]) => {
+            const words = (lengths || {})[String(length)] || [];
+            return mode.startsWith("contains-") ? words : [];
+          });
           return uniqueWords([
-            ...(((SPECIAL_WORD_BANK[wordSettings.mode] || {})[String(length)] || [])),
+            ...specialMatches.filter((word) => matchesWordMode(word, wordSettings)),
             ...baseWordsForLength(length).filter((word) => matchesWordMode(word, wordSettings))
           ]);
         }
@@ -1255,11 +1256,7 @@
 
       function wordSelectionSeedKey(wordSettings) {
         switch (wordSettings.mode) {
-          case "contains-z": return "z";
-          case "contains-x": return "x";
-          case "contains-q": return "q";
-          case "contains-ing": return "ing";
-          case "contains-mm": return "mm";
+          case "contains-text": return `contains-${wordSettings.requiredText}`;
           case "starts-with": return `starts-${wordSettings.startLetter}`;
           case "fixed-length": return `n-${wordSettings.fixedLength}`;
           default: return "any";
@@ -1268,18 +1265,21 @@
 
       function decodeWordSelectionSeedKey(key) {
         const normalized = String(key || "any");
-        if (normalized === "z") return { mode: "contains-z", startLetter: "A", fixedLength: 5 };
-        if (normalized === "x") return { mode: "contains-x", startLetter: "A", fixedLength: 5 };
-        if (normalized === "q") return { mode: "contains-q", startLetter: "A", fixedLength: 5 };
-        if (normalized === "ing") return { mode: "contains-ing", startLetter: "A", fixedLength: 5 };
-        if (normalized === "mm") return { mode: "contains-mm", startLetter: "A", fixedLength: 5 };
+        if (normalized === "z") return { mode: "contains-text", requiredText: "Z", startLetter: "A", fixedLength: 5 };
+        if (normalized === "x") return { mode: "contains-text", requiredText: "X", startLetter: "A", fixedLength: 5 };
+        if (normalized === "q") return { mode: "contains-text", requiredText: "Q", startLetter: "A", fixedLength: 5 };
+        if (normalized === "ing") return { mode: "contains-text", requiredText: "ING", startLetter: "A", fixedLength: 5 };
+        if (normalized === "mm") return { mode: "contains-text", requiredText: "MM", startLetter: "A", fixedLength: 5 };
+        if (normalized.startsWith("contains-")) {
+          return { mode: "contains-text", requiredText: sanitizeRequiredText(normalized.slice(9)), startLetter: "A", fixedLength: 5 };
+        }
         if (normalized.startsWith("starts-")) {
-          return { mode: "starts-with", startLetter: sanitizeStartLetter(normalized.slice(7)), fixedLength: 5 };
+          return { mode: "starts-with", requiredText: "Z", startLetter: sanitizeStartLetter(normalized.slice(7)), fixedLength: 5 };
         }
         if (normalized.startsWith("n-")) {
-          return { mode: "fixed-length", startLetter: "A", fixedLength: sanitizeFixedLength(normalized.slice(2)) };
+          return { mode: "fixed-length", requiredText: "Z", startLetter: "A", fixedLength: sanitizeFixedLength(normalized.slice(2)) };
         }
-        return { mode: "any", startLetter: "A", fixedLength: 5 };
+        return { mode: "any", requiredText: "Z", startLetter: "A", fixedLength: 5 };
       }
 
       function layoutSelectionSeedKey(layoutSettings) {
@@ -1362,6 +1362,7 @@
         if (parsed.wordToken) {
           const word = decodeWordSelectionSeedKey(parsed.wordToken);
           state.selectedWordMode = word.mode;
+          state.selectedRequiredText = word.requiredText;
           state.selectedStartLetter = word.startLetter;
           state.selectedFixedLength = word.fixedLength;
         }
@@ -2241,12 +2242,14 @@
         els.gridSize.value = state.selectedGridSize;
         els.seedInput.value = state.currentSeed;
         els.wordMode.value = state.selectedWordMode;
+        els.requiredTextInput.value = sanitizeRequiredText(state.selectedRequiredText);
         els.startLetterInput.value = sanitizeStartLetter(state.selectedStartLetter);
         els.fixedLengthInput.value = String(sanitizeFixedLength(state.selectedFixedLength));
         els.blankLayout.value = state.selectedBlankLayout;
         els.blankPercentInput.value = String(sanitizeBlankPercent(state.selectedBlankPercent));
         els.blankCountInput.value = String(sanitizeBlankCount(state.selectedBlankCount, state.puzzle.rows, state.puzzle.cols));
         els.blankCharInput.value = sanitizeBlankChar(state.selectedBlankChar);
+        els.requiredTextField.hidden = state.selectedWordMode !== "contains-text";
         els.startLetterField.hidden = state.selectedWordMode !== "starts-with";
         els.fixedLengthField.hidden = state.selectedWordMode !== "fixed-length";
         const showBlankControls = blankControlsRelevant(state.selectedBlankLayout);
@@ -2289,6 +2292,7 @@
 
       function syncConfigFromControls() {
         state.selectedWordMode = els.wordMode.value;
+        state.selectedRequiredText = sanitizeRequiredText(els.requiredTextInput.value);
         state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
         state.selectedFixedLength = sanitizeFixedLength(els.fixedLengthInput.value);
         state.selectedBlankLayout = els.blankLayout.value;
@@ -2324,10 +2328,11 @@
 
       function applyWordSettings() {
         state.selectedWordMode = els.wordMode.value;
+        state.selectedRequiredText = sanitizeRequiredText(els.requiredTextInput.value);
         state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);
         state.selectedFixedLength = sanitizeFixedLength(els.fixedLengthInput.value);
         renderSummary();
-        if (state.selectedWordMode === "starts-with" || state.selectedWordMode === "fixed-length") {
+        if (state.selectedWordMode === "contains-text" || state.selectedWordMode === "starts-with" || state.selectedWordMode === "fixed-length") {
           setMessage("Choose the extra word filter, then the board will regenerate.");
           return;
         }
@@ -2383,6 +2388,15 @@
       });
       els.gridSize.addEventListener("change", (event) => applyGridSize(event.target.value));
       els.wordMode.addEventListener("change", applyWordSettings);
+      els.requiredTextInput.addEventListener("input", () => {
+        if (state.selectedWordMode === "contains-text") {
+          state.selectedRequiredText = sanitizeRequiredText(els.requiredTextInput.value);
+          renderSummary();
+          regenerateCurrentMode();
+        } else {
+          renderSummary();
+        }
+      });
       els.startLetterInput.addEventListener("input", () => {
         if (state.selectedWordMode === "starts-with") {
           state.selectedStartLetter = sanitizeStartLetter(els.startLetterInput.value);

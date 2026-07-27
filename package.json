@@ -1,6 +1,6 @@
 {
   "name": "wordfinder",
-  "version": "0.0.44",
+  "version": "0.0.46",
   "private": true,
   "description": "Playwright test harness for the WordFinder static web app",
   "scripts": {
@@ -11,4 +11,3 @@
     "@playwright/test": "^1.54.2"
   }
 }
-

@@ -69,13 +69,13 @@ implementation area back to the numbered product requirements in `REQUIREMENTS.m
 
 ## 7. Word Selection Mechanics
 
-- `TS-024` The word-selection modes are `any`, `contains-z`, `contains-x`, `contains-q`, `contains-ing`, `contains-mm`, `starts-with`, and `fixed-length`.
+- `TS-024` The word-selection modes are `any`, `contains-text`, `starts-with`, and `fixed-length`.
   - Implements: `REQ-029`, `REQ-030`, `REQ-031`, `REQ-032`
-- `TS-025` The `starts-with` mode sanitizes input to one alphabetic character and filters candidate words by prefix.
-  - Implements: `REQ-033`, `REQ-069`
-- `TS-026` The `fixed-length` mode sanitizes `N` into the supported `4..12` range and filters candidate words by exact length.
+- `TS-025` The `contains-text` mode sanitizes input to uppercase alphabetic text, encodes that text into the reproducible seed, and filters candidate words by substring inclusion.
+  - Implements: `REQ-030`, `REQ-033`, `REQ-069`
+- `TS-026` The `starts-with` mode sanitizes input to one alphabetic character and filters candidate words by prefix, while `fixed-length` sanitizes `N` into the supported `4..12` range and filters candidate words by exact length.
   - Implements: `REQ-034`, `REQ-070`
-- `TS-027` Constrained word modes only use dictionary-backed words that satisfy the active constraint.
+- `TS-027` Constrained word modes only use dictionary-backed words that satisfy the active constraint, and legacy seeds for older hardcoded contains presets normalize forward into the generic contains-text mode.
   - Implements: `REQ-069`, `REQ-072`, `REQ-073`
 
 ## 8. Blank Layout Mechanics

@@ -18,14 +18,11 @@ requirementTest(
     const report = await page.evaluate(() => {
       const sizes = Array.from({ length: GRID_MAX - GRID_MIN + 1 }, (_, index) => GRID_MIN + index);
       const wordModes = [
-        { mode: "any", startLetter: "A", fixedLength: 5 },
-        { mode: "contains-z", startLetter: "A", fixedLength: 5 },
-        { mode: "contains-x", startLetter: "A", fixedLength: 5 },
-        { mode: "contains-q", startLetter: "A", fixedLength: 5 },
-        { mode: "contains-ing", startLetter: "A", fixedLength: 5 },
-        { mode: "contains-mm", startLetter: "A", fixedLength: 5 },
-        { mode: "starts-with", startLetter: "A", fixedLength: 5 },
-        { mode: "fixed-length", startLetter: "A", fixedLength: 5 }
+        { mode: "any", requiredText: "Z", startLetter: "A", fixedLength: 5 },
+        { mode: "contains-text", requiredText: "Z", startLetter: "A", fixedLength: 5 },
+        { mode: "contains-text", requiredText: "ING", startLetter: "A", fixedLength: 5 },
+        { mode: "starts-with", requiredText: "Z", startLetter: "A", fixedLength: 5 },
+        { mode: "fixed-length", requiredText: "Z", startLetter: "A", fixedLength: 5 }
       ];
       const blankLayouts = [
         "default",
@@ -40,11 +37,7 @@ requirementTest(
 
       function matchesMode(word, wordMode) {
         switch (wordMode.mode) {
-          case "contains-z": return word.includes("Z");
-          case "contains-x": return word.includes("X");
-          case "contains-q": return word.includes("Q");
-          case "contains-ing": return word.includes("ING");
-          case "contains-mm": return word.includes("MM");
+          case "contains-text": return word.includes(wordMode.requiredText);
           case "starts-with": return word.startsWith(wordMode.startLetter);
           case "fixed-length": return word.length === wordMode.fixedLength;
           default: return true;
@@ -60,6 +53,7 @@ requirementTest(
             combinations += 1;
             state.selectedGridSize = `${size}x${size}`;
             state.selectedWordMode = wordMode.mode;
+            state.selectedRequiredText = wordMode.requiredText;
             state.selectedStartLetter = wordMode.startLetter;
             state.selectedFixedLength = wordMode.fixedLength;
             state.selectedBlankLayout = blankLayout;
@@ -69,7 +63,7 @@ requirementTest(
             const baseSeed = buildPracticeBaseSeed(combinations);
             const fullSeed = buildCurrentSeed(baseSeed);
             const puzzle = materializePuzzle(size, size, "practice", fullSeed);
-            const label = `${size}x${size} | ${wordMode.mode} | ${blankLayout}`;
+            const label = `${size}x${size} | ${wordMode.mode}:${wordMode.requiredText || "-"}:${wordMode.startLetter}:${wordMode.fixedLength} | ${blankLayout}`;
 
             if (puzzle.rows !== size || puzzle.cols !== size) {
               failures.push(`${label}: wrong puzzle dimensions`);
@@ -152,6 +146,6 @@ requirementTest(
     });
 
     expect(report.failures, report.failures.join("\n")).toEqual([]);
-    expect(report.combinations).toBe(17 * 8 * 8);
+    expect(report.combinations).toBe(17 * 5 * 8);
   }
 );

@@ -100,18 +100,26 @@ requirementTest(
     await gotoApp(page);
     await openSettings(page, "generation");
 
+    await expect(page.locator("#required-text-field")).toBeHidden();
     await expect(page.locator("#start-letter-field")).toBeHidden();
     await expect(page.locator("#fixed-length-field")).toBeHidden();
     await expect(page.locator("#blank-percent-field")).toBeHidden();
     await expect(page.locator("#blank-count-field")).toBeHidden();
     await expect(page.locator("#blank-char-field")).toBeHidden();
 
+    await page.locator("#word-mode").selectOption("contains-text");
+    await expect(page.locator("#required-text-field")).toBeVisible();
+    await page.locator("#required-text-input").fill("iNg!");
+    await expect(page.locator("#required-text-input")).toHaveValue("ING");
+
     await page.locator("#word-mode").selectOption("starts-with");
+    await expect(page.locator("#required-text-field")).toBeHidden();
     await expect(page.locator("#start-letter-field")).toBeVisible();
     await page.locator("#start-letter-input").fill("z");
     await expect(page.locator("#start-letter-input")).toHaveValue("Z");
 
     await page.locator("#word-mode").selectOption("fixed-length");
+    await expect(page.locator("#required-text-field")).toBeHidden();
     await expect(page.locator("#start-letter-field")).toBeHidden();
     await expect(page.locator("#fixed-length-field")).toBeVisible();
     await page.locator("#fixed-length-input").fill("99");
